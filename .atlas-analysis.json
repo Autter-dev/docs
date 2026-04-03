@@ -1,0 +1,98 @@
+{
+  "projectType": "saas",
+  "projectName": "Autter",
+  "projectDescription": "Autter is an AI code reviewer that runs your code, tests your changes, and catches what you missed before anyone hits merge.",
+  "theme": "luma",
+  "primaryColor": "#32fcd3",
+  "lightColor": "#202f4e",
+  "darkColor": "#ccd7da",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/code-review",
+              "features/pipeline",
+              "features/analytics",
+              "features/ai-chat",
+              "features/integrations"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/overview",
+              "configuration/rules",
+              "configuration/pipeline"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/github-setup",
+              "guides/gitlab-setup",
+              "guides/custom-rules",
+              "guides/team-onboarding"
+            ]
+          },
+          {
+            "group": "FAQ",
+            "pages": [
+              "faq"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "groups": [
+          {
+            "group": "Releases",
+            "pages": [
+              "changelog/overview",
+              "changelog/new-analytics-dashboard",
+              "changelog/pipeline-templates-beta",
+              "changelog/webhook-retry-fix",
+              "changelog/in-app-announcements"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "AI code review that runs your code and tests changes before merge",
+    "Custom rules defined in plain English — no regex or YAML required",
+    "Pipeline automation with 40+ linters, security scanners, and test generation",
+    "Team learning — Autter learns from your senior developers' PR comment history",
+    "Engineering analytics: cycle time, review quality, and team velocity dashboards",
+    "AI chat for inline PR feedback and codebase-aware suggestions",
+    "Integrations with GitHub, GitLab, Jira, Linear, Slack, and VS Code",
+    "Unified PR inbox with real-time GitHub sync and keyboard shortcuts",
+    "Merge gate enforcement — blocks merges on critical issues automatically",
+    "Docstring and unit test auto-generation for changed code"
+  ],
+  "publicApiSurface": [
+    "npx autter analyse --pr <number>",
+    "npx autter check --diff HEAD~1..HEAD",
+    "npx autter init --learn",
+    "npx autter conventions list",
+    "npx autter conventions export --format markdown",
+    ".autter/pipeline.yml configuration file",
+    "autter.config.yml rules configuration",
+    "Custom webhook API for review events",
+    "GitHub App integration",
+    "GitLab integration"
+  ]
+}

@@ -1,0 +1,160 @@
+---
+title: "Installation"
+description: "Set up Autter on GitHub or GitLab, or run it locally with the CLI."
+---
+
+## Requirements
+
+- A GitHub or GitLab account (cloud or self-hosted)
+- At least one repository you want Autter to review
+- No server setup, no configuration files required to get started
+
+<Note>
+  Autter works out of the box. You don't need to write any configuration to get your first review — just connect a repository and open a pull request.
+</Note>
+
+## Install the integration
+
+<Tabs>
+  <Tab title="GitHub">
+    <Steps>
+      <Step title="Go to autter.dev and sign in">
+        Visit [autter.dev](https://autter.dev) and create your account, or sign in if you already have one.
+      </Step>
+
+      <Step title="Install the GitHub App">
+        From your Autter dashboard, click **Install GitHub App**. GitHub will open the app installation page.
+
+        Choose whether to install on your personal account or an organisation. You'll need admin access to the account or organisation to install the app.
+      </Step>
+
+      <Step title="Select repositories">
+        GitHub will ask which repositories Autter should have access to. You can choose:
+
+        - **All repositories** — Autter reviews every current and future repository in the account
+        - **Only select repositories** — choose specific repositories by name
+
+        You can change this selection at any time from your GitHub App settings.
+      </Step>
+
+      <Step title="Confirm installation">
+        Click **Install** to complete the GitHub App installation. GitHub redirects you back to Autter automatically.
+
+        On first connection, Autter analyses your repository's merge history to learn your codebase's conventions, patterns, and architecture. This takes a few minutes for large repositories.
+      </Step>
+
+      <Step title="Verify with your first review">
+        Open a pull request in any connected repository. Autter posts its review as inline PR comments within seconds.
+
+        You'll also see an Autter status check appear on the PR. A passing check means no blocking issues were found. A failing check means Autter has flagged something that needs to be resolved before merging.
+
+        <Tip>
+          If you don't see the status check, confirm that Autter has access to the repository under **Settings → GitHub Apps** in your GitHub account or organisation.
+        </Tip>
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="GitLab">
+    <Steps>
+      <Step title="Go to autter.dev and sign in">
+        Visit [autter.dev](https://autter.dev) and create your account, or sign in if you already have one.
+      </Step>
+
+      <Step title="Connect your GitLab account">
+        From your Autter dashboard, click **Connect GitLab**. Autter will redirect you to GitLab's OAuth authorisation page.
+
+        Authorise Autter to access your GitLab account. You'll need at least Maintainer-level access to the groups or projects you want to connect.
+      </Step>
+
+      <Step title="Select projects to connect">
+        After authorisation, Autter lists your GitLab groups and projects. Select the projects you want Autter to review.
+
+        You can connect projects across multiple groups. Add or remove projects at any time from the Autter dashboard.
+      </Step>
+
+      <Step title="Confirm and complete setup">
+        Autter sets up the necessary webhooks and merge request approval rules automatically. No manual webhook configuration required.
+
+        On first connection, Autter analyses your project's merge history to build its model of your codebase's patterns.
+      </Step>
+
+      <Step title="Verify with your first review">
+        Open a merge request in any connected project. Autter posts review comments and sets a pipeline status check within seconds.
+
+        A passing status means no blocking issues. A failing status means Autter has flagged something critical that must be resolved before the merge request can be approved.
+
+        <Tip>
+          If the pipeline check doesn't appear, verify that the Autter webhook is registered under **Settings → Webhooks** in your GitLab project.
+        </Tip>
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Local CLI
+
+Use the Autter CLI to run reviews locally before pushing, or to inspect what Autter would flag on an existing branch. No installation required — run it directly with `npx`.
+
+```bash
+# Analyse a specific open pull request by PR number
+npx autter analyse --pr 142
+
+# Preview what Autter would flag in your current branch vs the previous commit
+npx autter check --diff HEAD~1..HEAD
+
+# Learn conventions from your repository's merge history
+npx autter init --learn
+```
+
+### `npx autter init --learn`
+
+Run this once per repository to prime Autter with your codebase's conventions. Autter scans your merge history and builds a catalogue of established patterns, naming conventions, and architecture rules.
+
+```bash
+# Browse the detected conventions at any time
+npx autter conventions list
+
+# Export conventions as a Markdown file for your docs
+npx autter conventions export --format markdown > docs/conventions.md
+```
+
+<Warning>
+  The CLI reads from your local repository. Make sure you run CLI commands from the root of the repository you want to analyse.
+</Warning>
+
+## Configuration (optional)
+
+Autter requires no configuration to get started. When you're ready to customise enforcement levels for your team, add an `autter.config.yml` to the root of your repository:
+
+```yaml
+# autter.config.yml
+rules:
+  security:
+    severity: block          # prevent merge
+  performance:
+    severity: warn           # comment but allow merge
+  conventions:
+    severity: info           # informational only
+  deprecated_apis:
+    severity: block
+    exceptions:
+      - path: "legacy/**"    # known legacy code, don't block
+```
+
+Commit this file to your repository. Autter picks it up automatically on the next PR — no dashboard changes required.
+
+## Supported languages
+
+Autter is language-agnostic. It supports all popular programming languages, including JavaScript, TypeScript, Python, Go, Ruby, Java, C#, Rust, Kotlin, and Swift.
+
+## Privacy and security
+
+- Your code is processed in isolated, ephemeral environments
+- Source code is never stored after a review is complete
+- Code is never used to train Autter's models
+- All data is encrypted in transit and at rest
+
+<Note>
+  For questions about enterprise security requirements, data residency, or self-hosted GitLab support, contact the Autter team directly from [autter.dev](https://autter.dev).
+</Note>

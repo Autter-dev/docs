@@ -1,0 +1,128 @@
+---
+title: "Quick Start"
+description: "Connect your first repository and get an automated AI code review in under five minutes."
+---
+
+## Get your first review
+
+<Steps>
+  <Step title="Sign up at autter.dev">
+    Go to [autter.dev](https://autter.dev) and create your account. No credit card required. Public repositories are free with unlimited reviews.
+  </Step>
+
+  <Step title="Install the GitHub App or GitLab integration">
+    After signing up, you'll be prompted to install Autter on your Git host.
+
+    <Tabs>
+      <Tab title="GitHub">
+        Click **Install GitHub App** and authorise Autter on your GitHub account or organisation. GitHub will redirect you back to Autter once the installation is complete.
+      </Tab>
+      <Tab title="GitLab">
+        Click **Connect GitLab** and follow the OAuth flow to authorise Autter on your GitLab instance or group.
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Select repositories to connect">
+    Choose which repositories Autter should review. You can start with one and add more at any time. Autter analyses your merge history on first connect to build its initial model of your codebase's conventions.
+
+    <Tip>
+      Start with your most active repository — the one where AI-generated code and review volume are highest. That's where Autter delivers the most immediate impact.
+    </Tip>
+  </Step>
+
+  <Step title="Open a pull request">
+    Open any pull request in a connected repository. Autter reviews it automatically within seconds — no extra steps needed from you or your team.
+
+    You'll see Autter post inline review comments directly in the PR. Each comment includes:
+
+    - **What was detected** — a clear description of the issue
+    - **Why it matters** — the specific risk or convention being violated
+    - **How to fix it** — a concrete suggestion, often with a code snippet
+    - **Confidence level** — how certain Autter is that this is a genuine issue
+
+    For critical issues, Autter sets a blocking status check that prevents merge until the issue is resolved.
+  </Step>
+
+  <Step title="Review and merge with confidence">
+    Address Autter's comments, push your changes, and Autter re-reviews automatically. When all blocking issues are resolved, the status check clears and you can merge.
+
+    Your human reviewers arrive at a PR that's already been filtered for convention violations, N+1 queries, security gaps, and deprecated API usage — so they can focus on architecture and design.
+  </Step>
+</Steps>
+
+## What a review looks like
+
+Here's the kind of issue Autter catches automatically — an N+1 query pattern that looks clean in isolation but collapses under production cardinality:
+
+```typescript
+// autter flags this pattern automatically
+async function getTeamMembers(teamIds: string[]) {
+  // N+1 query — will execute one DB call per team ID
+  // autter suggests: use db.teams.findMany({ where: { id: { in: teamIds } } })
+  const members = [];
+  for (const id of teamIds) {
+    const team = await db.teams.findUnique({ where: { id } });
+    members.push(...team.members);
+  }
+  return members;
+}
+```
+
+Autter has seen your codebase use `findMany` with `in` clauses in other places. It flags this loop not because loops are bad, but because this specific pattern in your specific codebase is a performance regression.
+
+For new developers, Autter also provides inline convention guidance with direct references to where your codebase does it right:
+
+```
+// autter feedback on PR #47
+//
+// 1. CONVENTION — Import ordering
+//    In this codebase, imports follow the pattern:
+//    external packages → internal packages → relative imports
+//    Each group separated by a blank line.
+//    [auto-fixable]
+//
+// 2. PATTERN — Error handling
+//    This codebase wraps all service errors in AppError.
+//    Raw throws are reserved for truly unexpected conditions.
+//    See: src/services/user-service.ts:42 for an example.
+//
+// 3. CONVENTION — Test file naming
+//    Tests in this module use *.test.ts, not *.spec.ts.
+//    [auto-fixable]
+```
+
+## Run Autter locally
+
+You can also run Autter from the command line before pushing — useful for catching issues before they reach a PR.
+
+```bash
+# Analyse a specific open pull request
+npx autter analyse --pr 142
+
+# Preview what Autter would flag in your current branch
+npx autter check --diff HEAD~1..HEAD
+```
+
+## Configure enforcement rules
+
+Autter works out of the box with no configuration. When you're ready to customise enforcement levels, add an `autter.config.yml` to the root of your repository:
+
+```yaml
+# autter.config.yml — customise enforcement levels
+rules:
+  security:
+    severity: block          # prevent merge
+  performance:
+    severity: warn           # comment but allow merge
+  conventions:
+    severity: info           # informational only
+  deprecated_apis:
+    severity: block
+    exceptions:
+      - path: "legacy/**"    # known legacy code, don't block
+```
+
+<Note>
+  Configuration is optional. Autter's default rule set covers the most common AI-generated code issues out of the box — connect and see what it catches on your first PR.
+</Note>

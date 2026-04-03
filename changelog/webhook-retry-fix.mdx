@@ -1,0 +1,25 @@
+---
+title: "Webhook Fix"
+description: "Fixed webhook retry logic with exponential backoff"
+---
+
+<Note>
+  **Fix** — March 20, 2026
+</Note>
+
+Resolved an issue where failed webhooks were not being retried with exponential backoff, causing missed notifications for some users.
+
+## The problem
+
+Some webhook deliveries were failing silently after the first attempt. The retry mechanism was not respecting the configured backoff strategy, leading to missed notifications for CI/CD integrations.
+
+## The fix
+
+We updated the retry logic to properly implement exponential backoff with jitter. Failed webhook deliveries are now retried up to 5 times, with delays that increase exponentially between attempts to avoid thundering-herd issues on your endpoint.
+
+**What changed:**
+- Up to 5 automatic retries per failed delivery (previously 0 after the first failure)
+- Exponential backoff with jitter between retries
+- Failed deliveries that exhaust all retries are now logged and visible in your Autter dashboard
+
+If you were experiencing missed webhook deliveries, they should now be working reliably. No action is needed on your end.

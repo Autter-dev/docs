@@ -1,0 +1,124 @@
+---
+title: "Pipeline"
+description: "Automated pre-merge checks, test generation, and 40+ linters and scanners — so nothing slips through."
+---
+
+Autter sits at the merge layer of your CI/CD pipeline and runs automated checks before any code reaches your main branch. Catch issues, generate missing tests, and document your code — all without changing your existing workflow.
+
+## Pipeline commands
+
+Three built-in commands give you control over what runs on every PR:
+
+<CardGroup cols={3}>
+  <Card title="_guardrail" icon="shield-check" href="/configuration/pipeline">
+    **Custom checks** — create your own pre-merge code quality checks in natural language. No YAML configs or complex regex patterns needed.
+  </Card>
+  <Card title="_test" icon="test-tube" href="/configuration/pipeline">
+    **Unit test generation** — check test coverage and immediately generate any missing tests for changed code paths.
+  </Card>
+  <Card title="_generate" icon="file-text" href="/configuration/pipeline">
+    **Docstring generation** — create docstrings to make functions, classes, and modules easier to understand in the future.
+  </Card>
+</CardGroup>
+
+## Pipeline configuration
+
+Autter pipelines are configured in a single YAML file at `.autter/pipeline.yml`. Use built-in templates as a starting point, then customize enforcement levels to match your team's standards.
+
+```yaml
+# .autter/pipeline.yml
+template: security-audit
+config:
+  severity_threshold: medium
+  block_on_findings: true
+  notify:
+    - slack: "#security-alerts"
+    - email: security@yourcompany.com
+```
+
+You can also configure per-rule severity levels directly:
+
+```yaml
+# autter.config.yml — customise enforcement levels
+rules:
+  security:
+    severity: block          # prevent merge
+  performance:
+    severity: warn           # comment but allow merge
+  conventions:
+    severity: info           # informational only
+  deprecated_apis:
+    severity: block
+    exceptions:
+      - path: "legacy/**"    # known legacy code, don't block
+```
+
+## Available pipeline templates
+
+Autter ships with four templates that cover the most common pre-merge workflows:
+
+<Tabs>
+  <Tab title="Standard review">
+    The default template. Runs code quality checks, convention detection, and test coverage analysis on every PR. Best for teams getting started with automated review.
+
+    Checks included:
+    - Bug and logical error detection
+    - Convention drift from your merge history
+    - Test coverage for changed files
+    - PR summary generation
+  </Tab>
+  <Tab title="Security audit">
+    Runs security-focused scanners with configurable severity thresholds. Integrates with Slack and email for immediate notification on findings.
+
+    Checks included:
+    - Dependency vulnerability scanning
+    - Injection risk detection (SQL, XSS, command injection)
+    - Secret and credential exposure
+    - Insecure API usage patterns
+  </Tab>
+  <Tab title="Performance gate">
+    Catches performance regressions before they reach production. Flags N+1 queries, blocking operations, and memory-inefficient patterns.
+
+    Checks included:
+    - N+1 query detection
+    - Bundle size impact analysis
+    - Blocking synchronous operations
+    - Memory allocation patterns
+  </Tab>
+  <Tab title="Compliance check">
+    Enforces regulatory and internal compliance requirements. Useful for teams in regulated industries or with strict internal audit requirements.
+
+    Checks included:
+    - License compatibility checks
+    - Data handling pattern review
+    - Access control pattern validation
+    - Audit trail completeness
+  </Tab>
+</Tabs>
+
+<Note>
+  Templates are starting points, not constraints. You can extend any template with custom `_guardrail` checks written in natural language.
+</Note>
+
+## Built for your CI/CD pipeline
+
+<CardGroup cols={2}>
+  <Card title="Custom guardrails" icon="shield-check" href="/configuration/rules">
+    Define your own pre-merge quality checks in natural language. No YAML configs or complex regex patterns needed.
+  </Card>
+  <Card title="Test generation" icon="test-tube" href="/configuration/pipeline">
+    Automatically detect coverage gaps and generate missing unit tests for changed code paths.
+  </Card>
+  <Card title="Docstring generation" icon="file-text" href="/configuration/pipeline">
+    Auto-generate clear, consistent documentation for functions, classes, and modules.
+  </Card>
+  <Card title="40+ linters and scanners" icon="search" href="/configuration/pipeline">
+    Security scanners and linters catch bugs early — and Autter filters out the noise from false positives.
+  </Card>
+  <Card title="Branch policies" icon="git-branch" href="/guides/github-setup">
+    Enforce branch protection rules and ensure PRs meet your quality bar before merging.
+  </Card>
+  <Card title="Modular pipeline" icon="blocks" href="/configuration/pipeline">
+    Pick and choose which checks to run. Enable or disable any step with a single toggle.
+  </Card>
+</CardGroup>

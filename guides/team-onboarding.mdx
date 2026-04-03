@@ -1,0 +1,183 @@
+---
+title: "Team Onboarding"
+description: "Use Autter to give new developers immediate, consistent feedback on your codebase conventions from their very first pull request."
+---
+
+Every codebase has hundreds of unwritten rules — patterns that emerged organically, conventions agreed on in a meeting two years ago, anti-patterns that caused an incident nobody documented. No onboarding guide captures all of them. And no new developer learns them without making mistakes first.
+
+Autter turns those mistakes into immediate, contextual learning moments — on every PR, from day one.
+
+## The onboarding bottleneck
+
+New developer productivity follows a predictable curve. In the first 2–4 weeks, they're learning the codebase. In weeks 4–8, they're contributing small changes with heavy review guidance. By week 8–12, they're autonomous for most tasks.
+
+The biggest bottleneck in this curve isn't comprehension — it's feedback latency. When a new developer writes code that violates a convention, the feedback loop looks like this:
+
+1. Developer writes code → opens PR
+2. Reviewer notices violation → leaves comment (hours to days later)
+3. Developer reads comment → makes change
+4. Reviewer re-reviews → possibly finds more issues
+5. Repeat until approved
+
+Each cycle costs time and context. Worse, the feedback is inconsistent — different reviewers catch different things, and some conventions only get flagged when a particular senior engineer happens to review the PR.
+
+## How Autter accelerates onboarding
+
+Autter provides immediate, consistent, contextual feedback on every convention, pattern, and anti-pattern in your codebase. For new developers, this changes the feedback loop entirely.
+
+### Instant feedback, zero waiting
+
+A new developer opens a PR and gets Autter's review within 90 seconds:
+
+```
+// Autter feedback on PR #47 (new developer's second PR)
+//
+// 1. CONVENTION — Import ordering
+//    In this codebase, imports follow the pattern:
+//    external packages → internal packages → relative imports
+//    Each group separated by a blank line.
+//    [auto-fixable]
+//
+// 2. PATTERN — Error handling
+//    This codebase wraps all service errors in AppError.
+//    Raw throws are reserved for truly unexpected conditions.
+//    See: src/services/user-service.ts:42 for an example.
+//
+// 3. CONVENTION — Test file naming
+//    Tests in this module use *.test.ts, not *.spec.ts.
+//    [auto-fixable]
+```
+
+The developer fixes these immediately — while they still have full context on the change — and pushes an updated PR. When the human reviewer sees it, the PR is already clean.
+
+### Learning through examples
+
+Autter doesn't just tell developers what's wrong — it shows them examples from your actual codebase:
+
+> **Pattern:** In this codebase, database queries in services always use the repository pattern.
+>
+> **Your code:**
+> ```typescript
+> const user = await db.users.findUnique({ where: { id } });
+> ```
+>
+> **Codebase convention** (see `src/services/order-service.ts:28`):
+> ```typescript
+> const user = await this.userRepository.findById(id);
+> ```
+>
+> **Why:** Repository methods include audit logging, caching, and soft-delete filtering that raw queries bypass.
+
+This is the kind of context that takes weeks to absorb through documentation alone. With Autter, it's delivered in context, at the exact moment the developer needs it.
+
+### Progressive complexity
+
+Autter adapts its feedback density based on the developer's history with the codebase. In the first weeks, it explains conventions in detail with examples. As the developer demonstrates mastery of a pattern — by no longer violating it — Autter reduces the verbosity:
+
+| Developer experience | Autter feedback style |
+|---|---|
+| First 2 weeks | Detailed explanations with codebase examples |
+| Weeks 2–6 | Concise flags with links to examples |
+| Weeks 6+ | Minimal — only flags, no explanation needed |
+
+This prevents experienced developers from being annoyed by verbose feedback while ensuring new developers get the guidance they need.
+
+## Impact on onboarding metrics
+
+| Metric | Without Autter | With Autter |
+|--------|---------------|-------------|
+| Time to first merged PR | 5–8 days | 2–3 days |
+| Review cycles on first 10 PRs | 3.2 avg | 1.4 avg |
+| Convention violations at week 4 | 8–12 per PR | 1–2 per PR |
+| Time to autonomous contributor | 8–12 weeks | 4–6 weeks |
+| Senior engineer time on onboarding reviews | ~10 hrs/week | ~3 hrs/week |
+
+The impact compounds: faster onboarding means new developers contribute value sooner, senior engineers spend less time on repetitive guidance, and your team's conventions are enforced consistently regardless of who reviews the PR.
+
+## Convention catalogue
+
+Autter maintains a living catalogue of your codebase's conventions — derived from your merge history, not from documentation that might be outdated. New developers can browse it at any time:
+
+```bash
+npx autter conventions list
+```
+
+```
+┌─────────────────────────────────────┬──────────┬─────────────┐
+│ Convention                          │ Category │ Compliance  │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│ Import ordering (external → inter…) │ Style    │ 97%         │
+│ AppError wrapping in services       │ Pattern  │ 94%         │
+│ Repository pattern for DB access    │ Pattern  │ 91%         │
+│ camelCase for functions/variables   │ Naming   │ 99%         │
+│ Test co-location (*.test.ts)        │ Testing  │ 96%         │
+│ Async error handling with try/catch │ Pattern  │ 88%         │
+└─────────────────────────────────────┴──────────┴─────────────┘
+```
+
+You can also export the catalogue as a Markdown document to include in your onboarding materials:
+
+```bash
+# Detect conventions from your merge history
+npx autter init --learn
+
+# Export as a Markdown reference for new developers
+npx autter conventions export --format markdown > docs/conventions.md
+```
+
+<Tip>
+  Add `docs/conventions.md` to your new developer onboarding checklist. It gives them a searchable reference of your codebase's established patterns before they open their first PR.
+</Tip>
+
+## What senior engineers gain back
+
+With Autter handling convention enforcement on every PR, senior engineers stop spending review time on repetitive feedback and focus on the decisions that actually require their expertise:
+
+- Architecture and API design
+- Edge cases the tests don't cover
+- Operational behaviour under load
+- Alignment with the team's technical roadmap
+
+Teams using Autter on onboarding consistently report that senior engineer time spent on onboarding reviews drops from around 10 hours per week to around 3 hours per week — without reducing the quality of feedback new developers receive.
+
+## Getting started
+
+<Steps>
+  <Step title="Connect your repository">
+    Install the [GitHub App](/guides/github-setup) or [GitLab integration](/guides/gitlab-setup) if you haven't already. Autter will start reviewing PRs immediately.
+  </Step>
+  <Step title="Learn your conventions">
+    Run `npx autter init --learn` to build a convention model from your merge history. Autter analyses your last merged PRs and detects the patterns your team already follows.
+
+    ```bash
+    npx autter init --learn
+    ```
+  </Step>
+  <Step title="Export a conventions reference">
+    Generate a Markdown document from the detected conventions for your onboarding materials.
+
+    ```bash
+    npx autter conventions export --format markdown > docs/conventions.md
+    ```
+  </Step>
+  <Step title="Ask the next new developer to open a PR">
+    Autter reviews it automatically. They get immediate feedback on any convention violations — with examples from your codebase explaining why the convention exists.
+  </Step>
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Rules" icon="shield-check" href="/guides/custom-rules">
+    Define explicit rules to enforce conventions that Autter hasn't detected automatically.
+  </Card>
+  <Card title="Code Review" icon="magnifying-glass-code" href="/features/code-review">
+    Learn how Autter builds codebase awareness and learns from your team's review patterns.
+  </Card>
+  <Card title="GitHub Setup" icon="github" href="/guides/github-setup">
+    Connect Autter to GitHub if you haven't already.
+  </Card>
+  <Card title="GitLab Setup" icon="gitlab" href="/guides/gitlab-setup">
+    Connect Autter to GitLab if you haven't already.
+  </Card>
+</CardGroup>

@@ -1,0 +1,109 @@
+---
+title: "Rules"
+description: "Define custom review rules in plain English and configure enforcement levels for each category."
+---
+
+Rules tell Autter what to flag and how strictly to enforce it. You define them in `autter.config.yml` at the root of your repository using plain English descriptions — no regex expertise or complex YAML syntax required.
+
+<Tip>
+  Start with Autter's default ruleset and add custom rules incrementally. The defaults cover the most common security, performance, and convention issues out of the box.
+</Tip>
+
+## Rule types
+
+Autter organises rules into three categories that map to the most common sources of problems in pull requests.
+
+### Security rules
+
+Security rules detect vulnerabilities and enforce safe access patterns across your codebase.
+
+**Examples from Autter's built-in ruleset:**
+
+- `Detect security vulnerabilities` — scans for common vulnerability patterns across all changed files
+- `No Direct process.env Access` — environment variables must be accessed through the config module, not read directly
+
+### Architecture rules
+
+Architecture rules enforce the structural patterns your team has agreed on — things like which modules are allowed to import from which, or how configuration must be accessed.
+
+**Example:** Preventing direct `process.env` access enforces the pattern that all environment variable access flows through a single validated config module, making configuration errors easier to catch at startup rather than at runtime.
+
+### Reliability rules
+
+Reliability rules encode the patterns your team has established to prevent production failures.
+
+**Example:** `Require error boundaries` — ensures React component trees have error boundary wrappers so individual component failures don't crash the full page.
+
+## Configuration reference
+
+Add a `rules` block to `autter.config.yml` to configure enforcement. Each key under `rules` is a rule category name.
+
+```yaml autter.config.yml
+rules:
+  security:
+    severity: block
+  performance:
+    severity: warn
+  conventions:
+    severity: info
+  deprecated_apis:
+    severity: block
+    exceptions:
+      - path: "legacy/**"
+```
+
+### Rule fields
+
+<ParamField path="rules.<category>.severity" type="string" required>
+  How strictly Autter enforces this rule category. Accepts `"block"`, `"warn"`, or `"info"`.
+
+  - `block` — prevents merge until the issue is resolved
+  - `warn` — adds a review comment but allows merge to proceed
+  - `info` — informational only, no review action required
+</ParamField>
+
+<ParamField path="rules.<category>.exceptions" type="array">
+  A list of glob path patterns to exclude from this rule. Files matching any pattern in this list will not be flagged, even if they would otherwise trigger the rule.
+
+  ```yaml
+  deprecated_apis:
+    severity: block
+    exceptions:
+      - path: "legacy/**"
+  ```
+
+  Use exceptions for known legacy directories or third-party code you don't own and can't change.
+</ParamField>
+
+## Convention detection
+
+Autter automatically learns your codebase's conventions from your merge history and flags deviations — without you needing to document every rule manually.
+
+You can inspect the conventions Autter has detected and export them for onboarding documentation:
+
+```bash
+# List all detected conventions with compliance rates
+npx autter conventions list
+
+# Export conventions as a Markdown reference document
+npx autter conventions export --format markdown > docs/conventions.md
+```
+
+Running `conventions list` produces a table of every pattern Autter has learned, its category, and how consistently your codebase follows it:
+
+```
+┌─────────────────────────────────────┬──────────┬─────────────┐
+│ Convention                          │ Category │ Compliance  │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│ Import ordering (external → inter…) │ Style    │ 97%         │
+│ AppError wrapping in services       │ Pattern  │ 94%         │
+│ Repository pattern for DB access    │ Pattern  │ 91%         │
+│ camelCase for functions/variables   │ Naming   │ 99%         │
+│ Test co-location (*.test.ts)        │ Testing  │ 96%         │
+│ Async error handling with try/catch │ Pattern  │ 88%         │
+└─────────────────────────────────────┴──────────┴─────────────┘
+```
+
+<Note>
+  Convention detection runs automatically. You do not need to configure anything for Autter to learn from your merge history. Run `npx autter init --learn` after first connecting a repository to seed the initial convention catalogue from existing merged PRs.
+</Note>

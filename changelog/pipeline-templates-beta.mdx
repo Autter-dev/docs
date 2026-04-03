@@ -1,0 +1,40 @@
+---
+title: "Pipeline Templates"
+description: "Pre-built CI/CD pipeline configurations for common workflows"
+---
+
+<Note>
+  **Beta** — March 15, 2026
+</Note>
+
+Try our new pipeline templates — pre-built CI/CD configurations for common workflows. Available now in beta.
+
+## Available templates
+
+- **Standard review:** Basic code review with linting and type checking.
+- **Security audit:** Full vulnerability scanning with SAST/DAST analysis.
+- **Performance gate:** Automated performance regression detection.
+- **Compliance check:** SOC2 and GDPR compliance verification.
+
+## Getting started
+
+Add a `.autter/pipeline.yml` file to your repository and specify the template you want to use:
+
+```yaml
+# .autter/pipeline.yml
+template: security-audit
+config:
+  severity_threshold: medium
+  block_on_findings: true
+  notify:
+    - slack: "#security-alerts"
+    - email: security@yourcompany.com
+```
+
+<Note>
+  Pipeline Templates are available to all Pro and Enterprise users. Share your feedback at feedback@autter.dev.
+</Note>
+
+## What's next
+
+We're working on custom template authoring, which will let you create and share your own pipeline templates across your organization.

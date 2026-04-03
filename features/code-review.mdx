@@ -1,0 +1,102 @@
+---
+title: "Code Review"
+description: "AI-powered code reviews that enforce your team's standards and learn from your senior developers."
+---
+
+Autter enforces your rules, patterns, and conventions — and learns from your team over time. Define standards in plain English and get consistent, codebase-aware reviews across every repository, on every pull request.
+
+## Enforce standards in plain English
+
+Write rules the way you'd explain them to a colleague. No regex, no YAML, no configuration overhead. Autter understands what you mean and applies your rules across every repo.
+
+Here are examples of rules teams enforce with Autter today:
+
+| Rule | Category |
+|---|---|
+| Detect security vulnerabilities | Security |
+| No direct `process.env` access — environment variables must be accessed through the config module | Security |
+| Require error boundaries on all async UI components | Reliability |
+
+<Tip>
+  You can scope rules to specific repositories. A rule that applies to 5 repos can be configured once and maintained in one place.
+</Tip>
+
+## Team learning
+
+Autter watches how your team reviews code and picks up patterns, preferences, and institutional knowledge over time. As your team approves and rejects changes, Autter builds a model of what "good" looks like in your codebase.
+
+Examples of what Autter learns from your team's review activity:
+
+- **Include demo videos for UI changes** — learned from reviewers consistently requesting recordings before approving frontend PRs
+- **Always include tests for payment flows** — learned from senior engineers blocking payment-related PRs without test coverage
+- **Inconsistent invalidation implementation between team and non-team schedules** — learned from multiple review threads flagging the same architectural inconsistency
+
+These patterns are applied automatically to future PRs — so the standard your best reviewer holds is the standard every PR is held to.
+
+## Onboards from senior developer comments
+
+Autter reads your senior developers' PR comment history and learns from it directly. When a new hire opens their first PR, they get the same quality of feedback they'd get from your most experienced team member — not a generic linter.
+
+This means:
+- New developers learn your actual conventions from day one, not from documentation that may be outdated
+- Senior engineers spend less time repeating the same feedback
+- The review bar stays consistent regardless of who reviews a PR
+
+<Note>
+  Autter adapts feedback verbosity based on a developer's history with the codebase. New contributors get detailed explanations with examples; experienced contributors get concise flags.
+</Note>
+
+## Catching AI-generated code issues
+
+AI coding assistants generate between 30% and 60% of code in a typical PR today. This code compiles, passes tests, and reads cleanly — but can fail in ways that only surface under production load. Autter operates at the merge layer to catch issues traditional CI misses:
+
+```typescript
+// Autter flags this pattern automatically
+async function getTeamMembers(teamIds: string[]) {
+  // N+1 query — will execute one DB call per team ID
+  // Autter suggests: use db.teams.findMany({ where: { id: { in: teamIds } } })
+  const members = [];
+  for (const id of teamIds) {
+    const team = await db.teams.findUnique({ where: { id } });
+    members.push(...team.members);
+  }
+  return members;
+}
+```
+
+Autter has seen your codebase use `findMany` with `in` clauses in dozens of other places. It knows this loop generates one query per `teamId` and flags it — not because loops are bad, but because this specific pattern in this specific codebase is a performance regression.
+
+### Convention drift detection
+
+Every codebase has unwritten rules. Autter learns them from your merge history and surfaces violations automatically:
+
+| What Autter detects | Example |
+|---|---|
+| Deprecated API usage | AI used `legacy.createUser()` instead of `auth.register()` |
+| Naming convention violations | `camelCase` in a module that uses `snake_case` throughout |
+| Import path deviations | Direct import from `@internal/db` instead of your team's `@app/data` facade |
+| Error handling pattern breaks | Throwing raw errors where the codebase wraps them in `AppError` |
+| Test pattern mismatches | Unit test where integration tests are the established standard |
+
+## Everything you need for better reviews
+
+<CardGroup cols={2}>
+  <Card title="Instant feedback" icon="message-square" href="/features/ai-chat">
+    Autter automatically scans opened PRs for bugs, logical errors, and other technical pitfalls so reviewers can focus on the big picture.
+  </Card>
+  <Card title="Codebase awareness" icon="brain" href="/features/code-review">
+    Every piece of feedback makes sense in the context of your codebase. No generic suggestions — only relevant insights.
+  </Card>
+  <Card title="Custom rules" icon="shield" href="/configuration/rules">
+    Define and enforce custom patterns with AI prompts and regex. Your standards, consistently applied across every PR.
+  </Card>
+  <Card title="PR summaries" icon="git-pull-request" href="/features/ai-chat">
+    Get a TL;DR with a summary of changes, a walkthrough, and an architectural diagram for every pull request.
+  </Card>
+  <Card title="Team learning" icon="users" href="/features/code-review">
+    Autter builds institutional knowledge from your team's review patterns and applies it consistently to every PR.
+  </Card>
+  <Card title="Documentation aware" icon="book-open" href="/configuration/overview">
+    Reviews consider your internal docs, README files, and architecture decision records for full context.
+  </Card>
+</CardGroup>

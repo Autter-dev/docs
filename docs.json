@@ -1,0 +1,86 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "luma",
+  "name": "Autter",
+  "logo": {
+    "light": "https://media.brand.dev/f9c6a39f-5ed7-4ad9-968c-bff045299a61.png",
+    "dark": "https://media.brand.dev/f9c6a39f-5ed7-4ad9-968c-bff045299a61.png"
+  },
+  "favicon": "https://media.brand.dev/07886dac-c8ed-4247-bda9-aadc359f98c7.png",
+  "colors": {
+    "primary": "#32fcd3",
+    "light": "#202f4e",
+    "dark": "#ccd7da"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/Autter-dev"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/code-review",
+              "features/pipeline",
+              "features/analytics",
+              "features/ai-chat",
+              "features/integrations"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/overview",
+              "configuration/rules",
+              "configuration/pipeline"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/github-setup",
+              "guides/gitlab-setup",
+              "guides/custom-rules",
+              "guides/team-onboarding"
+            ]
+          },
+          {
+            "group": "FAQ",
+            "pages": [
+              "faq"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "groups": [
+          {
+            "group": "Releases",
+            "pages": [
+              "changelog/overview",
+              "changelog/new-analytics-dashboard",
+              "changelog/pipeline-templates-beta",
+              "changelog/webhook-retry-fix",
+              "changelog/in-app-announcements"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

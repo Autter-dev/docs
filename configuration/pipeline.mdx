@@ -1,0 +1,127 @@
+---
+title: "Pipeline"
+description: "Configure automated pre-merge checks, test generation, and linting with .autter/pipeline.yml."
+---
+
+The pipeline is Autter's automated layer that runs before any code reaches your main branch. It handles pre-merge quality checks, test coverage enforcement, docstring generation, and security scanning — all configurable through a single file.
+
+Create `.autter/pipeline.yml` in your repository to activate pipeline automation and choose which template and checks apply to your project.
+
+<Note>
+  Changes to `.autter/pipeline.yml` take effect on the next pull request opened after the file is committed. Existing open PRs are not re-evaluated.
+</Note>
+
+## Configuration file
+
+```yaml .autter/pipeline.yml
+template: security-audit
+config:
+  severity_threshold: medium
+  block_on_findings: true
+  notify:
+    - slack: "#security-alerts"
+    - email: security@yourcompany.com
+```
+
+### Configuration fields
+
+<ParamField path="template" type="string">
+  The pipeline template to use. Templates are pre-built CI/CD configurations for common workflows. See [Available templates](#available-templates) below for the full list.
+</ParamField>
+
+<ParamField path="config.severity_threshold" type="string">
+  The minimum severity level that Autter flags as a finding. Accepts `"low"`, `"medium"`, or `"high"`. Findings below this threshold are silently ignored.
+
+  Set to `"high"` to only surface critical issues. Set to `"low"` to surface everything.
+</ParamField>
+
+<ParamField path="config.block_on_findings" type="boolean">
+  Whether Autter blocks the merge when findings at or above the `severity_threshold` are detected. Set to `true` to enforce a hard gate; set to `false` to report findings without blocking.
+</ParamField>
+
+<ParamField path="config.notify" type="array">
+  Notification channels to alert when findings are detected. Accepts a list of Slack channel references (prefixed with `#`) or email addresses.
+
+  ```yaml
+  notify:
+    - slack: "#security-alerts"
+    - email: security@yourcompany.com
+  ```
+</ParamField>
+
+## Available templates
+
+Templates are pre-built pipeline configurations for common workflows. Choose the one that matches your team's primary concern, then tune the `config` block to adjust thresholds and notifications.
+
+<Warning>
+  Pipeline Templates are currently in beta and available to Pro and Enterprise users only.
+</Warning>
+
+| Template | Description |
+|----------|-------------|
+| `standard-review` | Basic code review with linting and type checking |
+| `security-audit` | Full vulnerability scanning with SAST/DAST analysis |
+| `performance-gate` | Automated performance regression detection |
+| `compliance-check` | SOC2 and GDPR compliance verification |
+
+## Pipeline commands
+
+In addition to templates, Autter exposes three first-class pipeline commands you can reference in natural language guardrails and pipeline steps:
+
+<Tabs>
+  <Tab title="_guardrail">
+    **Custom pre-merge checks**
+
+    Define your own code quality checks in plain English — no YAML configurations or complex regex patterns needed. Autter interprets the natural language description and applies it to every PR.
+
+    ```yaml .autter/pipeline.yml
+    template: standard-review
+    config:
+      severity_threshold: medium
+      block_on_findings: true
+    ```
+
+    Use `_guardrail` to encode team-specific rules that don't fit into a standard template, such as "all API endpoints must include rate limiting" or "no direct database access from controller files."
+  </Tab>
+  <Tab title="_test">
+    **Unit test coverage check and generation**
+
+    Autter checks test coverage for every changed code path. When coverage gaps are detected, it generates the missing unit tests automatically and proposes them as part of the review.
+
+    This step catches the coverage gap immediately — before the PR is merged — rather than discovering it during a later audit.
+  </Tab>
+  <Tab title="_generate">
+    **Docstring generation**
+
+    Autter generates clear, consistent docstrings for functions, classes, and modules that are missing documentation. Generated docstrings are proposed as review suggestions and can be accepted with a single click.
+
+    Enable this step to keep your codebase documented as it grows, without requiring developers to write documentation manually on every PR.
+  </Tab>
+</Tabs>
+
+## Steps to get started
+
+<Steps>
+  <Step title="Create the .autter directory">
+    At the root of your repository, create the `.autter/` directory:
+
+    ```bash
+    mkdir .autter
+    ```
+  </Step>
+  <Step title="Add pipeline.yml">
+    Create `.autter/pipeline.yml` and choose a template that matches your workflow:
+
+    ```yaml .autter/pipeline.yml
+    template: standard-review
+    config:
+      severity_threshold: medium
+      block_on_findings: false
+      notify:
+        - slack: "#eng-reviews"
+    ```
+  </Step>
+  <Step title="Commit and open a pull request">
+    Commit the file to your default branch. The configuration takes effect on the next pull request opened after the commit is merged.
+  </Step>
+</Steps>

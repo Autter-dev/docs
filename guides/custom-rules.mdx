@@ -1,0 +1,165 @@
+---
+title: "Custom Rules"
+description: "Define your team's coding standards in plain English and enforce them automatically on every pull request."
+---
+
+Autter lets you define review rules in plain English — no regex, no YAML expertise required. Rules are enforced consistently on every PR, regardless of who opens it or which reviewer it lands on.
+
+You can define rules for security, reliability, performance, and conventions. Each rule gets a severity level that controls what happens when a violation is found.
+
+## Severity levels
+
+| Severity | Effect |
+|----------|--------|
+| `block` | Prevents the PR from merging until the issue is resolved |
+| `warn` | Posts a comment but allows the merge to proceed |
+| `info` | Informational comment only — no action required |
+
+## Creating your first rule
+
+<Steps>
+  <Step title="Create autter.config.yml">
+    Create a file named `autter.config.yml` at the root of your repository.
+
+    ```yaml
+    # autter.config.yml
+    rules:
+      security:
+        severity: block
+      performance:
+        severity: warn
+      conventions:
+        severity: info
+    ```
+  </Step>
+  <Step title="Add rules in the rules block">
+    Expand your configuration to include specific rule definitions. Each rule has a name, a description in plain English, and a severity level.
+
+    ```yaml
+    rules:
+      security:
+        severity: block
+      performance:
+        severity: warn
+      conventions:
+        severity: info
+      deprecated_apis:
+        severity: block
+        exceptions:
+          - path: "legacy/**"
+    ```
+
+    The `exceptions` field accepts glob patterns. Files matching those paths are excluded from that rule — useful for known legacy code you aren't ready to migrate.
+  </Step>
+  <Step title="Set severity for each rule">
+    Choose `block`, `warn`, or `info` for each rule category based on how critical violations are for your codebase. Start conservative — you can tighten severity as your team builds confidence in the rules.
+  </Step>
+  <Step title="Open a PR to test the rule">
+    Push the `autter.config.yml` file and open a pull request. Autter picks up the configuration automatically on the next review — no restart or re-installation required.
+  </Step>
+</Steps>
+
+## Rule examples
+
+These are real rule categories Autter enforces out of the box and through custom configuration:
+
+| Rule | Category | Example |
+|------|----------|---------|
+| Detect security vulnerabilities | Security | SQL injection, XSS, insecure deserialization |
+| No direct `process.env` access | Security | Environment variables must be accessed through the config module |
+| Require error boundaries | Reliability | React components that render dynamic data need error boundaries |
+| Deprecated API usage | Conventions | AI used `legacy.createUser()` instead of `auth.register()` |
+| N+1 query detection | Performance | Queries inside loops that should use `findMany` with `in` |
+
+<Warning>
+  Rules with `severity: block` prevent the merge until the violation is resolved. Use `block` for issues that are genuinely critical — security vulnerabilities, data integrity risks, breaking API changes. Use `warn` or `info` for style and convention enforcement while your team gets used to Autter's feedback.
+</Warning>
+
+## Full configuration example
+
+```yaml
+# autter.config.yml
+rules:
+  security:
+    severity: block
+  performance:
+    severity: warn
+  conventions:
+    severity: info
+  deprecated_apis:
+    severity: block
+    exceptions:
+      - path: "legacy/**"
+```
+
+This configuration:
+
+- **Blocks** merges when security vulnerabilities or deprecated API usage (outside `legacy/**`) are detected
+- **Warns** when performance anti-patterns are found — the PR can still merge
+- **Notes** convention violations informally without blocking or warning
+
+## Convention detection
+
+Autter can learn your existing conventions automatically by analysing your merge history. Run `npx autter init --learn` on an established repository and Autter builds a convention model from your merged PRs — no manual rule authoring needed.
+
+<Tip>
+  Run `npx autter init --learn` on an established repo. Autter analyses your merge history and detects your existing conventions automatically — so you don't have to document them manually.
+</Tip>
+
+```bash
+# Detect conventions from your merge history
+npx autter init --learn
+
+# Browse the detected conventions
+npx autter conventions list
+
+# Export them as a Markdown reference for your team
+npx autter conventions export --format markdown > docs/conventions.md
+```
+
+### Convention catalogue
+
+After running `npx autter conventions list`, you'll see a table of detected conventions with their compliance rates across your codebase:
+
+```
+┌─────────────────────────────────────┬──────────┬─────────────┐
+│ Convention                          │ Category │ Compliance  │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│ Import ordering (external → inter…) │ Style    │ 97%         │
+│ AppError wrapping in services       │ Pattern  │ 94%         │
+│ Repository pattern for DB access    │ Pattern  │ 91%         │
+│ camelCase for functions/variables   │ Naming   │ 99%         │
+│ Test co-location (*.test.ts)        │ Testing  │ 96%         │
+│ Async error handling with try/catch │ Pattern  │ 88%         │
+└─────────────────────────────────────┴──────────┴─────────────┘
+```
+
+Each convention shows its category and compliance rate — the percentage of merged PRs that follow it. Conventions with lower compliance rates are good candidates for explicit rules.
+
+## Gradual adoption
+
+You don't need to configure everything on day one. A common adoption path:
+
+1. Start with `severity: warn` on all rule categories — no merges blocked, just visibility
+2. Review Autter's findings over a sprint to calibrate which rules matter most
+3. Promote the highest-value rules to `severity: block`
+4. Expand rule coverage as your team builds confidence
+
+Most teams reach full coverage within 2–3 sprints.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration overview" icon="sliders" href="/configuration/overview">
+    See all available configuration options for rules, pipeline steps, and file exclusions.
+  </Card>
+  <Card title="Rules reference" icon="shield-check" href="/configuration/rules">
+    Full reference for rule types, severity options, and exception patterns.
+  </Card>
+  <Card title="Team Onboarding" icon="users" href="/guides/team-onboarding">
+    Use detected conventions to accelerate new developer onboarding.
+  </Card>
+  <Card title="Code Review" icon="magnifying-glass-code" href="/features/code-review">
+    Learn how Autter's review engine works under the hood.
+  </Card>
+</CardGroup>

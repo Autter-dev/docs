@@ -1,0 +1,100 @@
+---
+title: "AI Chat"
+description: "Get immediate, actionable feedback on every pull request with Autter's AI-powered inline review comments."
+---
+
+Autter scans every opened pull request and leaves inline review comments directly in your PR interface — the same place your team already works. No separate tool, no dashboard to check. Feedback arrives within seconds of opening a PR.
+
+## How it works
+
+When you open a pull request, Autter:
+
+<Steps>
+  <Step title="Scans the diff">
+    Autter reads the full diff and evaluates every change in the context of your existing codebase — not just the lines changed.
+  </Step>
+  <Step title="Identifies issues">
+    Autter flags bugs, logic errors, convention violations, security risks, and performance anti-patterns with a confidence level for each finding.
+  </Step>
+  <Step title="Leaves inline comments">
+    Each finding becomes an inline PR comment that includes what was detected, why it matters, and how to fix it — with a code suggestion you can apply in one click.
+  </Step>
+  <Step title="Learns from your feedback">
+    You can thumb up or thumb down any comment. Autter uses this signal to improve review quality over time for your specific codebase.
+  </Step>
+</Steps>
+
+## Example: catching a logic bug
+
+Here's what an Autter inline comment looks like in practice. The diff introduces a bug in duration calculation:
+
+```diff
+  const rebaseResult = await gitClient.rebaseUnmergedRange({
+    headBranch: pr.headBranch,
+    trunkBranch: newMergeBase,
+  });
+
++ const durationMs = startTime
++   .diff(DateTime.now())
++   .as("milliseconds");
+```
+
+Autter's inline comment on this diff:
+
+> **Autter** — *just now*
+>
+> The calculation of `durationMs` is incorrect. It's currently calculating the duration from the current time to the start time, which will result in a negative duration. To fix this, swap the order of the arguments in the `diff()` method: `DateTime.now().diff(startTime)`
+
+This is the kind of bug that compiles, passes type checking, and only surfaces at runtime — often in production.
+
+## Inline comment structure
+
+Every Autter comment includes four parts, drawn from the use-case source:
+
+1. **What was detected** — a clear description of the issue
+2. **Why it matters** — the specific risk or convention being violated
+3. **How to fix it** — a concrete suggestion, often with a code snippet
+4. **Confidence level** — how certain Autter is that this is a genuine issue
+
+For critical issues — security vulnerabilities, data integrity risks, breaking API changes — Autter can block the merge entirely until the issue is resolved. For lower-severity findings, it adds informational comments and lets your team decide.
+
+## Three things that make feedback useful
+
+<CardGroup cols={3}>
+  <Card title="Instant feedback" icon="zap" href="/features/ai-chat">
+    Autter automatically scans opened PRs for bugs, logical errors, and other technical pitfalls so reviewers can focus on the big picture.
+  </Card>
+  <Card title="Codebase awareness" icon="brain" href="/features/code-review">
+    Every piece of feedback makes sense in the context of your codebase — not generic suggestions from a template.
+  </Card>
+  <Card title="Custom rules" icon="sliders" href="/configuration/rules">
+    Define and enforce custom patterns with AI prompts and regex. Your standards, consistently applied across every review.
+  </Card>
+</CardGroup>
+
+## Full feature set
+
+<CardGroup cols={2}>
+  <Card title="AI-powered chat" icon="message-square" href="/features/ai-chat">
+    Ask questions about your codebase, get explanations for complex logic, and receive suggestions inline.
+  </Card>
+  <Card title="Deep context" icon="brain" href="/features/code-review">
+    Every suggestion is grounded in your codebase's architecture, patterns, and conventions.
+  </Card>
+  <Card title="Configurable rules" icon="sliders" href="/configuration/rules">
+    Define custom patterns and rules that the AI enforces across all reviews automatically.
+  </Card>
+  <Card title="Security scanning" icon="shield-check" href="/features/pipeline">
+    Catch vulnerabilities, injection risks, and insecure patterns before they reach production.
+  </Card>
+  <Card title="Lightning fast" icon="zap" href="/features/ai-chat">
+    Get feedback in seconds, not minutes. Autter is optimized for speed without sacrificing quality.
+  </Card>
+  <Card title="AI-suggested fixes" icon="sparkles" href="/features/ai-chat">
+    Not just problems — Autter suggests concrete fixes you can apply with one click.
+  </Card>
+</CardGroup>
+
+<Note>
+  Use the thumbs up / thumbs down buttons on any Autter comment to improve review quality. Your feedback trains Autter to surface more of what your team cares about and less of what it doesn't.
+</Note>

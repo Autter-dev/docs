@@ -1,0 +1,74 @@
+---
+title: "Configuration"
+description: "Customize Autter to match your team's standards, enforcement levels, and pipeline steps."
+---
+
+Autter works out of the box with no configuration required. Connect your repository and your first pull request is analysed automatically using sensible defaults that cover the most common issues.
+
+When you're ready to tailor Autter to your team's specific standards, two configuration files give you full control:
+
+| File | Purpose | Location |
+|------|---------|---------|
+| `autter.config.yml` | Rule categories and severity levels | Repository root |
+| `.autter/pipeline.yml` | Pipeline automation and pre-merge checks | `.autter/` directory at repo root |
+
+<Note>
+  Both files are optional. If neither is present, Autter uses its default ruleset, which covers security vulnerabilities, performance anti-patterns, and common convention violations.
+</Note>
+
+## autter.config.yml
+
+Place this file at the root of your repository to control which rule categories Autter enforces and how strictly it enforces them.
+
+```yaml autter.config.yml
+rules:
+  security:
+    severity: block          # prevent merge
+  performance:
+    severity: warn           # comment but allow merge
+  conventions:
+    severity: info           # informational only
+  deprecated_apis:
+    severity: block
+    exceptions:
+      - path: "legacy/**"    # known legacy code, don't block
+```
+
+### Severity levels
+
+Each rule category accepts one of three severity levels:
+
+| Level | Effect |
+|-------|--------|
+| `block` | Prevents merge until the issue is resolved |
+| `warn` | Adds a review comment but allows merge to proceed |
+| `info` | Informational only — no action or approval required |
+
+Use `block` for issues that are never acceptable in your codebase (security vulnerabilities, breaking API changes). Use `warn` for patterns your team cares about but handles case-by-case. Use `info` for nudges and style preferences.
+
+## .autter/pipeline.yml
+
+Place this file in a `.autter/` directory at your repository root to configure automated pre-merge checks, pipeline templates, and notification routing.
+
+```yaml .autter/pipeline.yml
+template: security-audit
+config:
+  severity_threshold: medium
+  block_on_findings: true
+  notify:
+    - slack: "#security-alerts"
+    - email: security@yourcompany.com
+```
+
+See [Pipeline](/configuration/pipeline) for the full reference.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Rules" icon="shield-check" href="/configuration/rules">
+    Define custom review rules and configure severity levels for each category.
+  </Card>
+  <Card title="Pipeline" icon="git-pull-request" href="/configuration/pipeline">
+    Configure pre-merge checks, pipeline templates, and notification channels.
+  </Card>
+</CardGroup>
