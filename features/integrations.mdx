@@ -1,78 +1,61 @@
 ---
 title: "Integrations"
-description: "Connect Autter to GitHub, GitLab, Jira, Linear, Slack, and VS Code — zero context switching required."
+description: "Connect Autter to source control, issue trackers, notifications, and editor workflows."
 ---
 
-Autter plugs into your existing development workflow. Connect the tools you already use and keep your entire team working in the interfaces they know — no context switching, no new dashboards to train everyone on.
+Integrations give Autter the code, work-item context, and delivery channels needed for useful reviews.
 
-## Integration hub
+<Frame caption="Placeholder: replace with approved integration artwork or a connected-tools screenshot.">
+  <img src="/images/placeholders/integrations.svg" alt="Placeholder showing Autter connected to GitHub, GitLab, Jira, Linear, Slack, and VS Code" />
+</Frame>
 
-Autter connects to six tools out of the box:
+## Available integrations
+
+| Integration | Customer workflow |
+| --- | --- |
+| GitHub | Review pull requests through the native GitHub workflow |
+| GitLab | Review merge requests through the GitLab workflow |
+| Jira | Add linked issue context to code review |
+| Linear | Add linked issue context to code review |
+| Slack | Receive review and workflow notifications |
+| VS Code | Use Autter in editor-adjacent workflows |
+
+Integration availability can vary by plan. See [current pricing](https://www.autter.dev/pricing).
+
+## Source control
+
+Connect GitHub or GitLab first. This gives Autter access to the repository and proposed changes it needs to review.
 
 <CardGroup cols={2}>
-  <Card title="GitHub" icon="github" href="/guides/github-setup">
-    Native GitHub App with PR comments, status checks, and automatic review assignments. Autter lives inside your existing GitHub workflow.
+  <Card title="GitHub setup" icon="github" href="/guides/github-setup">
+    Install the GitHub App, select repositories, and verify a pull request review.
   </Card>
-  <Card title="GitLab" icon="gitlab" href="/guides/gitlab-setup">
-    Full GitLab integration with merge request comments, pipeline status, and reviewer assignment.
-  </Card>
-  <Card title="Jira" icon="trello" href="/guides/github-setup">
-    Link PRs to Jira issues automatically. Autter surfaces relevant ticket context during reviews and updates issue status on merge.
-  </Card>
-  <Card title="Linear" icon="layers" href="/guides/github-setup">
-    Connect Linear issues to pull requests for full traceability from task to merged code.
-  </Card>
-  <Card title="Slack" icon="slack" href="/guides/github-setup">
-    Get notified in Slack when reviews need your attention. Configure exactly which events trigger notifications and which channels receive them.
-  </Card>
-  <Card title="VS Code" icon="code" href="/guides/github-setup">
-    Review PRs and see Autter's feedback directly inside VS Code — without leaving your editor.
+  <Card title="GitLab setup" icon="gitlab" href="/guides/gitlab-setup">
+    Authorize GitLab, select projects, and verify a merge request review.
   </Card>
 </CardGroup>
 
-## Unified inbox
+## Issue context
 
-Autter's unified inbox gives you one place to manage all your pull requests and review requests — across all your repos, all your tools.
+Connect Jira or Linear when the issue contains acceptance criteria, constraints, or incident context that should influence review.
 
-### Every change in one place
+Before relying on linked context:
 
-Stay on top of your team's pull requests from one dashboard. See reviews, CI status, stack info, and everything else you need to know about your PRs — without jumping between GitHub tabs.
+- confirm the pull request is linked to the correct issue
+- keep acceptance criteria current
+- avoid placing credentials or sensitive customer data in issue text
+- verify that a review finding actually follows from the linked requirement
 
-### Fully customizable
+## Notifications
 
-Customize each inbox section to match your workflow. Filter PRs based on author, CI status, reviews, labels, and more. Build views for "needs my review", "my open PRs", "blocked on CI", or any other combination that matters to your team.
+Use Slack when review events need visibility outside the source control provider. Keep notification routing focused so high-value review events are not buried in channel noise.
 
-### As fast as you are
+## Editor workflows
 
-Keyboard shortcuts, at-a-glance statuses, and real-time GitHub sync help you stay up to date and take action on things that need your attention. The inbox updates live — no refresh required.
+The public product lists a VS Code integration. The open source CLI also supports editor extensions that visualize AI authorship.
 
-### PRs as they should be
+<Card title="AI blame" icon="code" href="/cli/ai-blame">
+  Inspect line-level AI authorship in the terminal and supported editor extensions.
+</Card>
 
-File diffs, version history, comments, and CI status in one intuitive interface. Review code, leave comments, and approve PRs without ever leaving Autter.
-
-<Tip>
-  Power users can navigate the entire inbox and review interface with keyboard shortcuts. Press `?` at any time to see the full shortcut reference.
-</Tip>
-
-## A unified developer experience
-
-<CardGroup cols={2}>
-  <Card title="Deep GitHub integration" icon="plug" href="/guides/github-setup">
-    Native GitHub App with PR comments, status checks, and automatic review assignments.
-  </Card>
-  <Card title="Unified inbox" icon="inbox" href="/features/integrations">
-    All your PRs, reviews, and notifications in one dashboard. Never miss a review request again.
-  </Card>
-  <Card title="Keyboard-first" icon="keyboard" href="/features/integrations">
-    Full keyboard navigation and shortcuts for power users who live in the terminal.
-  </Card>
-  <Card title="PR workflows" icon="git-pull-request" href="/configuration/overview">
-    Customizable PR templates, auto-assignment rules, and merge policies that fit your team.
-  </Card>
-  <Card title="Configurable notifications" icon="bell" href="/features/integrations">
-    Get notified via Slack, email, or in-app. Configure exactly what you want to hear about.
-  </Card>
-  <Card title="Custom webhooks" icon="settings" href="/configuration/overview">
-    Trigger custom actions on review events. Connect to any tool with Autter's webhook API.
-  </Card>
-</CardGroup>
+{/* TODO: Add setup guides for Jira, Linear, Slack, and VS Code after their current authorization scopes and UI flows are approved. */}

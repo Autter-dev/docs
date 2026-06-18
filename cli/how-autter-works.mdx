@@ -25,7 +25,7 @@ Autter builds attribution from explicit coding-agent events. It does not scan fi
     Autter updates attribution after supported history operations, including rebase, cherry-pick, stash, merge, squash merge, reset, and amend.
   </Step>
   <Step title="Connected mode adds organization context">
-    When enabled, Autter syncs authorship and session data so the platform can aggregate it across repositories and join it to pull requests and teams.
+    When enabled, local Git notes remain available. Autter additionally redacts and queues captured transcripts in content-addressed storage, then syncs transcript and usage data to the owning organization's environment.
   </Step>
 </Steps>
 
@@ -57,7 +57,9 @@ autter blame src/service.ts
 
 Git notes should remain compact and safe to share with repository collaborators. Autter stores prompt records separately and links them by identifier. This design supports access control and reduces the chance of committing secrets or personal data into repository history.
 
-Connected deployments apply best-effort secret and personal-data redaction before prompt storage. You should still avoid entering secrets in coding-agent prompts.
+Connected deployments apply best-effort secret redaction on the developer machine before a transcript enters the upload queue. You should still avoid entering secrets in coding-agent prompts.
+
+Each uploaded transcript is keyed by a hash of its normalized content. The authorship note stores a `cas:<hash>` reference instead of embedding the full conversation in Git.
 
 ## Supported history operations
 

@@ -1,0 +1,63 @@
+---
+title: "Codebase scans"
+description: "Run repository-wide analysis when a pull request review is too narrow."
+---
+
+Codebase scans evaluate a repository beyond the current pull request. Use them to establish a baseline, investigate broad risk, or plan remediation work.
+
+<Frame caption="Placeholder: replace with an approved codebase scan report screenshot.">
+  <img src="/images/placeholders/codebase-scan.svg" alt="Placeholder showing an Autter codebase scan summary with findings grouped by risk area" />
+</Frame>
+
+## When to use a scan
+
+Run a repository-wide scan when:
+
+- you connect an unfamiliar repository
+- a production incident suggests systemic risk
+- you need to inspect dependencies, secrets, licenses, or public APIs
+- a pull request finding points to a wider architectural problem
+- you are preparing a remediation plan
+
+## Review categories
+
+The hosted product may expose focused scan categories for areas such as:
+
+- dependency and supply-chain risk
+- secrets and sensitive configuration
+- license compliance
+- static security analysis
+- API surface and runtime compatibility
+- code quality and architecture
+- business logic and payment flows
+- frontend health and accessibility
+
+{/* TODO: Confirm the scan categories currently available to customers and their plan requirements. */}
+
+## Review scan results
+
+<Steps>
+  <Step title="Start with high-impact findings">
+    Prioritize exploitable security issues, exposed credentials, authorization failures, and data integrity risks.
+  </Step>
+  <Step title="Verify the evidence">
+    Open the affected code and confirm that the finding reflects runtime behavior and repository context.
+  </Step>
+  <Step title="Group related findings">
+    Fix shared causes such as an outdated dependency, missing authorization layer, or repeated unsafe pattern.
+  </Step>
+  <Step title="Assign remediation work">
+    Turn verified findings into owned work with a clear priority and acceptance criteria.
+  </Step>
+  <Step title="Re-run the scan">
+    Confirm the fix and check whether the same pattern remains elsewhere.
+  </Step>
+</Steps>
+
+<Note>
+  A scan finding is evidence for investigation. Confirm exploitability and business impact before treating it as a production vulnerability.
+</Note>
+
+## Scans and pull request reviews
+
+Use [code review](/features/code-review) for change-level feedback before merge. Use codebase scans for repository-wide analysis that is not limited to the current diff.

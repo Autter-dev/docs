@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Pipeline configuration placeholder</title><desc id="desc">Wireframe showing modular pre-merge checks.</desc>
+  <rect width="1200" height="620" fill="#F1ECE0"/><text x="600" y="80" text-anchor="middle" fill="#1E2D4A" font-family="serif" font-size="36" font-weight="700">Pre-merge pipeline</text>
+  <g stroke="#1E2D4A" stroke-width="3" fill="#FFFFFF"><rect x="70" y="170" width="220" height="170" rx="14"/><rect x="350" y="170" width="220" height="170" rx="14"/><rect x="630" y="170" width="220" height="170" rx="14"/><rect x="910" y="170" width="220" height="170" rx="14"/></g>
+  <g fill="#1E2D4A" font-family="sans-serif" text-anchor="middle"><text x="180" y="230" font-size="22" font-weight="700">Guardrails</text><text x="460" y="230" font-size="22" font-weight="700">Tests</text><text x="740" y="230" font-size="22" font-weight="700">Docstrings</text><text x="1020" y="230" font-size="22" font-weight="700">Scanners</text><text x="180" y="278" font-size="15">Natural-language checks</text><text x="460" y="278" font-size="15">Coverage and generation</text><text x="740" y="278" font-size="15">Documentation proposals</text><text x="1020" y="278" font-size="15">Focused static analysis</text></g>
+  <g stroke="#00A88A" stroke-width="6"><line x1="290" y1="255" x2="350" y2="255"/><line x1="570" y1="255" x2="630" y2="255"/><line x1="850" y1="255" x2="910" y2="255"/></g>
+  <rect x="360" y="420" width="480" height="72" rx="12" fill="#1E2D4A"/><text x="600" y="463" text-anchor="middle" fill="#2EFFD1" font-family="monospace" font-size="18">REVIEW RESULT → PULL REQUEST</text>
+  <text x="600" y="552" text-anchor="middle" fill="#1E2D4A" font-family="monospace" font-size="14">PLACEHOLDER — REPLACE WITH APPROVED PIPELINE UI</text>
+</svg>

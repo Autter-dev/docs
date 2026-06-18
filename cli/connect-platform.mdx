@@ -34,7 +34,7 @@ Connected data supports:
     ```
   </Step>
   <Step title="Choose connected mode">
-    Select the option to connect to the Autter platform. Autter opens the browser sign-in flow and configures the connected backend for you.
+    Select the option to connect to the Autter platform. Autter opens a browser, displays a one-time code, and waits for you to authorize the device.
   </Step>
   <Step title="Confirm the active identity">
     After onboarding finishes, run:
@@ -46,8 +46,10 @@ Connected data supports:
 </Steps>
 
 <Tip>
-  Run `autter onboard --force` if you previously completed onboarding and need to choose a different mode.
+  Run `autter onboard --connect` to choose connected mode directly. Use `autter onboard --force` when you previously completed onboarding and want to change your choice.
 </Tip>
+
+If browser authorization fails, Autter keeps the machine in local-only mode. Your local attribution continues working. Retry later with `autter onboard --connect` or use the PAT fallback.
 
 ## PAT fallback
 
@@ -58,7 +60,7 @@ Use a personal access token only if `autter onboard` cannot complete the browser
     Go to [app.autter.dev](https://app.autter.dev) and sign in.
   </Step>
   <Step title="Create a personal access token">
-    Open **Settings → Access Tokens**, create a token, and copy it.
+    Open the organization you want to connect. Go to **Org Settings → Access Tokens**, create a token, and copy it.
   </Step>
   <Step title="Complete CLI sign-in">
     Pass the token to the CLI:
@@ -77,15 +79,21 @@ Use a personal access token only if `autter onboard` cannot complete the browser
   <img src="/images/placeholders/platform-dashboard.svg" alt="Placeholder for an Autter platform dashboard with AI authorship metrics" />
 </Frame>
 
-## How organization routing works
+## How connected storage works
 
 An access token belongs to your account. If you belong to several organizations, Autter uses the repository's Git remote to identify its owning organization. If no match exists, it uses your default organization.
 
-Authorship notes and prompt transcripts are written directly to the organization's database using connection details in the signed token. The CLI repository states that no intermediate Autter server sits in that write path.
+Connected mode keeps line-level attribution in local Git notes under `refs/notes/ai`. Prompt transcripts and usage data also sync to your organization's Autter environment.
+
+After a commit, Autter reads any captured agent transcript, normalizes it, and redacts detected secrets before it leaves the machine. The transcript is queued as a content-addressed object. Its `cas:<hash>` reference is added to the matching prompt record so review and blame tools can resolve the conversation behind an attributed change.
+
+Transcript capture is best-effort. A missing, empty, or unreadable transcript does not block the commit or invalidate its authorship note. The background service retries queued uploads.
+
+Usage metrics route to the organization database associated with the signed identity and repository remote.
 
 ## Manage access
 
-Open **Settings → Access Tokens** in the dashboard to:
+Open **Org Settings → Access Tokens** in the dashboard to:
 
 - Review active tokens
 - Revoke a token

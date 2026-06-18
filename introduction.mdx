@@ -1,65 +1,57 @@
 ---
 title: "Introduction"
-description: "Autter is an AI merge gate that runs your code, tests your changes, and blocks bad PRs before anyone hits merge."
+description: "Learn how the Autter platform reviews pull requests and how the Autter CLI records AI authorship."
 ---
 
-## What is Autter?
+Autter has two complementary products:
 
-Autter is an AI code reviewer that sits at the merge layer — the gap between "looks good to me" and code that actually holds up in production.
+- **Autter platform** reviews proposed changes before merge.
+- **Autter CLI** records AI authorship as developers and coding agents edit code.
 
-It installs as a GitHub or GitLab App, automatically reviews every pull request, and blocks merges when it finds critical issues. Most reviews complete within seconds of a PR being opened.
+You can use either product independently or connect them for team-level attribution and analytics.
 
-Autter is not a linter. Linters check syntax and style in isolation. Autter builds a semantic model of your entire codebase — your conventions, your deprecated APIs, your architecture patterns — and evaluates every diff in that context. It catches what linters miss and what human reviewers only catch when they happen to look closely enough.
+## Autter platform
 
-## The problems Autter solves
+The Autter platform is an AI code review product for pull requests and merge requests. It uses the current diff, codebase context, team rules, linked work items, and scanner output to find issues before merge.
 
-**AI-generated code that looks right but isn't.**
-AI coding assistants now write between 30% and 60% of code in a typical pull request. The code compiles. The tests pass. And yet production incidents from AI-authored code are climbing — not because the code is obviously broken, but because it is confidently wrong in ways that only surface under real load. Autter was built specifically for this failure mode.
+The platform can help you:
 
-**Review fatigue and shrinking trust in diffs.**
-PRs are getting larger and faster. Senior engineers spend their best hours policing conventions and reviewing boilerplate instead of thinking about architecture and design. Autter handles the repetitive layer so your reviewers can focus on what only humans can judge.
+- find bugs, edge cases, and security risks
+- apply team standards written in natural language
+- summarize a pull request and its architectural impact
+- suggest concrete fixes
+- run linters, security scanners, and pre-merge checks
+- measure review cycle time and team activity
 
-**Onboarding bottlenecks.**
-Every codebase has hundreds of unwritten rules — patterns that emerged organically, anti-patterns that caused an incident nobody documented. New developers learn them by making mistakes. Autter surfaces those mistakes immediately, in context, on every PR from day one — cutting the time to autonomous contributor nearly in half.
+Autter works alongside human review. It handles repeatable checks and surfaces context so reviewers can focus on architecture, product behavior, and risk.
 
-## How it works
+## Autter CLI
 
-1. **Installs in under a minute.** Connect the GitHub App or GitLab integration to your repositories. No changes to your existing pipeline required.
-2. **Reviews every PR automatically.** When a pull request opens, Autter analyses the diff against your codebase's full history, conventions, and architecture.
-3. **Posts inline review comments.** Findings appear directly in the PR interface your team already uses, with a description of the issue, why it matters, and how to fix it.
-4. **Blocks merges on critical issues.** For security vulnerabilities, data integrity risks, and breaking API changes, Autter can prevent the merge entirely until the issue is resolved. For lower-severity findings, it comments and lets your team decide.
+The open source Autter CLI records explicit AI authorship. Coding agents report which lines they changed, so Autter does not need to guess whether code was written by AI.
 
-Autter runs in parallel with your CI pipeline and never slows down your development workflow.
+The CLI links AI-authored lines to the coding agent, model, and prompt context. You can inspect that information with commands such as `autter blame` and `autter stats`.
 
-## What Autter is not
+<Info>
+  Local-only mode works without an account. Connected mode sends selected attribution and prompt data to your Autter organization. Review [Data and privacy](/cli/data-and-privacy) before choosing a mode.
+</Info>
 
-<Note>
-  Autter does not replace human code reviewers. It makes them dramatically more effective. Autter handles convention enforcement, pattern detection, and surface-level issues — so your reviewers arrive at a PR already knowing what to look at and can spend their time on architecture, design, and business logic.
-</Note>
+## How the products fit together
 
-Autter is also not:
+| Need | Use |
+| --- | --- |
+| Review a pull request before merge | Autter platform |
+| Apply organization review rules | Autter platform |
+| Track who or what authored each line | Autter CLI |
+| Keep attribution entirely on one machine | Autter CLI in local-only mode |
+| Compare AI usage across a team | Autter CLI in connected mode with the Autter platform |
 
-- A static analysis tool or an advanced linter
-- A testing framework or CI replacement
-- An AI that writes code for you
-
-## Explore Autter
+## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Quick Start" icon="bolt" href="/quickstart">
-    Connect your first repository and get your first automated review in under five minutes.
+  <Card title="Platform quickstart" icon="rocket" href="/quickstart">
+    Connect a repository and receive your first review.
   </Card>
-  <Card title="Installation" icon="plug" href="/installation">
-    Full setup instructions for the GitHub App, GitLab integration, and the local CLI.
-  </Card>
-  <Card title="Code Review" icon="shield-check" href="/features/code-review">
-    How Autter learns your team's conventions and enforces them on every PR.
-  </Card>
-  <Card title="Integrations" icon="puzzle-piece" href="/features/integrations">
-    GitHub, GitLab, Jira, Linear, Slack, VS Code — Autter connects to your entire workflow.
+  <Card title="CLI installation" icon="terminal" href="/cli/install">
+    Install `autter` and verify line-level attribution.
   </Card>
 </CardGroup>
-
-<Note>
-  Autter is free for public repositories. Connect a public repo and get unlimited AI reviews with no credit card required.
-</Note>

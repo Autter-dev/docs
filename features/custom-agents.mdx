@@ -1,0 +1,38 @@
+---
+title: "Focused agents"
+description: "Add focused checks for repository risks that need more attention than the default review."
+---
+
+Focused agents extend the core review with checks for a specific engineering concern. Use them when one type of risk recurs in a repository.
+
+Examples can include checks for:
+
+- dependency risk
+- code complexity
+- test coverage changes
+- public code documentation
+- frontend bundle size
+- license policy
+- N+1 query patterns
+- accessibility issues
+
+{/* TODO: Confirm the focused agent catalog and customer-facing name for this feature before publication. */}
+
+## Choose a focused check
+
+Enable a focused check when:
+
+- the repository uses the relevant framework or package ecosystem
+- maintainers agree on the expected behavior
+- the finding can be verified from code or build output
+- the expected signal is worth the additional review volume
+
+Avoid enabling every available check at once. Start with the repository's highest-risk area, review the output, and expand gradually.
+
+## Focused agents and custom rules
+
+Use a [custom rule](/guides/custom-rules) for an organization-specific standard written in natural language.
+
+Use a focused agent for a specialized analysis domain such as dependency auditing or accessibility.
+
+Use [codebase scans](/features/codebase-scans) when you need a broader repository-wide assessment.

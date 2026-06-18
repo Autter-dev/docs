@@ -32,7 +32,7 @@
     ],
     "primary": {
       "type": "github",
-      "href": "https://github.com/Autter-dev/autter-cli"
+      "href": "https://github.com/Autter-dev"
     }
   },
   "footer": {
@@ -42,6 +42,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/cli/how-git-ai-works",
+      "destination": "/cli/how-autter-works"
+    },
     {
       "source": "/changelog/new-analytics-dashboard",
       "destination": "/changelog/overview"
@@ -76,10 +80,14 @@
           {
             "group": "Features",
             "pages": [
+              "features/platform-overview",
               "features/code-review",
+              "features/codebase-scans",
+              "features/wiki",
               "features/pipeline",
               "features/analytics",
               "features/ai-chat",
+              "features/custom-agents",
               "features/integrations"
             ]
           },
@@ -97,7 +105,8 @@
               "guides/github-setup",
               "guides/gitlab-setup",
               "guides/custom-rules",
-              "guides/team-onboarding"
+              "guides/team-onboarding",
+              "guides/add-your-agent"
             ]
           },
           {
@@ -119,6 +128,12 @@
             ]
           },
           {
+            "group": "Context",
+            "pages": [
+              "cli/context"
+            ]
+          },
+          {
             "group": "Use attribution",
             "pages": [
               "cli/ai-blame",
@@ -128,10 +143,22 @@
           {
             "group": "Reference",
             "pages": [
+              "cli/reference",
               "cli/configuration",
               "cli/data-and-privacy",
               "cli/command-reference",
+              "cli/performance-faqs",
               "cli/troubleshooting"
+            ]
+          },
+          {
+            "group": "Supported agents",
+            "pages": [
+              "cli/cursor",
+              "cli/claude-code",
+              "cli/copilot",
+              "cli/codex",
+              "cli/windsurf"
             ]
           }
         ]

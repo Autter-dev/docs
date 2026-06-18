@@ -1,46 +1,50 @@
 ---
-title: "FAQ"
-description: "Common questions about Autter"
+title: "Frequently asked questions"
+description: "Answers about Autter reviews, integrations, AI authorship, pricing, and data handling."
 ---
 
-<Note>
-  Can't find your answer? Contact us at support@autter.dev
-</Note>
-
 <AccordionGroup>
-  <Accordion title="Do you train AI on my data?">
-    No. Your code is never used to train our models. We take security and privacy seriously — your source code is encrypted in transit and at rest, and is never stored beyond the duration of a review.
+  <Accordion title="What is the difference between the Autter platform and the Autter CLI?">
+    The Autter platform reviews pull requests and provides team workflows, integrations, and analytics. The open source Autter CLI records explicit, line-level AI authorship in Git. You can use either product independently or connect the CLI to your Autter organization.
   </Accordion>
 
-  <Accordion title="What programming languages do you support?">
-    Autter is language-agnostic and supports all popular programming languages, including JavaScript, TypeScript, Python, Go, Ruby, Java, C#, Rust, Kotlin, and Swift.
+  <Accordion title="Does Autter detect whether code was written by AI?">
+    No. The Autter CLI uses explicit attribution reported by supported coding agents. It records which lines an agent changed and links those lines to the agent, model, and prompt context. Autter calls this AI authorship and line-level attribution.
   </Accordion>
 
-  <Accordion title="Do you have an open source plan?">
-    Yes. Autter is free for public repositories. Connect Autter to a public repository to get unlimited AI reviews.
+  <Accordion title="Can I use the CLI without an account?">
+    Yes. Local-only mode works without an account. Prompts remain on the developer machine, while authorship metadata is written to local Git notes. Error and exception telemetry is enabled by default and can be disabled. See [Data and privacy](/cli/data-and-privacy).
   </Accordion>
 
-  <Accordion title="How does Autter integrate with my workflow?">
-    Autter integrates directly with GitHub and GitLab. Once connected, it automatically reviews every pull request and merge request — no extra setup or steps needed from your team.
+  <Accordion title="What does the platform review?">
+    The platform reviews proposed changes for bugs, edge cases, security risks, codebase-specific patterns, and team rules. It can also use linters, scanners, linked issues, and documentation as context.
   </Accordion>
 
-  <Accordion title="What kinds of issues does Autter catch?">
-    Autter catches bugs, security vulnerabilities, performance issues, code style violations, and logic errors. It also suggests improvements for readability and maintainability, going beyond what traditional linters can detect.
+  <Accordion title="Can I define custom review rules?">
+    Yes. Define team standards in natural language and apply them across repositories. Start with advisory feedback, evaluate the findings, and tighten enforcement only after the rule is reliable. See [Custom rules](/guides/custom-rules).
   </Accordion>
 
-  <Accordion title="How fast are the reviews?">
-    Most reviews complete within seconds of a pull request being opened. Autter runs in parallel with your CI pipeline so it never slows down your development workflow.
+  <Accordion title="Which source control providers does Autter support?">
+    The public product supports GitHub and GitLab for code review workflows. The Autter CLI also reads Git repository history independently of the hosted review integration.
   </Accordion>
 
-  <Accordion title="Can I customize the review rules?">
-    Yes. Configure Autter to follow your team's coding standards, ignore specific file patterns, and focus on the areas that matter most to your codebase through a simple configuration file.
+  <Accordion title="Which other integrations are available?">
+    Autter publicly lists Jira, Linear, Slack, and VS Code alongside GitHub and GitLab. Availability can vary by plan. See [Integrations](/features/integrations) and [current pricing](https://www.autter.dev/pricing).
   </Accordion>
 
-  <Accordion title="Does Autter replace human code reviews?">
-    No. Autter is designed to augment your team, not replace it. It handles the repetitive and easy-to-miss issues so your reviewers can focus on architecture, design, and business logic.
+  <Accordion title="How is source code and prompt data handled?">
+    Data handling depends on the product and mode you choose. In CLI local-only mode, code, prompts, and agent usage data are not uploaded to Autter, although error telemetry is enabled by default. Team deployments process pull request diffs to compute AI percentage without storing those diffs. See [Data and privacy](/cli/data-and-privacy) for the full breakdown.
   </Accordion>
 
-  <Accordion title="How do you handle private and proprietary code?">
-    Your code is processed in isolated, ephemeral environments. We never store your source code after a review is complete, and all data is encrypted end-to-end.
+  <Accordion title="How much does Autter cost?">
+    Plans and included pull request volumes are published on the [Autter pricing page](https://www.autter.dev/pricing). Check that page for current limits and features instead of relying on a static value in the docs.
+  </Accordion>
+
+  <Accordion title="Does Autter replace human review?">
+    No. Autter handles repeatable checks and surfaces context before merge. Human reviewers still own architecture, product behavior, operational tradeoffs, and the final approval decision.
   </Accordion>
 </AccordionGroup>
+
+<Note>
+  If your question is not covered here, use the [Autter contact form](https://www.autter.dev/contact).
+</Note>

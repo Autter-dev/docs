@@ -1,0 +1,46 @@
+---
+title: "Codex"
+description: "Set up Autter for Codex and keep AI-authored code attributed automatically."
+icon: "bot"
+---
+
+Autter works with Codex by checkpointing the changes Codex makes and carrying that attribution into Git history.
+
+## What you get
+
+- Automatic attribution for Codex-authored edits
+- Commit-level summaries in `autter stats`
+- Line-level review in `autter blame`
+- Prompt and session context when the storage backend provides it
+
+## Set up Codex
+
+<Steps>
+  <Step title="Install Autter">
+    Install the CLI on the machine where Codex runs.
+  </Step>
+  <Step title="Install or refresh hooks">
+    Run:
+
+    ```bash
+    autter install-hooks
+    ```
+  </Step>
+  <Step title="Restart Codex">
+    Restart the agent so it loads the latest integration files.
+  </Step>
+  <Step title="Verify attribution">
+    Ask Codex to edit a file, then run `autter status` and `autter stats HEAD`.
+  </Step>
+</Steps>
+
+## Good follow-up checks
+
+```bash
+autter blame src/service.ts
+autter show HEAD
+```
+
+<Card title="How Autter works" icon="diagram-project" href="/cli/how-autter-works">
+  See how checkpoints become authorship notes.
+</Card>

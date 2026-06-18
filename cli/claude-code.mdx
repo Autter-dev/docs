@@ -1,0 +1,47 @@
+---
+title: "Claude Code"
+description: "Set up Autter for Claude Code and keep AI-authored code attributed automatically."
+icon: "code"
+---
+
+Autter works with Claude Code by checkpointing the edits Claude makes and turning them into Git authorship data.
+
+## What you get
+
+- Automatic attribution for Claude Code edits
+- Prompt-backed context in `autter show-prompt` when the storage backend has it
+- Line-level authorship in `autter blame`
+- Commit summaries in `autter stats`
+
+## Set up Claude Code
+
+<Steps>
+  <Step title="Install Autter">
+    Install the CLI on the machine that runs Claude Code.
+  </Step>
+  <Step title="Refresh the hooks">
+    Run:
+
+    ```bash
+    autter install-hooks
+    ```
+  </Step>
+  <Step title="Restart Claude Code">
+    Restart the agent so it picks up the new checkpoint integration.
+  </Step>
+  <Step title="Confirm attribution">
+    Make a small edit, then run `autter status` and `autter stats HEAD`.
+  </Step>
+</Steps>
+
+## Useful commands
+
+```bash
+autter blame src/service.ts
+autter stats HEAD
+autter show-prompt <id>
+```
+
+<Card title="Troubleshooting" icon="wrench" href="/cli/troubleshooting">
+  Fix missing attribution, startup issues, and local-only mode problems.
+</Card>

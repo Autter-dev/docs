@@ -1,0 +1,53 @@
+---
+title: "Context"
+description: "Use attribution and prompt records to understand why AI-authored code exists."
+icon: "message-square-more"
+---
+
+Autter gives you the context behind AI-authored code without guessing from the code alone.
+
+When you need to understand a change, start with the artifacts Autter already records:
+
+- Line-level attribution in Git notes
+- Commit-level statistics
+- Prompt records when they are available in the active storage backend
+- Session and model identifiers for the coding agent that made the change
+
+## What context can show you
+
+| Question | Use |
+| --- | --- |
+| Who wrote this line? | `autter blame <file>` |
+| How much of this commit came from AI? | `autter stats <commit-or-range>` |
+| What prompt or session created this change? | `autter show-prompt <id>` |
+| What does the current working tree look like? | `autter status` |
+
+<Note>
+  `autter show-prompt` only returns prompt records that exist in the current storage backend. In local-only mode, that usually means local data on the machine.
+</Note>
+
+## Use context when reviewing code
+
+When a line looks surprising, use the surrounding authorship data first:
+
+1. Check the file with `autter blame`.
+2. Open the relevant commit with `autter stats` or `autter show`.
+3. Read the prompt record with `autter show-prompt` if the backend has one.
+4. Compare the result with the current repository history.
+
+This gives you the intent behind the code, not just the final diff.
+
+## Keep context available to your team
+
+Connected mode can make prompt and attribution data available to the Autter platform for shared analytics and audit history.
+
+Local-only mode keeps the same line-level attribution on the machine and in Git notes. Use it when prompts must stay off the platform.
+
+<CardGroup cols={2}>
+  <Card title="AI blame" icon="code-branch" href="/cli/ai-blame">
+    Inspect line-level authorship in a file.
+  </Card>
+  <Card title="Data and privacy" icon="shield" href="/cli/data-and-privacy">
+    See what stays local and what can sync when you connect.
+  </Card>
+</CardGroup>

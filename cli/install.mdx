@@ -35,6 +35,10 @@ Install Autter once on each developer machine. You do not need per-repository se
   Do not run Autter as root or with `sudo`. Elevated installation can create files your normal user cannot update.
 </Warning>
 
+The installer places Autter in `~/.autter/bin`, adds it to your user `PATH`, configures supported coding agents and editors, and starts the background service.
+
+Close and reopen your terminal and IDE after installation. Interactive macOS, Linux, and WSL installs start onboarding automatically. If the installer runs without an interactive terminal, complete onboarding later with `autter onboard`.
+
 ## Complete onboarding
 
 The installer asks whether you want local-only or connected mode.
@@ -62,6 +66,8 @@ The installer asks whether you want local-only or connected mode.
     autter onboard
     ```
 
+    To select connected mode directly, run `autter onboard --connect`.
+
     If onboarding cannot complete, use the [PAT fallback](/cli/connect-platform#pat-fallback).
   </Tab>
 </Tabs>
@@ -69,13 +75,13 @@ The installer asks whether you want local-only or connected mode.
 ## Verify the installation
 
 ```bash
-autter version
-autter status
+autter --version
+autter debug
 autter whoami
 ```
 
-- `autter version` prints the installed version.
-- `autter status` shows uncommitted authorship checkpoints.
+- `autter --version` prints the installed version.
+- `autter debug` checks the installation and integrations.
 - `autter whoami` shows whether the CLI is connected.
 
 ## Verify an agent integration

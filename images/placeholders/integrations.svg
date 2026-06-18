@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Autter integrations placeholder</title><desc id="desc">Diagram connecting Autter to GitHub, GitLab, Jira, Linear, Slack, and VS Code.</desc>
+  <rect width="1200" height="620" fill="#F1ECE0"/><circle cx="600" cy="310" r="112" fill="#1E2D4A"/><text x="600" y="322" text-anchor="middle" fill="#2EFFD1" font-family="monospace" font-size="30" font-weight="700">autter.</text>
+  <g stroke="#00A88A" stroke-width="4"><line x1="500" y1="260" x2="285" y2="155"/><line x1="500" y1="360" x2="285" y2="465"/><line x1="700" y1="260" x2="915" y2="155"/><line x1="700" y1="360" x2="915" y2="465"/><line x1="600" y1="198" x2="600" y2="92"/><line x1="600" y1="422" x2="600" y2="528"/></g>
+  <g fill="#FFFFFF" stroke="#1E2D4A" stroke-width="2"><rect x="170" y="105" width="230" height="86" rx="12"/><rect x="170" y="422" width="230" height="86" rx="12"/><rect x="800" y="105" width="230" height="86" rx="12"/><rect x="800" y="422" width="230" height="86" rx="12"/><rect x="485" y="35" width="230" height="70" rx="12"/><rect x="485" y="515" width="230" height="70" rx="12"/></g>
+  <g fill="#1E2D4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle"><text x="285" y="157">GitHub</text><text x="285" y="474">GitLab</text><text x="915" y="157">Jira / Linear</text><text x="915" y="474">Slack</text><text x="600" y="79">Documentation</text><text x="600" y="559">VS Code</text></g>
+</svg>

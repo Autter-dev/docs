@@ -1,84 +1,63 @@
 ---
-title: "Rules"
-description: "Define custom review rules in plain English and configure enforcement levels for each category."
+title: "Review rules"
+description: "Write clear, testable team standards in natural language and apply them across repositories."
 ---
 
-Rules tell Autter what to flag and how strictly to enforce it. You define them in `autter.config.yml` at the root of your repository using plain English descriptions — no regex expertise or complex YAML syntax required.
+Review rules tell the Autter platform which team-specific standards to check on every pull request.
 
-<Tip>
-  Start with Autter's default ruleset and add custom rules incrementally. The defaults cover the most common security, performance, and convention issues out of the box.
-</Tip>
+Write rules in natural language. You do not need a repository YAML file or a regular expression to create a rule.
 
-## Rule types
+## Write an effective rule
 
-Autter organises rules into three categories that map to the most common sources of problems in pull requests.
+A useful rule has three parts:
 
-### Security rules
+| Part | Example |
+| --- | --- |
+| Scope | Payment handlers |
+| Requirement | Verify the authenticated account owns the payment method |
+| Reason or exception | Prevent cross-account charges; test fixtures are excluded |
 
-Security rules detect vulnerabilities and enforce safe access patterns across your codebase.
+Combined rule:
 
-**Examples from Autter's built-in ruleset:**
+> Payment handlers must verify that the authenticated account owns the payment method before creating a charge. Test fixtures are excluded.
 
-- `Detect security vulnerabilities` — scans for common vulnerability patterns across all changed files
-- `No Direct process.env Access` — environment variables must be accessed through the config module, not read directly
+Keep each rule focused on one decision. Split a rule when it contains several unrelated requirements.
 
-### Architecture rules
+## Good rule patterns
 
-Architecture rules enforce the structural patterns your team has agreed on — things like which modules are allowed to import from which, or how configuration must be accessed.
+Use rules for standards that can be checked from code and repository context:
 
-**Example:** Preventing direct `process.env` access enforces the pattern that all environment variable access flows through a single validated config module, making configuration errors easier to catch at startup rather than at runtime.
+- require tests for payment flows
+- route environment access through the validated configuration module
+- use design system tokens instead of raw color values
+- prevent direct database access from HTTP controllers
+- require authorization checks before account-scoped reads or writes
+- reject deprecated APIs outside an approved legacy path
 
-### Reliability rules
+Avoid rules such as “write good code” or “follow best practices.” They do not give Autter or the author a testable condition.
 
-Reliability rules encode the patterns your team has established to prevent production failures.
+## Roll out a rule safely
 
-**Example:** `Require error boundaries` — ensures React component trees have error boundary wrappers so individual component failures don't crash the full page.
+<Steps>
+  <Step title="Start from an existing review comment">
+    Choose a standard your team already applies repeatedly.
+  </Step>
+  <Step title="Write one testable requirement">
+    Include the scope, expected behavior, and important exceptions.
+  </Step>
+  <Step title="Apply it to a small repository set">
+    Start where maintainers can evaluate findings quickly.
+  </Step>
+  <Step title="Review false positives">
+    Refine the wording or scope when valid code is flagged.
+  </Step>
+  <Step title="Expand the rule">
+    Apply it more broadly only after the output is consistently useful.
+  </Step>
+</Steps>
 
-## Configuration reference
+<Info>
+  Available enforcement controls can vary by plan and platform release. Check the rule editor in your Autter organization for the controls currently available to you.
+</Info>
 
-Add a `rules` block to `autter.config.yml` to configure enforcement. Each key under `rules` is a rule category name.
-
-```yaml autter.config.yml
-rules:
-  security:
-    severity: block
-  performance:
-    severity: warn
-  conventions:
-    severity: info
-  deprecated_apis:
-    severity: block
-    exceptions:
-      - path: "legacy/**"
-```
-
-### Rule fields
-
-<ParamField path="rules.<category>.severity" type="string" required>
-  How strictly Autter enforces this rule category. Accepts `"block"`, `"warn"`, or `"info"`.
-
-  - `block` — prevents merge until the issue is resolved
-  - `warn` — adds a review comment but allows merge to proceed
-  - `info` — informational only, no review action required
-</ParamField>
-
-<ParamField path="rules.<category>.exceptions" type="array">
-  A list of glob path patterns to exclude from this rule. Files matching any pattern in this list will not be flagged, even if they would otherwise trigger the rule.
-
-  ```yaml
-  deprecated_apis:
-    severity: block
-    exceptions:
-      - path: "legacy/**"
-  ```
-
-  Use exceptions for known legacy directories or third-party code you don't own and can't change.
-</ParamField>
-
-## Pair rules with CLI attribution
-
-Install the [Autter CLI](/cli/install) to record which agent and session produced each committed line. Connected mode lets the platform relate rule findings to authorship, agent, model, and prompt context.
-
-<Note>
-  CLI attribution is separate from repository rule configuration. You can use either feature independently.
-</Note>
+{/* TODO: Add an approved screenshot of the natural-language rule editor and document its exact fields. */}

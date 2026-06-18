@@ -1,0 +1,47 @@
+---
+title: "GitHub Copilot"
+description: "Set up Autter for GitHub Copilot and keep AI-authored code attributed automatically."
+icon: "github"
+---
+
+Autter works with GitHub Copilot by recording the edits Copilot makes and attaching them to the commit that lands in Git history.
+
+## What you get
+
+- Automatic attribution for Copilot-authored lines
+- `autter blame` for line-level review
+- `autter stats` for acceptance and human edit summaries
+- `autter show-prompt` when prompt storage is available
+
+## Set up GitHub Copilot
+
+<Steps>
+  <Step title="Install Autter">
+    Install the CLI on each developer machine.
+  </Step>
+  <Step title="Install or refresh hooks">
+    Run:
+
+    ```bash
+    autter install-hooks
+    ```
+  </Step>
+  <Step title="Restart the editor">
+    Restart VS Code or the Copilot host application so the hook files load.
+  </Step>
+  <Step title="Confirm it works">
+    Make a tracked edit, then run `autter status`.
+  </Step>
+</Steps>
+
+## After installation
+
+```bash
+autter debug
+autter stats HEAD
+autter blame src/services/review.ts
+```
+
+<Card title="Data and privacy" icon="shield" href="/cli/data-and-privacy">
+  Review what stays local when you connect the CLI.
+</Card>

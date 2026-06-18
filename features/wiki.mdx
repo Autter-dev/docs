@@ -1,0 +1,47 @@
+---
+title: "Repository wiki"
+description: "Use generated repository documentation for architecture, onboarding, ownership, and codebase questions."
+---
+
+The Autter platform can generate repository documentation from code and repository context. Use it to orient reviewers and contributors before they make or approve changes.
+
+<Frame caption="Placeholder: replace with an approved repository wiki screenshot.">
+  <img src="/images/placeholders/repository-wiki.svg" alt="Placeholder showing an Autter repository wiki with architecture, modules, ownership, and search" />
+</Frame>
+
+## Documentation areas
+
+Generated content may include:
+
+- repository overview and setup
+- system architecture
+- important modules and files
+- APIs and data models
+- ownership signals
+- technical debt and risk context
+
+{/* TODO: Confirm the generated page types currently exposed to customers. */}
+
+## Use the wiki during review
+
+The wiki is useful when you need to answer questions such as:
+
+- Which service owns this behavior?
+- What depends on this module?
+- Where is the data model defined?
+- Which repository pattern should this change follow?
+- Who has recent context on this area?
+
+Generated documentation can become stale after code changes. Verify important claims against the current repository before making a design or merge decision.
+
+## Keep documentation useful
+
+1. Generate the wiki after connecting the repository.
+2. Review key architecture and setup pages for obvious errors.
+3. Refresh it after significant structural changes.
+4. Link authoritative human-written documentation where it should take precedence.
+5. Report or correct generated content that could mislead contributors.
+
+<Warning>
+  Do not treat generated documentation as the source of truth for security controls, data handling, or operational procedures. Link the approved internal source instead.
+</Warning>

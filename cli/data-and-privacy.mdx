@@ -15,8 +15,8 @@ You choose whether the Autter CLI stays local or connects to the Autter platform
 | Data | Local-only | Connected personal dashboard | Teams or Enterprise |
 | --- | --- | --- | --- |
 | Prompt records | Local SQLite | Uploaded unless `prompt_storage` is `local` | Team prompt store, with best-effort secret and PII redaction |
-| Line-level attribution | Git notes | Organization database and platform views | Team instance and SCM-linked views |
-| Agent and model identifiers | Git notes | Uploaded for analytics | Uploaded for team analytics |
+| Line-level attribution | Local Git notes | Local Git notes | Local Git notes plus team and SCM-linked processing where enabled |
+| Agent and model identifiers | Git notes | Git notes and connected transcript or usage records | Git notes and team analytics |
 | Git name and email | Git notes | Used with connected attribution | Stored as employee identity and SCM membership |
 | Tool calls, MCP calls, skills, errors, interruptions, tokens | Not uploaded as cloud analytics | Uploaded for personal analytics | Uploaded for team analytics |
 | SCM profile and pull request metadata | Not uploaded by local-only CLI | SCM profile metadata | PR description, opener, reviewer, status, and related metadata |
@@ -55,6 +55,18 @@ When you opt in to a personal dashboard, Autter Cloud receives:
 - SCM profile metadata from GitHub, GitLab, or Bitbucket
 
 Personal agent-usage data is visible only to you unless you share it.
+
+### Transcript upload path
+
+When a commit has a captured agent transcript, Autter:
+
+1. Reads and normalizes the local JSON or JSONL transcript.
+2. Removes detected secrets before the transcript leaves the machine.
+3. Queues the transcript in local durable storage as a content-addressed object.
+4. Adds a `cas:<hash>` reference to the prompt record in the authorship note.
+5. Lets the background service upload queued content to the connected organization environment.
+
+This process is best-effort. Missing, empty, or invalid transcripts are skipped, and transcript failures do not block commits.
 
 ## Teams and Enterprise
 

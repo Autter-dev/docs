@@ -1,74 +1,53 @@
 ---
-title: "Configuration"
-description: "Customize Autter to match your team's standards, enforcement levels, and pipeline steps."
+title: "Platform configuration"
+description: "Configure Autter review rules, pre-merge checks, integrations, and feedback behavior from the hosted platform."
 ---
 
-Autter works out of the box with no configuration required. Connect your repository and your first pull request is analysed automatically using sensible defaults that cover the most common issues.
+Use Autter platform settings to control what Autter reviews and how your team receives feedback.
 
-When you're ready to tailor Autter to your team's specific standards, two configuration files give you full control:
+<Warning>
+  The hosted platform does not use the Autter CLI configuration file. CLI settings live in `~/.autter/config.json` and are documented separately in [CLI configuration](/cli/configuration).
+</Warning>
 
-| File | Purpose | Location |
-|------|---------|---------|
-| `autter.config.yml` | Rule categories and severity levels | Repository root |
-| `.autter/pipeline.yml` | Pipeline automation and pre-merge checks | `.autter/` directory at repo root |
-
-<Note>
-  Both files are optional. If neither is present, Autter uses its default ruleset, which covers security vulnerabilities, performance anti-patterns, and common convention violations.
-</Note>
-
-## autter.config.yml
-
-Place this file at the root of your repository to control which rule categories Autter enforces and how strictly it enforces them.
-
-```yaml autter.config.yml
-rules:
-  security:
-    severity: block          # prevent merge
-  performance:
-    severity: warn           # comment but allow merge
-  conventions:
-    severity: info           # informational only
-  deprecated_apis:
-    severity: block
-    exceptions:
-      - path: "legacy/**"    # known legacy code, don't block
-```
-
-### Severity levels
-
-Each rule category accepts one of three severity levels:
-
-| Level | Effect |
-|-------|--------|
-| `block` | Prevents merge until the issue is resolved |
-| `warn` | Adds a review comment but allows merge to proceed |
-| `info` | Informational only — no action or approval required |
-
-Use `block` for issues that are never acceptable in your codebase (security vulnerabilities, breaking API changes). Use `warn` for patterns your team cares about but handles case-by-case. Use `info` for nudges and style preferences.
-
-## .autter/pipeline.yml
-
-Place this file in a `.autter/` directory at your repository root to configure automated pre-merge checks, pipeline templates, and notification routing.
-
-```yaml .autter/pipeline.yml
-template: security-audit
-config:
-  severity_threshold: medium
-  block_on_findings: true
-  notify:
-    - slack: "#security-alerts"
-    - email: security@yourcompany.com
-```
-
-See [Pipeline](/configuration/pipeline) for the full reference.
-
-## Next steps
+## Configuration areas
 
 <CardGroup cols={2}>
-  <Card title="Rules" icon="shield-check" href="/configuration/rules">
-    Define custom review rules and configure severity levels for each category.
+  <Card title="Team rules" icon="shield-check" href="/configuration/rules">
+    Write standards in natural language and apply them to the repositories that need them.
   </Card>
-  <Card title="Pipeline" icon="git-pull-request" href="/configuration/pipeline">
-    Configure pre-merge checks, pipeline templates, and notification channels.
+  <Card title="Pipeline checks" icon="diagram-project" href="/configuration/pipeline">
+    Choose custom checks, generation steps, linters, and scanners for the pre-merge workflow.
+  </Card>
+  <Card title="Review behavior" icon="messages" href="/features/code-review">
+    Tune review sensitivity, feedback detail, triggers, and exclusions where those controls are available.
+  </Card>
+  <Card title="Integrations" icon="plug" href="/features/integrations">
+    Connect source control, issue trackers, notifications, and editor workflows.
   </Card>
 </CardGroup>
+
+## Recommended rollout
+
+<Steps>
+  <Step title="Start with one repository">
+    Connect an active repository with a review pattern your team understands.
+  </Step>
+  <Step title="Review the default feedback">
+    Check whether findings are specific, actionable, and appropriate for your codebase.
+  </Step>
+  <Step title="Add a small number of team rules">
+    Encode standards that reviewers already enforce consistently. Avoid broad rules that require subjective judgment.
+  </Step>
+  <Step title="Tune the pipeline">
+    Enable focused checks for the repository's languages, frameworks, and risk profile.
+  </Step>
+  <Step title="Expand after calibration">
+    Roll the same configuration to more repositories after the team agrees on the signal quality.
+  </Step>
+</Steps>
+
+<Frame caption="Placeholder: replace with an approved Autter settings screenshot.">
+  <img src="/images/placeholders/platform-settings.svg" alt="Placeholder showing Autter platform settings for rules, review behavior, and pipeline checks" />
+</Frame>
+
+{/* TODO: Add exact navigation labels after the current production settings UI is approved for documentation. */}
