@@ -54,21 +54,14 @@ Autter is language-agnostic and supports all popular programming languages, incl
 
 Public repositories are free with unlimited reviews. Private repositories include your first 100 MR reviews at no cost — no credit card required.
 
-## Local CLI verification
+## Add CLI attribution
 
-You can inspect Autter's analysis locally before pushing, or preview what it would flag in your current branch:
+Install the [Autter CLI](/cli/install) to attach agent, model, and prompt context to committed lines. Connected mode lets the Autter platform join that attribution to GitLab merge requests and team analytics.
 
 ```bash
-# Verify a specific MR locally (use the MR number)
-npx autter analyse --pr 142
-
-# Preview what Autter would flag in your current branch
-npx autter check --diff HEAD~1..HEAD
+autter stats main..HEAD
+autter blame src/services/review.ts
 ```
-
-<Tip>
-  Run `npx autter check --diff HEAD~1..HEAD` before pushing to catch issues before Autter reviews the MR. This works identically on GitLab and GitHub.
-</Tip>
 
 ## Next steps
 

@@ -1,0 +1,108 @@
+---
+title: "Connect to the Autter platform"
+description: "Link the CLI to your Autter account for organization dashboards, prompt search, and audit history."
+icon: "cloud-arrow-up"
+---
+
+Connected mode turns local attribution into shared platform context. It is optional and reversible.
+
+## Why connect
+
+The CLI can calculate attribution for one developer or repository. The Autter platform can join that attribution with your software delivery workflow.
+
+Connected data supports:
+
+- AI adoption and acceptance metrics by contributor, team, repository, agent, and model
+- Pull request and production-level durability analysis
+- Prompt and agent-session search for review or debugging
+- Token usage and cost analysis
+- Organization audit logs for CLI access and data pushes
+- Attribution preservation across server-side squash and rebase merges when the required SCM integration is installed
+
+<Info>
+  The platform helps teams answer which agent workflows produce durable code. It does not change how developers prompt, stage, or commit.
+</Info>
+
+## Connect with onboarding
+
+<Steps>
+  <Step title="Start onboarding">
+    Run the primary connection flow:
+
+    ```bash
+    autter onboard
+    ```
+  </Step>
+  <Step title="Choose connected mode">
+    Select the option to connect to the Autter platform. Autter opens the browser sign-in flow and configures the connected backend for you.
+  </Step>
+  <Step title="Confirm the active identity">
+    After onboarding finishes, run:
+
+    ```bash
+    autter whoami
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  Run `autter onboard --force` if you previously completed onboarding and need to choose a different mode.
+</Tip>
+
+## PAT fallback
+
+Use a personal access token only if `autter onboard` cannot complete the browser connection.
+
+<Steps>
+  <Step title="Open the dashboard">
+    Go to [app.autter.dev](https://app.autter.dev) and sign in.
+  </Step>
+  <Step title="Create a personal access token">
+    Open **Settings → Access Tokens**, create a token, and copy it.
+  </Step>
+  <Step title="Complete CLI sign-in">
+    Pass the token to the CLI:
+
+    ```bash
+    autter login --token autter_pat_xxxxxxxx
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  Treat the PAT like a password. Do not commit it or paste it into tickets, chat, or shared logs.
+</Warning>
+
+<Frame caption="Replace this placeholder with an approved connected dashboard screenshot.">
+  <img src="/images/placeholders/platform-dashboard.svg" alt="Placeholder for an Autter platform dashboard with AI authorship metrics" />
+</Frame>
+
+## How organization routing works
+
+An access token belongs to your account. If you belong to several organizations, Autter uses the repository's Git remote to identify its owning organization. If no match exists, it uses your default organization.
+
+Authorship notes and prompt transcripts are written directly to the organization's database using connection details in the signed token. The CLI repository states that no intermediate Autter server sits in that write path.
+
+## Manage access
+
+Open **Settings → Access Tokens** in the dashboard to:
+
+- Review active tokens
+- Revoke a token
+- Review sign-in and data-push activity
+
+To remove credentials from the current machine:
+
+```bash
+autter logout
+```
+
+To return to local-only mode:
+
+```bash
+autter onboard --local --force
+```
+
+<Card title="Review data and opt-out controls" icon="shield" href="/cli/data-and-privacy">
+  See exactly what remains local, enters Git, or uploads in connected mode.
+</Card>

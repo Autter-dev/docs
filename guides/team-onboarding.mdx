@@ -94,40 +94,16 @@ This prevents experienced developers from being annoyed by verbose feedback whil
 
 The impact compounds: faster onboarding means new developers contribute value sooner, senior engineers spend less time on repetitive guidance, and your team's conventions are enforced consistently regardless of who reviews the PR.
 
-## Convention catalogue
+## Add AI authorship to onboarding
 
-Autter maintains a living catalogue of your codebase's conventions — derived from your merge history, not from documentation that might be outdated. New developers can browse it at any time:
-
-```bash
-npx autter conventions list
-```
-
-```
-┌─────────────────────────────────────┬──────────┬─────────────┐
-│ Convention                          │ Category │ Compliance  │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│ Import ordering (external → inter…) │ Style    │ 97%         │
-│ AppError wrapping in services       │ Pattern  │ 94%         │
-│ Repository pattern for DB access    │ Pattern  │ 91%         │
-│ camelCase for functions/variables   │ Naming   │ 99%         │
-│ Test co-location (*.test.ts)        │ Testing  │ 96%         │
-│ Async error handling with try/catch │ Pattern  │ 88%         │
-└─────────────────────────────────────┴──────────┴─────────────┘
-```
-
-You can also export the catalogue as a Markdown document to include in your onboarding materials:
+Install the [Autter CLI](/cli/install) on each developer machine. It records line-level attribution without changing the team's commit workflow.
 
 ```bash
-# Detect conventions from your merge history
-npx autter init --learn
-
-# Export as a Markdown reference for new developers
-npx autter conventions export --format markdown > docs/conventions.md
+autter status
+autter stats HEAD
 ```
 
-<Tip>
-  Add `docs/conventions.md` to your new developer onboarding checklist. It gives them a searchable reference of your codebase's established patterns before they open their first PR.
-</Tip>
+Connected mode can aggregate attribution across the team. Review [Data and privacy](/cli/data-and-privacy) before enabling prompt storage.
 
 ## What senior engineers gain back
 
@@ -146,18 +122,14 @@ Teams using Autter on onboarding consistently report that senior engineer time s
   <Step title="Connect your repository">
     Install the [GitHub App](/guides/github-setup) or [GitLab integration](/guides/gitlab-setup) if you haven't already. Autter will start reviewing PRs immediately.
   </Step>
-  <Step title="Learn your conventions">
-    Run `npx autter init --learn` to build a convention model from your merge history. Autter analyses your last merged PRs and detects the patterns your team already follows.
-
-    ```bash
-    npx autter init --learn
-    ```
+  <Step title="Install the CLI">
+    Follow [Install the CLI](/cli/install) on the developer's machine, then restart their coding agent.
   </Step>
-  <Step title="Export a conventions reference">
-    Generate a Markdown document from the detected conventions for your onboarding materials.
+  <Step title="Choose a storage mode">
+    Use local-only mode or connect the machine to your organization. Keep prompts local when required by policy.
 
     ```bash
-    npx autter conventions export --format markdown > docs/conventions.md
+    autter onboard --force
     ```
   </Step>
   <Step title="Ask the next new developer to open a PR">

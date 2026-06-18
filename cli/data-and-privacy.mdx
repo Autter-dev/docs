@@ -1,0 +1,116 @@
+---
+title: "Data and privacy"
+description: "See what Autter stores locally, in Git, and in the cloud, with controls to opt out."
+icon: "shield"
+---
+
+You choose whether the Autter CLI stays local or connects to the Autter platform. You can change this choice at any time.
+
+<Frame caption="Replace this placeholder with approved data-flow artwork.">
+  <img src="/images/placeholders/data-flow.svg" alt="Placeholder diagram of Autter data moving from a developer machine to Git notes and an optional organization cloud" />
+</Frame>
+
+## Storage at a glance
+
+| Data | Local-only | Connected personal dashboard | Teams or Enterprise |
+| --- | --- | --- | --- |
+| Prompt records | Local SQLite | Uploaded unless `prompt_storage` is `local` | Team prompt store, with best-effort secret and PII redaction |
+| Line-level attribution | Git notes | Organization database and platform views | Team instance and SCM-linked views |
+| Agent and model identifiers | Git notes | Uploaded for analytics | Uploaded for team analytics |
+| Git name and email | Git notes | Used with connected attribution | Stored as employee identity and SCM membership |
+| Tool calls, MCP calls, skills, errors, interruptions, tokens | Not uploaded as cloud analytics | Uploaded for personal analytics | Uploaded for team analytics |
+| SCM profile and pull request metadata | Not uploaded by local-only CLI | SCM profile metadata | PR description, opener, reviewer, status, and related metadata |
+| Pull request diffs | Not uploaded by local-only CLI | Depends on connected product workflow | Processed to compute AI percentage; not stored |
+| Error and exception telemetry | Sent by default | Sent by default | Sent by default unless disabled or redirected |
+
+<Note>
+  Autter's public CLI privacy document does not state a universal cloud retention period. Check your agreement, deployment policy, or the [Autter Trust Center](https://trust.autter.dev) for current terms.
+</Note>
+
+## Local-only mode
+
+Without login, Autter says it does not send code, prompts, or agent-usage data to the Autter platform.
+
+Local-only storage includes:
+
+- Prompt records in local SQLite storage
+- Temporary checkpoints under `.git/ai`
+- Attribution in Git notes, including the agent, model, line ranges, acceptance metrics, and steering developer's Git name and email
+
+Git notes are part of the repository's Git data. Anyone who receives the notes and has repository access can read their metadata.
+
+The open source CLI sends error and exception telemetry by default. Disable it with:
+
+```bash
+autter config set telemetry_oss off
+```
+
+## Connected personal dashboards
+
+When you opt in to a personal dashboard, Autter Cloud receives:
+
+- Agent activity such as tool calls, MCP calls, skills, interruptions, errors, and token usage
+- Prompts and agent responses used for personal analytics
+- AI percentage, parallel-agent counts, and related dashboard metrics
+- SCM profile metadata from GitHub, GitLab, or Bitbucket
+
+Personal agent-usage data is visible only to you unless you share it.
+
+## Teams and Enterprise
+
+Team deployments can also store:
+
+- Employee names, email addresses, and SCM team membership
+- Full prompt records with best-effort secret and personal-data stripping
+- Full agent sessions for review and summarization
+- Pull request metadata from supported SCMs
+- Organization-wide attribution, token, cost, and agent-usage analytics
+
+Prompt records are write-only for developers unless an administrator grants read access. Self-hosted deployments send this data to the team's own Autter instance.
+
+## Opt out of cloud storage
+
+To clear credentials and reselect local-only mode:
+
+```bash
+autter logout
+autter onboard --local --force
+```
+
+This stops future connected writes from that machine. It does not automatically delete data uploaded before you opted out.
+
+{/* TODO: Add the approved cloud-data deletion workflow and support contact once Autter publishes it. */}
+
+<Warning>
+  Switching to local-only mode does not delete existing organization data. Use your organization's deletion process or contact Autter support for a deletion request.
+</Warning>
+
+## Stay connected but keep prompts local
+
+You can keep platform authentication while preventing future prompt uploads:
+
+```bash
+autter config set prompt_storage local
+```
+
+Attribution and other enabled telemetry can still sync. Use local-only mode if you want to stop connected storage as a whole.
+
+## Disable Autter for a repository
+
+From the repository, run:
+
+```bash
+autter config --add exclude_repositories .
+```
+
+This adds the repository's remote to your machine-level exclusion list.
+
+## Protect sensitive data
+
+- Never place credentials or secrets in agent prompts.
+- Keep `prompt_storage` set to `local` for repositories that cannot upload prompts.
+- Review Git-note access because attribution includes developer identity.
+- Store CI access tokens in a secret manager.
+- Review organization permissions before enabling prompt access for developers.
+
+For published policy details, see the [Autter privacy policy](https://autter.dev/privacy-policy) and [Trust Center](https://trust.autter.dev).

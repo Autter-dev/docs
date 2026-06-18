@@ -1,0 +1,72 @@
+---
+title: "Autter CLI"
+description: "Track AI-authored code locally and connect attribution to the Autter platform when your team needs shared analytics."
+icon: "terminal"
+---
+
+The Autter CLI is an open source Git extension for line-level AI authorship. It links generated lines to the coding agent, model, and prompt that produced them.
+
+Autter does not guess whether code came from AI. Supported coding agents create explicit checkpoints as they work. Autter turns those checkpoints into attribution metadata when you commit.
+
+<Columns cols={2}>
+  <Card title="Install the CLI" icon="download" href="/cli/install">
+    Install Autter on macOS, Linux, Windows, or WSL.
+  </Card>
+  <Card title="Connect the platform" icon="cloud-arrow-up" href="/cli/connect-platform">
+    Sync attribution to dashboards, prompt search, and audit logs.
+  </Card>
+  <Card title="Inspect AI authorship" icon="code-branch" href="/cli/ai-blame">
+    See the human or agent behind each line.
+  </Card>
+  <Card title="Control your data" icon="shield" href="/cli/data-and-privacy">
+    Compare storage modes and opt out at any time.
+  </Card>
+</Columns>
+
+## What the CLI adds
+
+- **Line-level attribution** connects committed code to the agent session that created it.
+- **AI-aware blame and diffs** add authorship context to familiar Git workflows.
+- **Commit statistics** show AI acceptance, human edits, and tool or model breakdowns.
+- **History preservation** carries attribution through common operations such as rebase, merge, stash, cherry-pick, and amend.
+- **Optional platform sync** aggregates data by contributor, repository, pull request, team, agent, and model.
+
+## Choose an operating mode
+
+<Tabs>
+  <Tab title="Local-only">
+    Autter works offline without an account. Prompts stay in local SQLite storage. Attribution is written to Git notes.
+
+    Choose this mode when you want personal attribution tools without hosted dashboards.
+  </Tab>
+  <Tab title="Connected">
+    Autter links the machine to your account and routes repository data to the owning organization. The platform can then build shared analytics, prompt search, and audit history.
+
+    You can keep prompts local while remaining signed in. See [Data and privacy](/cli/data-and-privacy#stay-connected-but-keep-prompts-local).
+  </Tab>
+</Tabs>
+
+<Note>
+  Connecting is optional. The open source CLI remains useful in local-only mode.
+</Note>
+
+## Start here
+
+<Steps>
+  <Step title="Install Autter">
+    Follow the platform-specific command in [Install the CLI](/cli/install).
+  </Step>
+  <Step title="Let Autter configure your agents">
+    The installer detects supported coding agents and installs the required integration files.
+  </Step>
+  <Step title="Choose local-only or connected mode">
+    Pick the storage and collaboration model that fits your work. You can change it later with `autter onboard --force`.
+  </Step>
+  <Step title="Prompt, commit, and inspect">
+    Continue using your coding agent and normal Git workflow. Run `autter status`, `autter stats`, or `autter blame <file>` when you need attribution details.
+  </Step>
+</Steps>
+
+<Card title="Read how attribution works" icon="diagram-project" href="/cli/how-autter-works">
+  Follow a checkpoint from an agent edit through commit, Git history, and the optional Autter platform.
+</Card>

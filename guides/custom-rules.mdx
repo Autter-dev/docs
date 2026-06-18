@@ -98,43 +98,11 @@ This configuration:
 - **Warns** when performance anti-patterns are found — the PR can still merge
 - **Notes** convention violations informally without blocking or warning
 
-## Convention detection
+## Connect rules to AI authorship
 
-Autter can learn your existing conventions automatically by analysing your merge history. Run `npx autter init --learn` on an established repository and Autter builds a convention model from your merged PRs — no manual rule authoring needed.
+The Autter CLI adds line-level agent attribution to Git history. When connected to the platform, that context helps teams compare rule findings with the agent and session that produced the change.
 
-<Tip>
-  Run `npx autter init --learn` on an established repo. Autter analyses your merge history and detects your existing conventions automatically — so you don't have to document them manually.
-</Tip>
-
-```bash
-# Detect conventions from your merge history
-npx autter init --learn
-
-# Browse the detected conventions
-npx autter conventions list
-
-# Export them as a Markdown reference for your team
-npx autter conventions export --format markdown > docs/conventions.md
-```
-
-### Convention catalogue
-
-After running `npx autter conventions list`, you'll see a table of detected conventions with their compliance rates across your codebase:
-
-```
-┌─────────────────────────────────────┬──────────┬─────────────┐
-│ Convention                          │ Category │ Compliance  │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│ Import ordering (external → inter…) │ Style    │ 97%         │
-│ AppError wrapping in services       │ Pattern  │ 94%         │
-│ Repository pattern for DB access    │ Pattern  │ 91%         │
-│ camelCase for functions/variables   │ Naming   │ 99%         │
-│ Test co-location (*.test.ts)        │ Testing  │ 96%         │
-│ Async error handling with try/catch │ Pattern  │ 88%         │
-└─────────────────────────────────────┴──────────┴─────────────┘
-```
-
-Each convention shows its category and compliance rate — the percentage of merged PRs that follow it. Conventions with lower compliance rates are good candidates for explicit rules.
+See [Connect to the Autter platform](/cli/connect-platform) for setup and [Data and privacy](/cli/data-and-privacy) for storage controls.
 
 ## Gradual adoption
 

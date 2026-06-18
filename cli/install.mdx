@@ -1,0 +1,112 @@
+---
+title: "Install the CLI"
+description: "Install Autter, choose a storage mode, and verify AI authorship tracking."
+icon: "download"
+---
+
+Install Autter once on each developer machine. You do not need per-repository setup.
+
+## Requirements
+
+- Git
+- A supported macOS, Linux, WSL, or Windows environment
+- At least one supported coding agent for automatic attribution
+
+## Install
+
+<Tabs>
+  <Tab title="macOS, Linux, or WSL">
+    Run the installer:
+
+    ```bash
+    curl -sSL https://autter.dev/install.sh | bash
+    ```
+  </Tab>
+  <Tab title="Windows">
+    Run PowerShell without administrator privileges:
+
+    ```powershell
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://autter.dev/install.ps1 | iex"
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+  Do not run Autter as root or with `sudo`. Elevated installation can create files your normal user cannot update.
+</Warning>
+
+## Complete onboarding
+
+The installer asks whether you want local-only or connected mode.
+
+<Frame caption="Replace this placeholder with the final onboarding terminal screenshot.">
+  <img src="/images/placeholders/cli-onboarding.svg" alt="Placeholder for the Autter CLI onboarding choices" />
+</Frame>
+
+<Tabs>
+  <Tab title="Local-only">
+    Choose local-only mode to keep prompts on the machine and use Git notes for attribution.
+
+    You can select it again later:
+
+    ```bash
+    autter onboard --local --force
+    ```
+  </Tab>
+  <Tab title="Connected">
+    Choose connected mode to sign in and sync attribution to the Autter platform.
+
+    You can start the flow later:
+
+    ```bash
+    autter onboard
+    ```
+
+    If onboarding cannot complete, use the [PAT fallback](/cli/connect-platform#pat-fallback).
+  </Tab>
+</Tabs>
+
+## Verify the installation
+
+```bash
+autter version
+autter status
+autter whoami
+```
+
+- `autter version` prints the installed version.
+- `autter status` shows uncommitted authorship checkpoints.
+- `autter whoami` shows whether the CLI is connected.
+
+## Verify an agent integration
+
+Start a fresh coding-agent session after installation. Ask the agent to edit a tracked file, then run:
+
+```bash
+autter status
+```
+
+Commit the change and inspect its attribution:
+
+```bash
+git commit -am "Test Autter attribution"
+autter stats HEAD
+```
+
+<Tip>
+  If you installed a new coding agent after Autter, run `autter install-hooks` to refresh integrations.
+</Tip>
+
+## Update Autter
+
+```bash
+autter upgrade
+```
+
+Use `autter upgrade --force` to reinstall the latest release.
+
+## Next step
+
+<Card title="Connect to the platform" icon="cloud" href="/cli/connect-platform">
+  Learn what connection enables and how repository data is routed to your organization.
+</Card>

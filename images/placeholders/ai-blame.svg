@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">AI blame screenshot placeholder</title>
+  <desc id="desc">Placeholder for line-level AI attribution in a terminal or editor.</desc>
+  <rect width="1440" height="900" fill="#0D1219"/>
+  <rect x="80" y="80" width="1280" height="740" rx="20" fill="#10151D" stroke="#1E2D4A" stroke-width="4"/>
+  <text x="130" y="190" fill="#2EFFD1" font-family="monospace" font-size="34">autter blame src/service.ts</text>
+  <text x="130" y="285" fill="#F1ECE0" font-family="monospace" font-size="27">a41f9c2  human   42  export async function review() {'{'}</text>
+  <text x="130" y="345" fill="#809CFF" font-family="monospace" font-size="27">a41f9c2  codex   43    return runChecks(diff)</text>
+  <text x="130" y="405" fill="#809CFF" font-family="monospace" font-size="27">a41f9c2  codex   44  {'}'}</text>
+  <text x="130" y="700" fill="#F1ECE0" opacity="0.6" font-family="monospace" font-size="26">TODO: Replace with final CLI or editor screenshot</text>
+</svg>

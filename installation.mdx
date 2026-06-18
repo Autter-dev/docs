@@ -92,36 +92,19 @@ description: "Set up Autter on GitHub or GitLab, or run it locally with the CLI.
   </Tab>
 </Tabs>
 
-## Local CLI
+## Install the Autter CLI
 
-Use the Autter CLI to run reviews locally before pushing, or to inspect what Autter would flag on an existing branch. No installation required — run it directly with `npx`.
-
-```bash
-# Analyse a specific open pull request by PR number
-npx autter analyse --pr 142
-
-# Preview what Autter would flag in your current branch vs the previous commit
-npx autter check --diff HEAD~1..HEAD
-
-# Learn conventions from your repository's merge history
-npx autter init --learn
-```
-
-### `npx autter init --learn`
-
-Run this once per repository to prime Autter with your codebase's conventions. Autter scans your merge history and builds a catalogue of established patterns, naming conventions, and architecture rules.
+The open source Autter CLI tracks which lines were written by humans and coding agents. It complements code review by carrying AI authorship context from the developer machine into Git history and, optionally, the Autter platform.
 
 ```bash
-# Browse the detected conventions at any time
-npx autter conventions list
-
-# Export conventions as a Markdown file for your docs
-npx autter conventions export --format markdown > docs/conventions.md
+curl -sSL https://autter.dev/install.sh | bash
 ```
 
-<Warning>
-  The CLI reads from your local repository. Make sure you run CLI commands from the root of the repository you want to analyse.
-</Warning>
+Windows users can follow the PowerShell instructions in [Install the CLI](/cli/install).
+
+<Card title="Autter CLI setup" icon="terminal" href="/cli/install">
+  Install the CLI, choose local-only or connected mode, and verify attribution.
+</Card>
 
 ## Configuration (optional)
 

@@ -2,30 +2,72 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "aspen",
   "name": "Autter",
+  "description": "Documentation for the Autter code review platform and open source AI authorship CLI.",
   "logo": {
-    "light": "https://media.brand.dev/f9c6a39f-5ed7-4ad9-968c-bff045299a61.png",
-    "dark": "https://media.brand.dev/f9c6a39f-5ed7-4ad9-968c-bff045299a61.png"
+    "light": "https://www.autter.dev/wordmark-light.png",
+    "dark": "https://www.autter.dev/wordmark-dark.png"
   },
-  "favicon": "https://media.brand.dev/07886dac-c8ed-4247-bda9-aadc359f98c7.png",
+  "favicon": "/images/autter-favicon.svg",
   "colors": {
-    "primary": "#32fcd3",
-    "light": "#202f4e",
-    "dark": "#ccd7da"
+    "primary": "#007A6C",
+    "light": "#2EFFD1",
+    "dark": "#00A88A"
   },
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/Autter-dev"
+  "fonts": {
+    "heading": {
+      "family": "Quattrocento",
+      "weight": 700
+    },
+    "body": {
+      "family": "Quattrocento Sans",
+      "weight": 400
     }
   },
+  "navbar": {
+    "links": [
+      {
+        "label": "Dashboard",
+        "href": "https://app.autter.dev"
+      }
+    ],
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/Autter-dev/autter-cli"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/Autter-dev",
+      "x": "https://x.com/autter_patch"
+    }
+  },
+  "redirects": [
+    {
+      "source": "/changelog/new-analytics-dashboard",
+      "destination": "/changelog/overview"
+    },
+    {
+      "source": "/changelog/pipeline-templates-beta",
+      "destination": "/changelog/overview"
+    },
+    {
+      "source": "/changelog/webhook-retry-fix",
+      "destination": "/changelog/overview"
+    },
+    {
+      "source": "/changelog/in-app-announcements",
+      "destination": "/changelog/overview"
+    }
+  ],
   "navigation": {
     "tabs": [
       {
         "tab": "Documentation",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "Get started",
             "pages": [
+              "index",
               "introduction",
               "quickstart",
               "installation"
@@ -59,9 +101,37 @@
             ]
           },
           {
-            "group": "FAQ",
+            "group": "Help",
+            "pages": ["faq"]
+          }
+        ]
+      },
+      {
+        "tab": "CLI",
+        "groups": [
+          {
+            "group": "Get started",
             "pages": [
-              "faq"
+              "cli/overview",
+              "cli/install",
+              "cli/connect-platform",
+              "cli/how-autter-works"
+            ]
+          },
+          {
+            "group": "Use attribution",
+            "pages": [
+              "cli/ai-blame",
+              "cli/commit-stats"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "cli/configuration",
+              "cli/data-and-privacy",
+              "cli/command-reference",
+              "cli/troubleshooting"
             ]
           }
         ]
@@ -72,11 +142,7 @@
           {
             "group": "Releases",
             "pages": [
-              "changelog/overview",
-              "changelog/new-analytics-dashboard",
-              "changelog/pipeline-templates-beta",
-              "changelog/webhook-retry-fix",
-              "changelog/in-app-announcements"
+              "changelog/overview"
             ]
           }
         ]

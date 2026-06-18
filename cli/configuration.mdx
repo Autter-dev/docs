@@ -1,0 +1,88 @@
+---
+title: "CLI configuration"
+description: "Configure storage, repository scope, updates, identity, and hosted endpoints."
+icon: "sliders-horizontal"
+---
+
+Autter stores machine-level configuration in `~/.autter/config.json`. Use `autter config` instead of editing the file directly.
+
+## Manage configuration
+
+```bash
+# Show effective configuration
+autter config
+
+# Read one value
+autter config prompt_storage
+
+# Set a value
+autter config set prompt_storage local
+
+# Add an item to an array
+autter config --add exclude_repositories "https://github.com/acme/sandbox-*"
+
+# Remove a value and return to its default
+autter config unset prompt_storage
+```
+
+## Storage and privacy options
+
+| Key | Values | Purpose |
+| --- | --- | --- |
+| `prompt_storage` | `default`, `notes`, `local` | Choose where prompt records are stored |
+| `telemetry_oss` | `off` | Disable open source error and exception telemetry |
+| `allow_repositories` | Repository patterns | Run Autter only for matching repositories |
+| `exclude_repositories` | Repository patterns | Disable Autter for matching repositories |
+| `notes_backend.kind` | `git_notes`, `http` | Choose local Git notes or the connected backend |
+| `notes_backend.backend_url` | URL | Set the notes backend gate for hosted or self-hosted use |
+
+<Warning>
+  `prompt_storage: notes` places prompt content in Git notes. Anyone with access to those notes can read it. Prefer `local` or your organization's prompt store for sensitive repositories.
+</Warning>
+
+## Repository patterns
+
+Repository filters accept remote URL patterns or local paths. Exclusion wins when a repository matches both lists.
+
+```bash
+# Disable Autter for the current repository
+autter config --add exclude_repositories .
+
+# Allow only repositories in one organization
+autter config set allow_repositories "https://github.com/acme/*"
+
+# Add another allowed repository
+autter config --add allow_repositories ~/code/customer-portal
+```
+
+## Updates
+
+```bash
+autter config set disable_auto_updates true
+autter config set disable_version_checks true
+```
+
+Set `update_channel` to `latest` for stable releases or `next` for prereleases.
+
+## Identity override
+
+Autter normally uses your Git identity. Set an explicit identity when your environment does not provide one:
+
+```bash
+autter config set author.name "Alice Example"
+autter config set author.email alice@example.com
+```
+
+## Environment overrides
+
+Use environment variables for CI or self-hosted deployments:
+
+| Variable | Purpose |
+| --- | --- |
+| `AUTTER_API_BASE_URL` | Authentication and token-exchange API |
+| `AUTTER_WEB_URL` | Browser dashboard URL |
+| `AUTTER_NOTES_BACKEND_KIND` | Notes backend selection |
+| `AUTTER_NOTES_BACKEND_URL` | Notes backend gate URL |
+| `AUTTER_API_KEY` | Non-interactive CI authentication |
+
+Do not commit `AUTTER_API_KEY` or access tokens. Store them in your CI secret manager.

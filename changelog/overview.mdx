@@ -1,21 +1,303 @@
 ---
 title: "Changelog"
-description: "Latest updates and improvements to Autter"
+description: "Product releases, improvements, and fixes shipped by Autter."
+icon: "clock-rotate-left"
+mode: "wide"
 ---
 
-Stay up to date with the latest features, improvements, and fixes in Autter.
+Follow the features and improvements shipped across Autter. The newest release appears first.
 
-<CardGroup cols={2}>
-  <Card title="New Analytics" icon="chart-bar" href="/changelog/new-analytics-dashboard">
-    Redesigned analytics dashboard with real-time metrics, custom charts, and team-level insights.
-  </Card>
-  <Card title="Pipeline Templates" icon="shield-check" href="/changelog/pipeline-templates-beta">
-    Pre-built CI/CD pipeline configurations for common workflows, now in beta.
-  </Card>
-  <Card title="Webhook Fix" icon="rotate" href="/changelog/webhook-retry-fix">
-    Fixed webhook retry logic with exponential backoff to eliminate missed notifications.
-  </Card>
-  <Card title="In-App Announcements" icon="bell" href="/changelog/in-app-announcements">
-    Product updates now surface directly in the UI — no extra clicks needed.
-  </Card>
-</CardGroup>
+<Update
+  label="2026-06-14"
+  description="The review that sees everything, and the billing that runs itself"
+  tags={["New feature"]}
+  rss={{
+    title: "The review that sees everything, and the billing that runs itself",
+    description: "Broader PR review coverage, infrastructure-as-code scanning, clearer findings, business-logic evidence, and self-service billing."
+  }}
+>
+  ## The review that sees everything, and the billing that runs itself
+
+  PR reviews now cover more security, dependency, license, CI/CD, authentication, database, frontend, and code-quality risks while producing fewer low-value findings.
+
+  - Added dependency-impact and cross-file consumer analysis.
+  - Added typosquatting detection and richer review telemetry.
+  - Added Terraform, CloudFormation, and Kubernetes scanning through three independent engines.
+  - Added finding detail views, progressive loading, frontend-health findings, and AI fix suggestions.
+  - Added evidence views for violated business-logic invariants.
+  - Added plan management, hosted checkout, UPI and B2B invoicing, invoice history, and usage visibility.
+</Update>
+
+<Update
+  label="2026-06-07"
+  description="The gate gets teeth"
+  tags={["New feature"]}
+  rss={{
+    title: "The gate gets teeth",
+    description: "A dedicated PR review engine, fifteen automated checks, richer webhooks, Slack routing, and a redesigned review interface."
+  }}
+>
+  ## The gate gets teeth
+
+  Autter's merge gate now runs a dedicated review pipeline with structured chapters, inline findings, PR summaries, and visible gate decisions.
+
+  - Added fifteen review categories spanning security, dependencies, API contracts, infrastructure, privacy, architecture, policy, and AI-generated code quality.
+  - Added durable chapter, activity, issue-link, blast-impact, and policy-violation records.
+  - Improved GitHub delivery logging, recursive-writeback protection, and first-delivery schema setup.
+  - Added per-event Slack notification routing.
+  - Added a Monaco diff viewer, keyboard shortcuts, activity feeds, and chronological review conversations.
+  - Added Markdown comments, mentions, GIF support, and authentication reliability fixes.
+</Update>
+
+<Update
+  label="2026-05-31"
+  description="The merge gate, public reports, and the knowledge graph"
+  tags={["New feature"]}
+  rss={{
+    title: "The merge gate, public reports, and the knowledge graph",
+    description: "Merge-blocking reviews, GitHub-native webhook ingestion, public scan reports, deeper supply-chain analysis, and a repository knowledge graph."
+  }}
+>
+  ## The merge gate, public reports, and the knowledge graph
+
+  The PR review pipeline can now parse diffs, generate structured summaries, run review tasks, and block a merge when required checks fail.
+
+  - Added durable PR revision tracking and local or Fargate runners.
+  - Rebuilt GitHub webhook handling around native PR, review, comment, and issue events.
+  - Expanded secret scanning with TruffleHog history scans, provider context, and verification status.
+  - Expanded Semgrep coverage across major security classes.
+  - Added public share links, branded scan pages, and downloadable PDF reports.
+  - Added deterministic dependency risk, lockfile-aware resolution, exploit-chain tracking, and infinite-loop detection.
+  - Added issue refresh, payment execution traces, Graphify-based knowledge graphs, chat improvements, and architecture-diagram controls.
+</Update>
+
+<Update
+  label="2026-05-23"
+  description="The full scan surface"
+  tags={["New feature"]}
+  rss={{
+    title: "The full scan surface",
+    description: "A complete scan surface spanning secrets, SAST, containers, SBOMs, supply chains, APIs, policy, AI slop, databases, and business logic."
+  }}
+>
+  ## The full scan surface
+
+  The scan engine now brings its major security, compliance, quality, and business-logic checks into one findings workflow.
+
+  - Added per-agent pipeline and performance tracking, runtime preflight checks, `strace` tracking, and PostgreSQL support.
+  - Added organization-scoped CycloneDX SBOM storage and file-risk history.
+  - Added AI-generated scan summaries and persistent action items.
+  - Added bidirectional Linear, Jira, and GitHub issue synchronization with logs and backfill.
+  - Added persisted Captain Patch suggestions and accept or decline workflows.
+  - Added CodeQL as a fourth SAST engine, Trivy filesystem scanning, dependency and license enrichment, and Socket.dev supply-chain analysis.
+  - Added exploit probability, CVSS, OSV context, exploit chains, API-surface analysis, policy validation, and AI-slop detection.
+</Update>
+
+<Update
+  label="2026-05-17"
+  description="The docs engine, the architecture view, and the auditor agents"
+  tags={["New feature"]}
+  rss={{
+    title: "The docs engine, the architecture view, and the auditor agents",
+    description: "A rebuilt documentation pipeline, indexed wiki search, architecture visualization, team management, and the first domain-specific auditor."
+  }}
+>
+  ## The docs engine, the architecture view, and the auditor agents
+
+  Generated repository documentation now has a more observable pipeline and a stronger browsing experience.
+
+  - Added manual documentation generation, job status tracking, clearer failures, and modular processing.
+  - Improved ingestion concurrency, import parsing, Dockerfile extraction, metadata updates, and organization connection pooling.
+  - Added indexed wiki search, improved Markdown navigation, zoom controls, and page-generation prompts.
+  - Added architecture visualization beside generated documentation.
+  - Added custom teams and member assignments.
+  - Added repository-scoped issues and file-content search results.
+  - Added a Payment Gateway Auditor with dedicated findings and execution-path context.
+  - Improved agent execution with batch writes, parallel processing, lockfile parsing, team context, and risk scoring.
+</Update>
+
+<Update
+  label="2026-05-10"
+  description="Custom agents, guided config, and the documentation engine"
+  tags={["New feature"]}
+  rss={{
+    title: "Custom agents, guided config, and the documentation engine",
+    description: "Richer custom agents, guided configuration, prebuilt-agent overrides, and the first repository documentation-generation pipeline."
+  }}
+>
+  ## Custom agents, guided config, and the documentation engine
+
+  Teams can now organize custom agents by category and configure when they run.
+
+  - Added trigger configuration and expanded APIs for custom agents.
+  - Added guided setup with streamed progress and surfaced configuration problems.
+  - Added editable overrides for prebuilt agents.
+  - Added repository graph construction, dependency edges, module clustering, and risk-aware documentation generation.
+  - Added wiki routes, documentation query APIs, Markdown rendering, sidebar navigation, and full-text search.
+  - Added optional mailing-list enrollment during onboarding.
+</Update>
+
+<Update
+  label="2026-05-04"
+  description="Repository overview, CVE watch, and smarter search"
+  tags={["New feature"]}
+  rss={{
+    title: "Repository overview, CVE watch, and smarter search",
+    description: "A consolidated repository workspace, scheduled vulnerability monitoring, deeper dependency intelligence, and faster organization search."
+  }}
+>
+  ## Repository overview, CVE watch, and smarter search
+
+  The repository workspace now brings activity, dependencies, APIs, health, and onboarding into one view.
+
+  - Improved repository health signals, empty states, and architectural-risk visibility.
+  - Added organization-wide search suggestions, finalized-query tracking, page awareness, and persistent query caching.
+  - Added scheduled CVE checks with concurrency control, graceful shutdown, and structured upgrade suggestions.
+  - Expanded registry, version, and vulnerability enrichment for dependencies.
+  - Connected endpoint indexing to test-coverage insights.
+  - Added AI response caching and broader LLM observability.
+  - Migrated model traffic to Vercel AI Gateway and added web analytics instrumentation.
+</Update>
+
+<Update
+  label="2026-04-27"
+  description="The wiki, the PR review, and the graph"
+  tags={["New feature"]}
+  rss={{
+    title: "The wiki, the PR review, and the graph",
+    description: "A repository wiki, rebuilt PR review experience, expanded code intelligence, architectural graphs, and notification controls."
+  }}
+>
+  ## The wiki, the PR review, and the graph
+
+  Repository knowledge is now browsable through generated wiki pages, search, navigation, and an AI-assisted question flow.
+
+  - Rebuilt PR review with dedicated review, check, and commit tabs; inline conversations; file navigation; and unified or split diffs.
+  - Expanded indexing for repository context, scopes, hotspots, files, dependencies, change impact, and health metrics.
+  - Added reverse-dependency, call-graph, and scope-dependency analysis.
+  - Expanded third-party dependency classification and documentation resolution.
+  - Added multi-framework endpoint indexing and API test-coverage analysis.
+  - Added event notifications, weekly digest controls, and Slack or webhook test flows.
+  - Improved tracing around dependency and supply-chain agents.
+</Update>
+
+<Update
+  label="2026-04-20"
+  description="Indexing, onboarding, and a lot of plumbing"
+  tags={["Improvement"]}
+  rss={{
+    title: "Indexing, onboarding, and a lot of plumbing",
+    description: "Guided onboarding, stronger provisioning and observability, and a deeper repository indexing pipeline."
+  }}
+>
+  ## Indexing, onboarding, and a lot of plumbing
+
+  Organization setup now collects more useful context and guides users through the initial codebase scan.
+
+  - Improved organization creation, login transitions, and dashboard motion.
+  - Added webhook testing with clearer notification errors.
+  - Hardened organization database provisioning and deployment retries.
+  - Expanded backend health checks, logging, Slack integration, and AI-pipeline instrumentation.
+  - Improved repository-context detection, scope profiling, file coverage, dependency resolution, graph insights, and per-scope health metrics.
+  - Refined analytics, wiki interactions, navigation, and sidebar styling.
+</Update>
+
+<Update
+  label="2026-04-16"
+  description="Onboarding that gets out of the way"
+  tags={["Improvement"]}
+  rss={{
+    title: "Onboarding that gets out of the way",
+    description: "A more guided first-run flow with cleaner transitions, stronger provisioning, dynamic migrations, and improved observability."
+  }}
+>
+  ## Onboarding that gets out of the way
+
+  The first-run experience now provides more context at each organization-setup step.
+
+  - Added guided organization setup.
+  - Improved loading motion and dashboard or login transitions.
+  - Hardened secrets management, host configuration, and deployment setup.
+  - Added dynamic database migrations during organization provisioning.
+  - Improved route logging, health checks, and Slack integration.
+</Update>
+
+<Update
+  label="2026-04-12"
+  description="Self-service scan initiation"
+  tags={["New feature"]}
+  rss={{
+    title: "Self-service scan initiation",
+    description: "Start branch-aware repository scans from onboarding or the dashboard and receive completion notifications."
+  }}
+>
+  ## Self-service scan initiation
+
+  You can now start a full repository scan without a support handoff.
+
+  - Start scans from onboarding or the dashboard.
+  - Select the branch you want Autter to analyze.
+  - Receive completion notifications through email or Slack.
+  - Audit dependency and vulnerability results over time.
+  - Review security, dependency, license, AI-code quality, and blast-radius findings in one report.
+</Update>
+
+<Update
+  label="2026-04-05"
+  description="Streaming progress and auto-open setup"
+  tags={["Improvement"]}
+  rss={{
+    title: "Streaming progress and auto-open setup",
+    description: "Organization setup now streams progress and opens from the correct dashboard context."
+  }}
+>
+  ## Streaming progress and auto-open setup
+
+  Organization creation now shows each setup stage as it happens instead of leaving you on a static loading screen.
+
+  The setup dialog also opens automatically from the relevant dashboard flow, reducing the steps required to finish organization configuration.
+</Update>
+
+<Update
+  label="2026-03-29"
+  description="The multi-agent scan engine"
+  tags={["New feature"]}
+  rss={{
+    title: "The multi-agent scan engine",
+    description: "Specialized scan agents, GitHub PR automation, an analytics foundation, and expanded codebase intelligence."
+  }}
+>
+  ## The multi-agent scan engine
+
+  Autter now runs specialized agents for distinct codebase risk surfaces and combines their findings into one prioritized report.
+
+  - Added checks for security, licenses, supply chains, infrastructure, containers, policy, business logic, and runtime behavior.
+  - Added GitHub PR comments, check runs, webhook handling, and review automation.
+  - Added the first analytics dashboard with date filtering and multiple result views.
+  - Expanded hotspot detection, dependency mapping, and legacy-code signals.
+</Update>
+
+<Update
+  label="2026-03-22"
+  description="Week one: We built the product"
+  tags={["New feature"]}
+  rss={{
+    title: "Week one: We built the product",
+    description: "Authentication, organizations, GitHub integration, codebase intelligence, and the first complete dashboard foundation."
+  }}
+>
+  ## Week one: We built the product
+
+  The first product release established the core account, repository, and review foundations.
+
+  - Added email one-time-code login, passkeys, trusted devices, and welcome flows.
+  - Added organization creation, branding, team management, account configuration, and product settings.
+  - Added GitHub App installation, pull request views, and repository insights.
+  - Added architecture graphs, repository context, hotspots, and codebase-learning signals.
+  - Added responsive dashboard navigation, search, loading states, notifications, and the Autter visual system.
+  - Introduced Captain Patch.
+</Update>
+
+<Card title="Read the source changelog" icon="arrow-up-right-from-square" href="https://www.autter.dev/changelog">
+  View Autter's full public release narrative and subscribe to future updates.
+</Card>

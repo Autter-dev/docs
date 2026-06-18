@@ -1,0 +1,72 @@
+---
+title: "Commit statistics"
+description: "Measure AI authorship, acceptance, and human edits for a commit or commit range."
+icon: "chart-column"
+---
+
+Use `autter stats` to summarize authorship for the current commit, a specific commit, or a linear commit range.
+
+## Show statistics
+
+```bash
+# Current HEAD
+autter stats
+
+# One commit
+autter stats 8f2c1ab
+
+# Linear commit range
+autter stats main..HEAD
+
+# Machine-readable output
+autter stats main..HEAD --json
+```
+
+## Read the metrics
+
+| Field | Meaning |
+| --- | --- |
+| `human_additions` | Added lines attributed to a human, including edited AI lines where applicable |
+| `ai_additions` | Added lines attributed to a coding agent |
+| `mixed_additions` | AI-generated lines edited by a human before commit |
+| `ai_accepted` | AI-generated lines committed without a human edit |
+| `total_ai_additions` | All lines generated during the session, including discarded output |
+| `total_ai_deletions` | All lines deleted by agents during the session |
+| `time_waiting_for_ai` | Wall-clock time spent waiting for agent responses |
+| `tool_model_breakdown` | The same metrics grouped by agent and model |
+
+<Note>
+  `human_additions + ai_additions` can exceed the raw Git additions when mixed lines count in both categories.
+</Note>
+
+## Use JSON in automation
+
+```bash
+autter stats HEAD --json
+```
+
+```json
+{
+  "human_additions": 28,
+  "ai_additions": 76,
+  "ai_accepted": 47,
+  "git_diff_deleted_lines": 34,
+  "git_diff_added_lines": 104,
+  "tool_model_breakdown": {
+    "codex/gpt-5": {
+      "ai_additions": 76,
+      "ai_accepted": 47
+    }
+  }
+}
+```
+
+## Know the local limit
+
+Local statistics are computed from commit-level Git notes. Large or nonlinear histories can take longer and may not represent pull request boundaries accurately.
+
+Connect the Autter platform when you need repository, pull request, team, cost, or production-level aggregation.
+
+<Card title="Why connect" icon="cloud-arrow-up" href="/cli/connect-platform">
+  See how the platform joins attribution with repositories, teams, and pull requests.
+</Card>

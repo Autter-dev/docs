@@ -55,21 +55,14 @@ Autter is language-agnostic. It supports all popular programming languages, incl
 
 Public repositories are free with unlimited reviews. Private repositories include your first 100 PR reviews at no cost — no credit card required.
 
-## Local CLI verification
+## Add CLI attribution
 
-You can verify Autter's analysis locally before pushing, or inspect a specific PR without opening GitHub:
+Install the [Autter CLI](/cli/install) to attach agent, model, and prompt context to committed lines. Connected mode lets the Autter platform join that attribution to GitHub pull requests and team analytics.
 
 ```bash
-# Verify a specific PR locally
-npx autter analyse --pr 142
-
-# Preview what Autter would flag in your current branch
-npx autter check --diff HEAD~1..HEAD
+autter stats main..HEAD
+autter blame src/services/review.ts
 ```
-
-<Tip>
-  Run `npx autter check --diff HEAD~1..HEAD` before pushing to catch issues before Autter reviews the PR on GitHub. This is especially useful during initial setup to confirm rules are working as expected.
-</Tip>
 
 ## Next steps
 

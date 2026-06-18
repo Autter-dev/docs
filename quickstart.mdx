@@ -92,17 +92,16 @@ For new developers, Autter also provides inline convention guidance with direct 
 //    [auto-fixable]
 ```
 
-## Run Autter locally
+## Add AI authorship context
 
-You can also run Autter from the command line before pushing — useful for catching issues before they reach a PR.
+Install the open source CLI when you want to track which agent, model, and prompt produced each line. This attribution can remain local or connect to the Autter platform for team-level analytics.
 
 ```bash
-# Analyse a specific open pull request
-npx autter analyse --pr 142
-
-# Preview what Autter would flag in your current branch
-npx autter check --diff HEAD~1..HEAD
+curl -sSL https://autter.dev/install.sh | bash
+autter status
 ```
+
+See [Autter CLI](/cli/overview) for installation, connected mode, and data controls.
 
 ## Configure enforcement rules
 
