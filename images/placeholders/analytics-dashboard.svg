@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Analytics dashboard placeholder</title><desc id="desc">Wireframe showing review metrics and a cycle-time trend.</desc>
+  <rect width="1200" height="620" fill="#F1ECE0"/><rect x="60" y="48" width="1080" height="524" rx="18" fill="#FFFFFF" stroke="#1E2D4A" stroke-width="3"/>
+  <text x="110" y="105" fill="#1E2D4A" font-family="serif" font-size="34" font-weight="700">Engineering analytics</text>
+  <g fill="#FAF9F5" stroke="#C7C0B5"><rect x="110" y="140" width="220" height="105" rx="10"/><rect x="360" y="140" width="220" height="105" rx="10"/><rect x="610" y="140" width="220" height="105" rx="10"/><rect x="860" y="140" width="220" height="105" rx="10"/></g>
+  <g fill="#1E2D4A" font-family="sans-serif"><text x="132" y="174" font-size="13">PRS MERGED</text><text x="132" y="222" font-size="32" font-weight="700">34</text><text x="382" y="174" font-size="13">MEDIAN REVIEW</text><text x="382" y="222" font-size="32" font-weight="700">4.2h</text><text x="632" y="174" font-size="13">LINES / PR</text><text x="632" y="222" font-size="32" font-weight="700">552</text><text x="882" y="174" font-size="13">ACTIVE REVIEWERS</text><text x="882" y="222" font-size="32" font-weight="700">18</text></g>
+  <rect x="110" y="285" width="970" height="200" rx="10" fill="#FAF9F5" stroke="#C7C0B5"/><text x="140" y="326" fill="#1E2D4A" font-family="sans-serif" font-size="17" font-weight="700">Median review time</text><polyline points="150,430 270,402 390,420 510,360 630,372 750,330 870,346 1030,310" fill="none" stroke="#00A88A" stroke-width="5"/><line x1="150" y1="450" x2="1030" y2="450" stroke="#C7C0B5"/>
+  <text x="600" y="535" text-anchor="middle" fill="#1E2D4A" font-family="monospace" font-size="14">PLACEHOLDER — REPLACE WITH APPROVED ANALYTICS SCREENSHOT</text>
+</svg>

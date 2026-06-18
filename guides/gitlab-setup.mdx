@@ -1,88 +1,63 @@
 ---
-title: "GitLab Setup"
-description: "Connect Autter to GitLab and start getting automatic merge request reviews in minutes."
+title: "GitLab setup"
+description: "Authorize GitLab, select projects, and verify an Autter merge request review."
 ---
 
-Autter integrates directly with GitLab and reviews every merge request automatically. The experience is identical to the GitHub integration — inline comments, pipeline status checks, and merge blocking for critical issues — using GitLab's native API.
+Connect GitLab to receive Autter feedback in the merge request workflow.
 
 <Note>
-  Autter uses the term "pull request" across its interface and documentation, but on GitLab it operates on merge requests. Everywhere you see "pull request" or "PR" in Autter's UI, it refers to GitLab merge requests.
+  Autter product pages often use “pull request” as a general term. In GitLab, the corresponding object is a merge request.
 </Note>
 
-## Connect Autter to GitLab
+## Before you begin
+
+You need an Autter account and permission to authorize access to the target GitLab group or project.
+
+{/* TODO: Confirm supported GitLab deployment types, exact OAuth scopes, and minimum project role. */}
+
+## Connect GitLab
 
 <Steps>
-  <Step title="Sign up or log in">
-    Visit [autter.dev](https://autter.dev) and create an account or log in with your existing credentials.
+  <Step title="Sign in to Autter">
+    Open the [Autter platform](https://app.autter.dev) and sign in.
   </Step>
-  <Step title="Install the Autter GitLab integration">
-    Click **Connect GitLab** from your dashboard. You will be prompted to authorize Autter with your GitLab account or group. Autter requests only the permissions it needs to read diffs, post comments, and update pipeline statuses.
+  <Step title="Start the GitLab connection">
+    Choose the GitLab connection in Autter and complete the provider authorization flow.
   </Step>
-  <Step title="Select your projects">
-    Choose which GitLab projects Autter should access. You can select individual projects or grant access to all projects within a group. You can update this selection at any time from your Autter dashboard.
+  <Step title="Select projects">
+    Grant access to the projects you want Autter to review. Start with a limited project set when possible.
   </Step>
-  <Step title="Open a merge request">
-    Open any merge request in a connected project. Autter reviews it automatically within seconds — posting inline comments and updating the pipeline status directly on the MR. No additional steps required from you or your team.
-  </Step>
-  <Step title="Configure custom rules (optional)">
-    Add an `autter.config.yml` file at your repository root to define custom rules, severity levels, and enforcement behavior. See [Custom Rules](/guides/custom-rules) for full configuration details.
+  <Step title="Open or update a merge request">
+    Use a connected project and look for Autter feedback in the merge request.
   </Step>
 </Steps>
 
-## Verifying your setup
+<Frame caption="Placeholder: replace with approved GitLab authorization and project selection screenshots.">
+  <img src="/images/placeholders/connect-repository.svg" alt="Placeholder showing the Autter GitLab authorization and project access flow" />
+</Frame>
 
-After connecting GitLab and opening a merge request, confirm Autter is working:
+## Verify the connection
 
-1. **Review comment** — Autter posts an inline review comment on the MR summarizing what it found.
-2. **Pipeline status** — An `autter` pipeline job appears on the MR. It passes when no blocking issues are detected, or fails if critical issues require resolution before merge.
+Confirm that:
 
-If neither appears within 30 seconds of opening an MR, check that the project was included in your integration scope from **Settings → GitLab Integration → Project access** in the Autter dashboard.
+- the project appears in the Autter platform
+- the GitLab integration has access to that project
+- a new or updated merge request starts an Autter review
+- the review output appears in the merge request workflow
 
-## What Autter reviews
+If no review appears, verify project access in GitLab and reconnect the project in Autter if necessary.
 
-Autter's GitLab integration provides the same review capabilities as GitHub:
+{/* TODO: Add the approved hosted-review status and troubleshooting locations from the production UI. */}
 
-- **Inline MR comments** — line-level feedback with a description of the issue, the risk it poses, and a concrete suggestion for fixing it
-- **Pipeline status checks** — a pass/fail gate that can block the merge when critical issues are found
-- **MR summaries** — a concise overview of changes and flagged areas that need human attention
+## Add AI authorship
 
-## Language support
-
-Autter is language-agnostic and supports all popular programming languages, including JavaScript, TypeScript, Python, Go, Ruby, Java, C#, Rust, Kotlin, and Swift.
-
-## Pricing
-
-Public repositories are free with unlimited reviews. Private repositories include your first 100 MR reviews at no cost — no credit card required.
-
-## Local CLI verification
-
-You can inspect Autter's analysis locally before pushing, or preview what it would flag in your current branch:
-
-```bash
-# Verify a specific MR locally (use the MR number)
-npx autter analyse --pr 142
-
-# Preview what Autter would flag in your current branch
-npx autter check --diff HEAD~1..HEAD
-```
-
-<Tip>
-  Run `npx autter check --diff HEAD~1..HEAD` before pushing to catch issues before Autter reviews the MR. This works identically on GitLab and GitHub.
-</Tip>
-
-## Next steps
+The GitLab integration and the Autter CLI are separate. Install the [Autter CLI](/cli/install) if you also want line-level AI authorship and coding-agent context.
 
 <CardGroup cols={2}>
-  <Card title="Custom Rules" icon="shield-check" href="/guides/custom-rules">
-    Define your team's coding standards in plain English and enforce them on every MR.
-  </Card>
-  <Card title="Team Onboarding" icon="users" href="/guides/team-onboarding">
-    Use Autter to accelerate how new developers learn your codebase.
-  </Card>
-  <Card title="Configuration" icon="sliders" href="/configuration/overview">
-    Explore all configuration options for rules, severity, and pipeline steps.
+  <Card title="Create a custom rule" icon="shield-check" href="/guides/custom-rules">
+    Add a team standard after you evaluate the default review.
   </Card>
   <Card title="Integrations" icon="plug" href="/features/integrations">
-    Connect Autter to Slack, Jira, Linear, VS Code, and more.
+    Add issue, notification, and editor context.
   </Card>
 </CardGroup>

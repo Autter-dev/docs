@@ -1,0 +1,74 @@
+---
+title: "Platform overview"
+description: "Understand the Autter platform review, automation, analytics, and integration workflows."
+---
+
+The Autter platform reviews proposed code changes before merge. It combines codebase context, team rules, linked work items, linters, and security scanners in one review workflow.
+
+<Frame caption="Placeholder: replace with an approved Autter platform overview screenshot.">
+  <img src="/images/placeholders/platform-overview.svg" alt="Placeholder showing the Autter platform navigation and repository review activity" />
+</Frame>
+
+## What you can accomplish
+
+<CardGroup cols={2}>
+  <Card title="Review pull requests" icon="git-pull-request" href="/features/code-review">
+    Find bugs, edge cases, security risks, and codebase-specific issues before merge.
+  </Card>
+  <Card title="Automate pre-merge checks" icon="diagram-project" href="/features/pipeline">
+    Run custom guardrails, test generation, docstring generation, linters, and scanners.
+  </Card>
+  <Card title="Apply team standards" icon="shield-check" href="/configuration/rules">
+    Define rules in natural language and use them consistently across repositories.
+  </Card>
+  <Card title="Measure review workflows" icon="chart-bar" href="/features/analytics">
+    Track cycle time, review activity, repository trends, and team velocity.
+  </Card>
+  <Card title="Add engineering context" icon="link" href="/features/integrations">
+    Connect source control, issue trackers, notifications, and editor workflows.
+  </Card>
+  <Card title="Track AI authorship" icon="terminal" href="/cli/overview">
+    Connect explicit line-level attribution from the open source Autter CLI.
+  </Card>
+</CardGroup>
+
+## Review flow
+
+<Steps>
+  <Step title="A pull request opens">
+    Autter receives the proposed diff through the connected source control provider.
+  </Step>
+  <Step title="Autter builds context">
+    The review considers repository architecture, established patterns, team rules, documentation, and linked work items when available.
+  </Step>
+  <Step title="Checks run">
+    Autter combines AI review with the enabled linters, scanners, and pipeline checks.
+  </Step>
+  <Step title="Feedback appears">
+    Authors and reviewers receive a summary, inline findings, and suggested fixes in the pull request workflow.
+  </Step>
+  <Step title="The team decides what merges">
+    Use Autter findings with branch policies and human review to make the final merge decision.
+  </Step>
+</Steps>
+
+## Sources of context
+
+| Context | What it contributes |
+| --- | --- |
+| Codebase intelligence | Architecture, dependencies, conventions, and related code |
+| Team rules | Explicit standards written in natural language |
+| Review history | Patterns and institutional knowledge from prior team reviews |
+| Linked work | Issue context from tools such as Jira and Linear |
+| Documentation | README files, architecture records, and other connected docs |
+| Linters and scanners | Deterministic findings that Autter can filter and explain |
+
+## Platform and CLI
+
+The Autter platform and Autter CLI solve different parts of the workflow. The platform reviews a proposed change. The CLI records who or what authored each line.
+
+When you connect the CLI, your organization can relate review activity to coding agent, model, prompt, and AI authorship context. Review [Data and privacy](/cli/data-and-privacy) before enabling connected mode.
+
+<Card title="Get started" icon="rocket" href="/quickstart">
+  Connect one repository and verify your first pull request review.
+</Card>

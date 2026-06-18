@@ -1,0 +1,116 @@
+---
+title: "Connect to the Autter platform"
+description: "Link the CLI to your Autter account for organization dashboards, prompt search, and audit history."
+icon: "cloud-arrow-up"
+---
+
+Connected mode turns local attribution into shared platform context. It is optional and reversible.
+
+## Why connect
+
+The CLI can calculate attribution for one developer or repository. The Autter platform can join that attribution with your software delivery workflow.
+
+Connected data supports:
+
+- AI adoption and acceptance metrics by contributor, team, repository, agent, and model
+- Pull request and production-level durability analysis
+- Prompt and agent-session search for review or debugging
+- Token usage and cost analysis
+- Organization audit logs for CLI access and data pushes
+- Attribution preservation across server-side squash and rebase merges when the required SCM integration is installed
+
+<Info>
+  The platform helps teams answer which agent workflows produce durable code. It does not change how developers prompt, stage, or commit.
+</Info>
+
+## Connect with onboarding
+
+<Steps>
+  <Step title="Start onboarding">
+    Run the primary connection flow:
+
+    ```bash
+    autter onboard
+    ```
+  </Step>
+  <Step title="Choose connected mode">
+    Select the option to connect to the Autter platform. Autter opens a browser, displays a one-time code, and waits for you to authorize the device.
+  </Step>
+  <Step title="Confirm the active identity">
+    After onboarding finishes, run:
+
+    ```bash
+    autter whoami
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  Run `autter onboard --connect` to choose connected mode directly. Use `autter onboard --force` when you previously completed onboarding and want to change your choice.
+</Tip>
+
+If browser authorization fails, Autter keeps the machine in local-only mode. Your local attribution continues working. Retry later with `autter onboard --connect` or use the PAT fallback.
+
+## PAT fallback
+
+Use a personal access token only if `autter onboard` cannot complete the browser connection.
+
+<Steps>
+  <Step title="Open the dashboard">
+    Go to [app.autter.dev](https://app.autter.dev) and sign in.
+  </Step>
+  <Step title="Create a personal access token">
+    Open the organization you want to connect. Go to **Org Settings → Access Tokens**, create a token, and copy it.
+  </Step>
+  <Step title="Complete CLI sign-in">
+    Pass the token to the CLI:
+
+    ```bash
+    autter login --token autter_pat_xxxxxxxx
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  Treat the PAT like a password. Do not commit it or paste it into tickets, chat, or shared logs.
+</Warning>
+
+<Frame caption="Replace this placeholder with an approved connected dashboard screenshot.">
+  <img src="/images/placeholders/platform-dashboard.svg" alt="Placeholder for an Autter platform dashboard with AI authorship metrics" />
+</Frame>
+
+## How connected storage works
+
+An access token belongs to your account. If you belong to several organizations, Autter uses the repository's Git remote to identify its owning organization. If no match exists, it uses your default organization.
+
+Connected mode keeps line-level attribution in local Git notes under `refs/notes/ai`. Prompt transcripts and usage data also sync to your organization's Autter environment.
+
+After a commit, Autter reads any captured agent transcript, normalizes it, and redacts detected secrets before it leaves the machine. The transcript is queued as a content-addressed object. Its `cas:<hash>` reference is added to the matching prompt record so review and blame tools can resolve the conversation behind an attributed change.
+
+Transcript capture is best-effort. A missing, empty, or unreadable transcript does not block the commit or invalidate its authorship note. The background service retries queued uploads.
+
+Usage metrics route to the organization database associated with the signed identity and repository remote.
+
+## Manage access
+
+Open **Org Settings → Access Tokens** in the dashboard to:
+
+- Review active tokens
+- Revoke a token
+- Review sign-in and data-push activity
+
+To remove credentials from the current machine:
+
+```bash
+autter logout
+```
+
+To return to local-only mode:
+
+```bash
+autter onboard --local --force
+```
+
+<Card title="Review data and opt-out controls" icon="shield" href="/cli/data-and-privacy">
+  See exactly what remains local, enters Git, or uploads in connected mode.
+</Card>

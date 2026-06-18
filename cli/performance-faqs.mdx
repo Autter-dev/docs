@@ -1,0 +1,66 @@
+---
+title: "Performance FAQs"
+description: "See how Autter affects commit time, history commands, and large repositories."
+icon: "gauge"
+---
+
+Autter keeps the normal Git workflow in place. Most of the work happens in local checkpointing and Git-note updates, not in a separate wrapper around Git.
+
+## Does Autter slow down git?
+
+For day-to-day use, the CLI should feel close to normal Git. The heaviest work happens when Autter needs to record checkpoint data, merge Git notes, or inspect a large commit range.
+
+If something feels slow, check the specific command first:
+
+- `autter status` inspects the current working tree
+- `autter stats` walks commit history for the range you give it
+- `autter blame` reads attribution for one file
+- `autter debug` checks the installation and integrations
+
+## What runs locally
+
+Local checkpointing and Git-note writes happen on the machine that is doing the edit or commit.
+
+That means:
+
+- your coding agent can checkpoint changes without waiting on the platform
+- commit-time attribution stays with the repository
+- background uploads only matter in connected mode
+
+<Note>
+  Connected mode can add background work after a commit, but it should not change how you prompt, stage, or commit.
+</Note>
+
+## What gets slower on large repos
+
+The most common slowdown is history inspection, not the commit itself.
+
+Commands that may take longer on large repositories or wide ranges:
+
+- `autter stats main..HEAD`
+- `autter blame <file>`
+- `autter show <commit-or-range>`
+
+Use narrower ranges and specific files when you can. That gives you the same answer with less history to scan.
+
+## How to keep performance predictable
+
+1. Keep the CLI installed on a local disk.
+2. Let the background service stay running.
+3. Re-run `autter install-hooks` after adding a new coding agent.
+4. Use the narrowest command that answers your question.
+
+## When to investigate further
+
+If Autter feels unusually slow, run:
+
+```bash
+autter debug
+autter bg status
+```
+
+Then compare the result against the repository size, the command you ran, and whether the machine is in local-only or connected mode.
+
+<Card title="CLI command reference" icon="rectangle-terminal" href="/cli/command-reference">
+  See the exact flags for the commands this page mentions.
+</Card>

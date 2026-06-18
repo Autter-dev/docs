@@ -1,0 +1,62 @@
+---
+title: "AI blame"
+description: "Use Autter as an AI-aware replacement for git blame."
+icon: "code-branch"
+---
+
+`autter blame` shows the commit author and the coding agent responsible for each attributed line.
+
+## Inspect a file
+
+```bash
+autter blame src/services/review.ts
+```
+
+The output follows `git blame` conventions and adds AI authorship where available. Standard `git blame` flags remain available.
+
+<Frame caption="Replace this placeholder with final terminal or editor attribution output.">
+  <img src="/images/placeholders/ai-blame.svg" alt="Placeholder for Autter AI blame showing human and Codex-authored lines" />
+</Frame>
+
+## Common examples
+
+```bash
+# Blame a file at the current revision
+autter blame src/services/review.ts
+
+# Limit output to a line range
+autter blame -L 40,80 src/services/review.ts
+
+# Inspect a previous revision
+autter blame HEAD~1 -- src/services/review.ts
+
+# Produce machine-readable output
+autter blame src/services/review.ts --json
+```
+
+## Use blame during review
+
+AI blame helps you answer:
+
+- Which agent session introduced this line?
+- Did a human edit the generated code before commit?
+- Which model produced the surrounding implementation?
+- Is the same session responsible for related lines in other files?
+
+Use prompt access according to your organization's permissions. Prompt content may be local-only, connected but restricted, or unavailable.
+
+## Editor support
+
+The Autter VS Code extension can display color-coded AI attribution in the gutter for VS Code and compatible editors such as Cursor, Windsurf, and Antigravity.
+
+<Card title="Install the VS Code extension" icon="arrow-up-right-from-square" href="https://marketplace.visualstudio.com/items?itemName=autter.autter-vscode">
+  View AI attribution beside the code you are reviewing.
+</Card>
+
+## JSON for tools
+
+Use `--json` when building an editor, review tool, or internal analysis pipeline. Treat prompt and identity fields as sensitive data.
+
+<Card title="Data and privacy" icon="shield" href="/cli/data-and-privacy">
+  Understand where attribution identities and prompt records are stored.
+</Card>

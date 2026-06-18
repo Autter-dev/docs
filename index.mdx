@@ -1,56 +1,79 @@
 ---
-title: "Autter Documentation"
-description: "AI code review that runs your code, tests your changes, and catches what you missed — before anyone hits merge."
+title: "Autter documentation"
+description: "Set up AI code review with the Autter platform or track AI authorship with the open source Autter CLI."
 ---
 
-Autter is a merge gate that automatically reviews every pull request with full awareness of your codebase's history, conventions, and architecture. It catches bugs, security issues, and convention violations in seconds — so your team ships higher-quality code, faster.
+Autter helps engineering teams review pull requests and understand AI-authored code.
+
+Choose the product that matches what you want to accomplish:
 
 <CardGroup cols={2}>
-  <Card title="Quick Start" icon="rocket" href="/quickstart">
-    Connect Autter to your first repository in under 5 minutes.
+  <Card title="Autter platform" icon="shield-check" href="/features/platform-overview">
+    Review pull requests, apply team rules, run pre-merge checks, and inspect engineering analytics.
   </Card>
-  <Card title="Code Review" icon="magnifying-glass-code" href="/features/code-review">
-    AI reviews that learn from your team's patterns and standards.
-  </Card>
-  <Card title="Pipeline Automation" icon="shield-check" href="/features/pipeline">
-    Pre-merge checks, test generation, and 40+ linters built in.
-  </Card>
-  <Card title="Integrations" icon="plug" href="/features/integrations">
-    GitHub, GitLab, Jira, Linear, Slack, VS Code, and more.
+  <Card title="Autter CLI" icon="terminal" href="/cli/overview">
+    Record line-level AI authorship in Git and inspect the agent, model, and prompt behind a change.
   </Card>
 </CardGroup>
 
-## How Autter works
+## Start with the Autter platform
+
+Connect GitHub or GitLab, select a repository, and open a pull request. Autter reviews the change in your existing pull request workflow.
+
+<Frame caption="Placeholder: replace with an approved Autter platform overview screenshot.">
+  <img src="/images/placeholders/platform-overview.svg" alt="Placeholder showing the Autter platform with repositories, reviews, analytics, and settings" />
+</Frame>
 
 <Steps>
-  <Step title="Install the GitHub or GitLab App">
-    Connect Autter to your repositories in one click — no CLI setup or configuration required to get started.
+  <Step title="Connect your source control provider">
+    Sign in to the [Autter platform](https://app.autter.dev), then connect GitHub or GitLab.
   </Step>
-  <Step title="Autter reviews every pull request">
-    Within seconds of a PR being opened, Autter analyses the diff against your codebase's full history and flags bugs, security issues, and convention violations.
+  <Step title="Choose a repository">
+    Grant Autter access to the repository you want to review.
   </Step>
-  <Step title="Merge with confidence">
-    Critical issues block the merge automatically. Lower-severity findings appear as inline comments for your team to review. Clean PRs merge without friction.
+  <Step title="Open a pull request">
+    Autter analyzes the diff, repository context, and configured rules before posting feedback.
+  </Step>
+  <Step title="Tune the review">
+    Add team rules and adjust review behavior after you see the first results.
   </Step>
 </Steps>
 
-<Note>
-  Autter is free for public repositories. No credit card required for your first 100 PR reviews on private repositories.
-</Note>
+<Card title="Get your first review" icon="rocket" href="/quickstart">
+  Follow the platform quickstart from sign-in to your first reviewed pull request.
+</Card>
 
-## Explore by feature
+## Start with the Autter CLI
+
+Use the CLI when you need explicit AI authorship and line-level attribution in Git history. It works in local-only mode without an account. Connected mode can send attribution and prompt history to your Autter organization.
+
+```bash
+curl -sSL https://autter.dev/install.sh | bash
+autter status
+```
 
 <CardGroup cols={2}>
+  <Card title="Install the CLI" icon="download" href="/cli/install">
+    Install `autter`, choose an operating mode, and verify attribution.
+  </Card>
+  <Card title="Review data and privacy" icon="shield" href="/cli/data-and-privacy">
+    See what remains local, what enters Git, and what uploads in connected mode.
+  </Card>
+</CardGroup>
+
+## Explore the platform
+
+<CardGroup cols={2}>
+  <Card title="Code review" icon="magnifying-glass-code" href="/features/code-review">
+    Understand codebase-aware findings, summaries, rules, and merge checks.
+  </Card>
+  <Card title="Pipeline automation" icon="diagram-project" href="/features/pipeline">
+    Add custom checks, test generation, docstring generation, linters, and scanners.
+  </Card>
   <Card title="Analytics" icon="chart-bar" href="/features/analytics">
-    Track cycle time, review quality, and team velocity in real-time dashboards.
+    Track cycle time, review activity, and engineering trends.
   </Card>
-  <Card title="AI Chat" icon="message-bot" href="/features/ai-chat">
-    Ask questions about your codebase and get codebase-aware suggestions inline.
-  </Card>
-  <Card title="Configuration" icon="sliders" href="/configuration/overview">
-    Customize rules, severity levels, and pipeline steps for your team.
-  </Card>
-  <Card title="Changelog" icon="clock-rotate-left" href="/changelog/overview">
-    See what's new in Autter — latest features and fixes.
+  <Card title="Integrations" icon="plug" href="/features/integrations">
+    Connect Autter to source control, issue trackers, notifications, and editors.
   </Card>
 </CardGroup>

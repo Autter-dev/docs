@@ -1,0 +1,88 @@
+---
+title: "Add your agent"
+description: "Integrate a coding agent with Autter's checkpoint and authorship flow."
+icon: "plug"
+---
+
+If you are building a coding agent, Autter gives you a standard way to record AI authorship without inventing a separate tracking system.
+
+The integration goal is simple:
+
+1. Capture an edit checkpoint before the agent changes files.
+2. Capture the agent's edit after it writes files.
+3. Feed that data to `autter checkpoint` with a stable preset name.
+4. Let Autter write the authorship log on commit.
+
+## What an integration needs
+
+| Requirement | Why it matters |
+| --- | --- |
+| A stable preset name | Autter uses it to route the hook input to the right parser. |
+| A pre-edit event | This separates human edits from the agent's upcoming change. |
+| A post-edit event | This records the files, lines, and session data for the checkpoint. |
+| Structured hook input | Autter expects machine-readable payloads, not free-form terminal text. |
+| A way to run on supported shells | Your users will run Autter on macOS, Linux, Windows, and WSL. |
+
+<Tip>
+  Build the hook payload in code. Do not assume utilities like `jq` or `node` are installed on the user's machine.
+</Tip>
+
+## Recommended shape
+
+If your agent supports before-edit and after-edit hooks, wire Autter into those hooks first.
+
+<Steps>
+  <Step title="Choose a preset name">
+    Pick a name that matches the agent or workflow, such as `cursor`, `claude`, `codex`, `github-copilot`, or `windsurf`.
+  </Step>
+  <Step title="Emit the hook input">
+    Serialize the edit event, workspace root, file list, and session identifiers in the format your integration already owns.
+  </Step>
+  <Step title="Call Autter">
+    Run `autter checkpoint <preset> --hook-input stdin` from the hook or integration layer.
+  </Step>
+  <Step title="Test the full flow">
+    Confirm that `autter status` shows the expected authorship and that `autter stats` counts the change correctly after commit.
+  </Step>
+</Steps>
+
+## How to test
+
+Test the same integration in the shells and operating systems you plan to support.
+
+Check these cases:
+
+- A single file edit
+- A multi-file edit
+- A human edit followed by an agent edit
+- A commit that lands on a branch, rebase, or cherry-pick path
+
+Then verify:
+
+```bash
+autter status
+autter stats HEAD
+autter blame <file>
+```
+
+## What to document for users
+
+When you ship support for a new agent, tell users:
+
+- whether they need `autter install-hooks`
+- whether they should restart the editor or agent after install
+- which shell and OS combinations you tested
+- how to remove the integration with `autter uninstall-hooks`
+
+<Warning>
+  Do not require users to hand-edit hook files unless there is no other path. The CLI should own the installation experience whenever possible.
+</Warning>
+
+<CardGroup cols={2}>
+  <Card title="CLI command reference" icon="rectangle-terminal" href="/cli/command-reference">
+    See the checkpoint command and related CLI flags.
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/cli/troubleshooting">
+    Help users recover if attribution does not appear.
+  </Card>
+</CardGroup>

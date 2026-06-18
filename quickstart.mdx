@@ -1,128 +1,95 @@
 ---
-title: "Quick Start"
-description: "Connect your first repository and get an automated AI code review in under five minutes."
+title: "Platform quickstart"
+description: "Connect a repository and receive your first Autter pull request review."
 ---
 
-## Get your first review
+Use this guide to connect the Autter platform and verify that reviews appear in your source control provider.
+
+## Before you begin
+
+You need:
+
+- an Autter account
+- access to a GitHub repository or GitLab project
+- permission to install or authorize the relevant integration
+- a pull request or merge request you can open for verification
+
+<Info>
+  Plans and included review volumes can change. See [current pricing](https://www.autter.dev/pricing) before you roll Autter out across an organization.
+</Info>
+
+## Connect your first repository
 
 <Steps>
-  <Step title="Sign up at autter.dev">
-    Go to [autter.dev](https://autter.dev) and create your account. No credit card required. Public repositories are free with unlimited reviews.
+  <Step title="Sign in to Autter">
+    Open the [Autter platform](https://app.autter.dev) and sign in.
   </Step>
-
-  <Step title="Install the GitHub App or GitLab integration">
-    After signing up, you'll be prompted to install Autter on your Git host.
+  <Step title="Connect GitHub or GitLab">
+    Choose your source control provider and complete its authorization flow.
 
     <Tabs>
       <Tab title="GitHub">
-        Click **Install GitHub App** and authorise Autter on your GitHub account or organisation. GitHub will redirect you back to Autter once the installation is complete.
+        Install the Autter GitHub App on the account or organization that owns the repository.
       </Tab>
       <Tab title="GitLab">
-        Click **Connect GitLab** and follow the OAuth flow to authorise Autter on your GitLab instance or group.
+        Authorize the Autter GitLab integration for the account, group, or project you want to use.
       </Tab>
     </Tabs>
   </Step>
-
-  <Step title="Select repositories to connect">
-    Choose which repositories Autter should review. You can start with one and add more at any time. Autter analyses your merge history on first connect to build its initial model of your codebase's conventions.
-
-    <Tip>
-      Start with your most active repository — the one where AI-generated code and review volume are highest. That's where Autter delivers the most immediate impact.
-    </Tip>
+  <Step title="Grant repository access">
+    Select the repository or project Autter should review. Start with one active repository while you evaluate the feedback.
   </Step>
-
   <Step title="Open a pull request">
-    Open any pull request in a connected repository. Autter reviews it automatically within seconds — no extra steps needed from you or your team.
-
-    You'll see Autter post inline review comments directly in the PR. Each comment includes:
-
-    - **What was detected** — a clear description of the issue
-    - **Why it matters** — the specific risk or convention being violated
-    - **How to fix it** — a concrete suggestion, often with a code snippet
-    - **Confidence level** — how certain Autter is that this is a genuine issue
-
-    For critical issues, Autter sets a blocking status check that prevents merge until the issue is resolved.
+    Open a pull request or merge request in the connected repository. Autter starts the review from the proposed diff and available repository context.
   </Step>
-
-  <Step title="Review and merge with confidence">
-    Address Autter's comments, push your changes, and Autter re-reviews automatically. When all blocking issues are resolved, the status check clears and you can merge.
-
-    Your human reviewers arrive at a PR that's already been filtered for convention violations, N+1 queries, security gaps, and deprecated API usage — so they can focus on architecture and design.
+  <Step title="Confirm the review appears">
+    Look for an Autter review summary, inline findings, or an Autter check in the pull request interface.
   </Step>
 </Steps>
 
-## What a review looks like
+<Frame caption="Placeholder: replace with an approved repository connection screenshot.">
+  <img src="/images/placeholders/connect-repository.svg" alt="Placeholder showing a customer connecting a GitHub or GitLab repository to Autter" />
+</Frame>
 
-Here's the kind of issue Autter catches automatically — an N+1 query pattern that looks clean in isolation but collapses under production cardinality:
+{/* TODO: Add approved screenshots for the current GitHub and GitLab authorization screens. */}
 
-```typescript
-// autter flags this pattern automatically
-async function getTeamMembers(teamIds: string[]) {
-  // N+1 query — will execute one DB call per team ID
-  // autter suggests: use db.teams.findMany({ where: { id: { in: teamIds } } })
-  const members = [];
-  for (const id of teamIds) {
-    const team = await db.teams.findUnique({ where: { id } });
-    members.push(...team.members);
-  }
-  return members;
-}
-```
+## Evaluate the first review
 
-Autter has seen your codebase use `findMany` with `in` clauses in other places. It flags this loop not because loops are bad, but because this specific pattern in your specific codebase is a performance regression.
+Check that the review gives the author enough context to act:
 
-For new developers, Autter also provides inline convention guidance with direct references to where your codebase does it right:
+- the affected code or behavior
+- why the finding matters
+- a proposed fix when Autter can provide one
+- the severity or merge impact
 
-```
-// autter feedback on PR #47
-//
-// 1. CONVENTION — Import ordering
-//    In this codebase, imports follow the pattern:
-//    external packages → internal packages → relative imports
-//    Each group separated by a blank line.
-//    [auto-fixable]
-//
-// 2. PATTERN — Error handling
-//    This codebase wraps all service errors in AppError.
-//    Raw throws are reserved for truly unexpected conditions.
-//    See: src/services/user-service.ts:42 for an example.
-//
-// 3. CONVENTION — Test file naming
-//    Tests in this module use *.test.ts, not *.spec.ts.
-//    [auto-fixable]
-```
+If the feedback is too broad or too noisy, adjust the review behavior and add team rules. See [Configuration](/configuration/overview).
 
-## Run Autter locally
+## Add a team rule
 
-You can also run Autter from the command line before pushing — useful for catching issues before they reach a PR.
+Autter supports team standards written in natural language. Define a small, testable rule such as:
+
+> Payment handlers must verify the authenticated account owns the payment method before creating a charge.
+
+Apply the rule to the relevant repositories, then test it with a pull request that contains a representative change. See [Custom rules](/guides/custom-rules) for a safe rollout process.
+
+## Add AI authorship context
+
+Install the Autter CLI when you also want line-level attribution for code written by coding agents.
 
 ```bash
-# Analyse a specific open pull request
-npx autter analyse --pr 142
-
-# Preview what Autter would flag in your current branch
-npx autter check --diff HEAD~1..HEAD
+curl -sSL https://autter.dev/install.sh | bash
+autter status
 ```
 
-## Configure enforcement rules
+The CLI can remain local-only or connect to your Autter organization. See [Install the CLI](/cli/install) and [Data and privacy](/cli/data-and-privacy).
 
-Autter works out of the box with no configuration. When you're ready to customise enforcement levels, add an `autter.config.yml` to the root of your repository:
+## Troubleshoot the connection
 
-```yaml
-# autter.config.yml — customise enforcement levels
-rules:
-  security:
-    severity: block          # prevent merge
-  performance:
-    severity: warn           # comment but allow merge
-  conventions:
-    severity: info           # informational only
-  deprecated_apis:
-    severity: block
-    exceptions:
-      - path: "legacy/**"    # known legacy code, don't block
-```
+If no review appears:
 
-<Note>
-  Configuration is optional. Autter's default rule set covers the most common AI-generated code issues out of the box — connect and see what it catches on your first PR.
-</Note>
+1. Confirm the repository is included in the integration's access scope.
+2. Confirm the pull request targets the repository's normal review branch.
+3. Check the Autter platform for a connection or review status.
+4. Reopen or update the pull request after fixing access.
+
+{/* TODO: Add the approved platform support path for failed hosted reviews. */}

@@ -1,0 +1,92 @@
+---
+title: "CLI troubleshooting"
+description: "Diagnose missing attribution, background-service issues, login failures, and unexpected uploads."
+icon: "wrench"
+---
+
+Start with Autter's built-in diagnostics:
+
+```bash
+autter debug
+autter bg status
+autter whoami
+autter config
+```
+
+## No attribution appears
+
+<Steps>
+  <Step title="Restart the coding agent">
+    Agent hooks are loaded when a session starts. Restart the agent or editor after installing Autter.
+  </Step>
+  <Step title="Refresh integrations">
+    Run:
+
+    ```bash
+    autter install-hooks
+    ```
+  </Step>
+  <Step title="Make a tracked edit">
+    Ask the agent to modify a file inside the repository, then run `autter status` before committing.
+  </Step>
+  <Step title="Check repository filters">
+    Run `autter config allow_repositories` and `autter config exclude_repositories`. Exclusion takes precedence.
+  </Step>
+</Steps>
+
+## The background service is unavailable
+
+```bash
+autter bg status
+autter bg restart
+autter bg tail -n 100
+```
+
+Use `autter bg tail -f` to follow logs while reproducing the issue.
+
+## Onboarding does not connect
+
+Retry the primary flow first:
+
+```bash
+autter onboard --force
+```
+
+If onboarding still cannot complete:
+
+1. Sign in at [app.autter.dev](https://app.autter.dev).
+2. Open the intended organization and create a PAT under **Org Settings → Access Tokens**.
+3. Run `autter login --token <token>`.
+4. Confirm the connection with `autter whoami`.
+
+Do not paste the token into tickets, chat, or command output you share.
+
+## Data uploads when you expected local-only mode
+
+Check the active backend and prompt mode:
+
+```bash
+autter config notes_backend.kind
+autter config prompt_storage
+autter whoami
+```
+
+Return to local-only mode and disable open source error telemetry:
+
+```bash
+autter logout
+autter onboard --local --force
+autter config set telemetry_oss off
+```
+
+## Attribution is missing after a rename
+
+`git mv` attribution preservation is not supported yet. Autter can treat lines in the renamed file as new or human-authored.
+
+## Get support diagnostics
+
+Run `autter debug` and review the output before sharing it. Remove repository paths, identities, tokens, and other sensitive values.
+
+<Card title="Open a GitHub issue" icon="github" href="https://github.com/Autter-dev/autter-cli/issues">
+  Report reproducible open source CLI problems.
+</Card>

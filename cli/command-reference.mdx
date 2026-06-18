@@ -1,0 +1,73 @@
+---
+title: "CLI command reference"
+description: "Reference for the main Autter CLI commands and options."
+icon: "rectangle-terminal"
+---
+
+Run `autter help` for the command list installed on your machine.
+
+## Daily commands
+
+| Command | Purpose |
+| --- | --- |
+| `autter status [--json]` | Show authorship for uncommitted changes |
+| `autter log [git log options]` | Add AI authorship statistics to commit history |
+| `autter blame <file> [git blame options]` | Show line-level AI attribution |
+| `autter diff <commit-or-range>` | Show a diff with AI authorship annotations |
+| `autter stats [commit-or-range] [--json]` | Summarize AI and human authorship |
+| `autter show <revision-or-range>` | Display formatted authorship logs |
+| `autter show-prompt <id>` | Read a prompt record available to the current storage backend |
+
+## Setup and account commands
+
+| Command | Purpose |
+| --- | --- |
+| `autter onboard` | Primary setup and platform connection flow |
+| `autter onboard --force` | Rerun onboarding and choose a different mode |
+| `autter onboard --connect --force` | Rerun onboarding directly in connected mode |
+| `autter onboard --local --force` | Rerun onboarding in local-only mode |
+| `autter login` | Open the dashboard login flow |
+| `autter login --token <token>` | PAT fallback when onboarding cannot connect |
+| `autter whoami` | Show authentication state and identity |
+| `autter logout` | Clear stored credentials |
+| `autter install-hooks` | Install or refresh coding-agent integrations |
+| `autter uninstall-hooks` | Remove Autter integrations from detected tools |
+
+## Configuration and maintenance
+
+| Command | Purpose |
+| --- | --- |
+| `autter config` | Show effective configuration |
+| `autter config <key>` | Read one configuration value |
+| `autter config set <key> <value>` | Set a value |
+| `autter config --add <key> <value>` | Add an array item or object entry |
+| `autter config unset <key>` | Remove a value and restore its default |
+| `autter debug` | Print support diagnostics |
+| `autter bg status` | Check the background service |
+| `autter bg restart` | Restart the background service |
+| `autter bg tail -f` | Follow background-service logs |
+| `autter upgrade` | Install the latest release |
+| `autter version` | Print the installed version |
+
+## Attribution transport
+
+| Command | Purpose |
+| --- | --- |
+| `autter fetch-notes [remote]` | Fetch authorship notes from a Git remote |
+| `autter notes migrate` | Upload existing Git notes to a configured HTTP notes backend |
+| `autter squash-authorship ...` | Generate attribution for squashed commits |
+| `autter ci ...` | Run SCM-specific CI helpers |
+
+## Agent integration command
+
+Supported agents call `autter checkpoint` through their installed integrations. You usually do not run it by hand.
+
+```bash
+autter checkpoint <preset> --hook-input stdin
+```
+
+Presets include Codex, Claude Code, Cursor, GitHub Copilot, Gemini, Amp, Windsurf, OpenCode, Pi, Continue, and other supported agents.
+
+<Warning>
+  Treat checkpoint arguments and hook input as an integration interface. Prefer `autter install-hooks` over hand-written agent hooks.
+</Warning>

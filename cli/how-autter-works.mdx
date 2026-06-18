@@ -1,0 +1,79 @@
+---
+title: "How the CLI works"
+description: "Understand checkpoints, Git notes, history rewrites, and optional platform sync."
+icon: "diagram-project"
+---
+
+Autter builds attribution from explicit coding-agent events. It does not scan finished code and guess who wrote it.
+
+## Attribution lifecycle
+
+<Steps>
+  <Step title="A coding agent starts an edit">
+    The agent integration checkpoints the working tree before it changes files. This separates existing human work from the agent's upcoming changes.
+  </Step>
+  <Step title="The agent records its changes">
+    After the edit, the integration records the changed lines with the agent, model, and session context. Temporary checkpoint data lives under `.git/ai`.
+  </Step>
+  <Step title="You keep working normally">
+    Human edits and later agent edits create more checkpoints. `autter status` summarizes the current working-tree attribution.
+  </Step>
+  <Step title="A commit creates an authorship log">
+    When you commit, Autter condenses checkpoints into a line-level authorship log and associates it with the commit through a Git note.
+  </Step>
+  <Step title="Git operations preserve attribution">
+    Autter updates attribution after supported history operations, including rebase, cherry-pick, stash, merge, squash merge, reset, and amend.
+  </Step>
+  <Step title="Connected mode adds organization context">
+    When enabled, local Git notes remain available. Autter additionally redacts and queues captured transcripts in content-addressed storage, then syncs transcript and usage data to the owning organization's environment.
+  </Step>
+</Steps>
+
+## What an authorship note contains
+
+An authorship note maps line ranges to prompt or session identifiers. Its metadata can include:
+
+- Agent and model
+- Human Git identity
+- Generated, deleted, accepted, and overridden line counts
+- Commit associations
+- A reference to prompt content stored outside Git
+
+View the raw notes for a commit with Git:
+
+```bash
+git log --show-notes=ai -1
+```
+
+Use Autter's formatted views for day-to-day inspection:
+
+```bash
+autter show HEAD
+autter diff HEAD
+autter blame src/service.ts
+```
+
+## Why prompts stay outside Git
+
+Git notes should remain compact and safe to share with repository collaborators. Autter stores prompt records separately and links them by identifier. This design supports access control and reduces the chance of committing secrets or personal data into repository history.
+
+Connected deployments apply best-effort secret redaction on the developer machine before a transcript enters the upload queue. You should still avoid entering secrets in coding-agent prompts.
+
+Each uploaded transcript is keyed by a hash of its normalized content. The authorship note stores a `cas:<hash>` reference instead of embedding the full conversation in Git.
+
+## Supported history operations
+
+| Operation | Attribution behavior |
+| --- | --- |
+| `git rebase` | Preserved |
+| `git cherry-pick` | Preserved |
+| `git stash` and `git stash pop` | Preserved |
+| `git merge --squash` | Preserved locally; server-side SCM squash requires CI or Teams support |
+| `git commit --amend` | Preserved |
+| `git reset` | Preserved for commits that remain in history |
+| `git mv` | File rename attribution is not yet preserved |
+| `git filter-repo` or `git filter-branch` | Bulk rewrite attribution is not preserved |
+
+<Note>
+  Autter's rewrite handling is eventually consistent. A note can appear shortly after the Git operation completes.
+</Note>

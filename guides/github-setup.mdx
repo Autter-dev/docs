@@ -1,89 +1,62 @@
 ---
-title: "GitHub Setup"
-description: "Connect Autter to GitHub and start getting automatic pull request reviews in minutes."
+title: "GitHub setup"
+description: "Install the Autter GitHub App, select repositories, and verify a pull request review."
 ---
 
-Autter integrates directly with GitHub as a native GitHub App. Once connected, it automatically reviews every pull request — no extra setup or steps needed from your team.
+Connect GitHub to receive Autter feedback in the pull request workflow.
 
-<Note>
-  Autter integrates directly with GitHub. Once connected, it automatically reviews every pull request — no extra setup or steps needed from your team.
-</Note>
+## Before you begin
 
-## Connect Autter to GitHub
+You need an Autter account and permission to install a GitHub App on the target account or organization.
+
+{/* TODO: Confirm the exact GitHub permissions and organization role required for installation. */}
+
+## Connect GitHub
 
 <Steps>
-  <Step title="Sign up or log in">
-    Visit [autter.dev](https://autter.dev) and create an account or log in with your existing credentials.
+  <Step title="Sign in to Autter">
+    Open the [Autter platform](https://app.autter.dev) and sign in.
   </Step>
-  <Step title="Install the Autter GitHub App">
-    Click **Connect GitHub** from your dashboard. This opens the GitHub App installation page, where you authorize Autter to access your repositories.
+  <Step title="Start the GitHub connection">
+    Choose the GitHub connection in Autter. GitHub opens the App installation flow.
   </Step>
-  <Step title="Select your repositories">
-    Choose which repositories Autter should access. You can grant access to individual repositories or all repositories in your organization. You can change this selection at any time from your GitHub App settings.
+  <Step title="Choose an account or organization">
+    Select the owner of the repositories you want Autter to review.
   </Step>
-  <Step title="Open a pull request">
-    Open any pull request in a connected repository. Autter reviews it automatically within seconds — posting inline comments and a status check directly on the PR. No additional steps required from you or your team.
+  <Step title="Select repository access">
+    Grant access to the repositories you want to evaluate. Start with a limited repository set when possible.
   </Step>
-  <Step title="Configure custom rules (optional)">
-    Add an `autter.config.yml` file at your repository root to define custom rules, severity levels, and enforcement behavior. See [Custom Rules](/guides/custom-rules) for full configuration details.
+  <Step title="Open or update a pull request">
+    Use a connected repository and look for Autter feedback in the pull request.
   </Step>
 </Steps>
 
-## Verifying your setup
+<Frame caption="Placeholder: replace with approved GitHub App installation and repository selection screenshots.">
+  <img src="/images/placeholders/connect-repository.svg" alt="Placeholder showing the Autter GitHub App installation and repository access flow" />
+</Frame>
 
-After installing the App and opening a pull request, confirm Autter is working:
+## Verify the connection
 
-1. **Review comment** — Autter posts an inline review comment on the PR summarizing what it found.
-2. **Status check** — A status check named `autter` appears on the PR. It passes when no blocking issues are detected, or fails if critical issues require resolution before merge.
+Confirm that:
 
-If neither of these appears within 30 seconds of opening a PR, check that the repository was included in your App installation scope. You can verify and update your repository access at any time from **Settings → GitHub App → Repository access** in the Autter dashboard.
+- the repository appears in the Autter platform
+- the GitHub App has access to that repository
+- a new or updated pull request starts an Autter review
+- the review output appears in the pull request workflow
 
-## What Autter reviews
+If no review appears, verify the App's repository access in GitHub and reconnect the repository in Autter if necessary.
 
-Autter's native GitHub integration provides:
+{/* TODO: Add the approved hosted-review status and troubleshooting locations from the production UI. */}
 
-- **PR comments** — inline feedback on specific lines, with a description of the issue, why it matters, and how to fix it
-- **Status checks** — a pass/fail gate on every PR that blocks merge when critical issues are found
-- **Automatic review assignments** — Autter can assign human reviewers based on the files changed and your team's ownership configuration
-- **PR summaries** — a TL;DR of changes, a walkthrough, and flagged areas that need human attention
+## Add AI authorship
 
-## Language support
-
-Autter is language-agnostic. It supports all popular programming languages, including JavaScript, TypeScript, Python, Go, Ruby, Java, C#, Rust, Kotlin, and Swift.
-
-## Pricing
-
-Public repositories are free with unlimited reviews. Private repositories include your first 100 PR reviews at no cost — no credit card required.
-
-## Local CLI verification
-
-You can verify Autter's analysis locally before pushing, or inspect a specific PR without opening GitHub:
-
-```bash
-# Verify a specific PR locally
-npx autter analyse --pr 142
-
-# Preview what Autter would flag in your current branch
-npx autter check --diff HEAD~1..HEAD
-```
-
-<Tip>
-  Run `npx autter check --diff HEAD~1..HEAD` before pushing to catch issues before Autter reviews the PR on GitHub. This is especially useful during initial setup to confirm rules are working as expected.
-</Tip>
-
-## Next steps
+The source control integration and the Autter CLI are separate. Install the [Autter CLI](/cli/install) if you also want line-level AI authorship and coding-agent context.
 
 <CardGroup cols={2}>
-  <Card title="Custom Rules" icon="shield-check" href="/guides/custom-rules">
-    Define your team's coding standards in plain English and enforce them on every PR.
-  </Card>
-  <Card title="Team Onboarding" icon="users" href="/guides/team-onboarding">
-    Use Autter to accelerate how new developers learn your codebase.
-  </Card>
-  <Card title="Configuration" icon="sliders" href="/configuration/overview">
-    Explore all configuration options for rules, severity, and pipeline steps.
+  <Card title="Create a custom rule" icon="shield-check" href="/guides/custom-rules">
+    Add a team standard after you evaluate the default review.
   </Card>
   <Card title="Integrations" icon="plug" href="/features/integrations">
-    Connect Autter to Slack, Jira, Linear, VS Code, and more.
+    Add issue, notification, and editor context.
   </Card>
 </CardGroup>

@@ -1,0 +1,49 @@
+---
+title: "Cursor"
+description: "Set up Autter for Cursor and keep AI-authored code attributed automatically."
+icon: "mouse-pointer-2"
+---
+
+Autter works with Cursor by recording checkpoints around the edits Cursor makes in your repository.
+
+## What you get
+
+- Automatic authorship tracking for Cursor-authored lines
+- `autter status` for the current working tree
+- `autter blame` for line-level attribution in committed files
+- `autter stats` for commit and range summaries
+
+## Set up Cursor
+
+<Steps>
+  <Step title="Install Autter">
+    Install the CLI on the developer machine first.
+  </Step>
+  <Step title="Install or refresh hooks">
+    Run:
+
+    ```bash
+    autter install-hooks
+    ```
+  </Step>
+  <Step title="Restart Cursor">
+    Restart the editor so it loads the new integration files.
+  </Step>
+  <Step title="Make an edit">
+    Ask Cursor to change a tracked file, then run `autter status` before you commit.
+  </Step>
+</Steps>
+
+## Verify the result
+
+```bash
+autter debug
+autter status
+autter stats HEAD
+```
+
+If Cursor does not appear in the attribution, check whether the repository was opened from the right root and whether the integration files were refreshed after install.
+
+<Card title="Add your agent" icon="plug" href="/guides/add-your-agent">
+  Learn how to integrate a new coding agent with Autter.
+</Card>

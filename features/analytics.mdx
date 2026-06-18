@@ -1,73 +1,53 @@
 ---
 title: "Analytics"
-description: "Track cycle time, review quality, and team velocity with in-depth historical metrics that actually matter."
+description: "Track review cycle time, activity, repository trends, and team velocity in the Autter platform."
 ---
 
-Autter tracks the metrics that drive engineering excellence — not vanity numbers. Measure cycle time, review quality, and team velocity from a single dashboard, with historical data that lets you spot trends and fix bottlenecks before they compound.
+Autter analytics helps you understand how pull requests move through review. Use trends to find bottlenecks and evaluate process changes.
 
-## Key metrics dashboard
+<Frame caption="Placeholder: replace with an approved analytics dashboard screenshot.">
+  <img src="/images/placeholders/analytics-dashboard.svg" alt="Placeholder showing Autter analytics for merged pull requests, review time, changed lines, and active reviewers" />
+</Frame>
 
-Your dashboard shows real-time and historical data across four core dimensions:
+## Metrics highlighted by Autter
 
-| Metric | What it measures |
-|---|---|
-| **PRs merged / engineer** | Individual and team throughput over time |
-| **Median review time** | End-to-end time from PR open to merge |
-| **Lines modified / PR** | Change size distribution across your team |
-| **Active reviewers** | Reviewer participation and workload spread |
+The public analytics product includes metrics such as:
 
-These metrics update in real time. Each one shows a trend indicator so you can see whether your workflow is improving or degrading week over week.
+- pull requests merged per engineer
+- median review time
+- lines modified per pull request
+- active reviewers
+- cycle time from first commit to merge
+- review workload and response time
+- team and repository trends over time
 
-## Why these metrics matter
+Available views and exports can vary by plan. See [current pricing](https://www.autter.dev/pricing).
 
-<CardGroup cols={3}>
-  <Card title="Beyond vanity" icon="bar-chart-3" href="/features/analytics">
-    Visualize and track data-driven metrics that are proven to enhance developer productivity — not commit counts or lines of code.
-  </Card>
-  <Card title="Transparency" icon="eye" href="/features/analytics">
-    Autter empowers every member of your team with data, regardless of their role. Engineers, leads, and managers see the same picture.
-  </Card>
-  <Card title="A historical record" icon="history" href="/features/analytics">
-    Measure developer trends over time, so you can identify and fix bottlenecks in your engineering workflow before they become chronic.
-  </Card>
-</CardGroup>
+## Questions analytics can answer
 
-## Real-world impact
+- Is median review time improving?
+- Where does cycle time accumulate?
+- Are pull requests growing larger?
+- Is review work distributed unevenly?
+- Did a new review rule reduce recurring issues?
+- Which repositories need a different rollout or rule set?
 
-Teams that adopt Autter consistently report the same patterns across metrics, regardless of team size or codebase complexity:
+## Use metrics responsibly
 
-| Metric | Before Autter | After Autter | Change |
-|---|---|---|---|
-| Production incidents from AI code | ~4.2 / month | ~1.1 / month | **-73%** |
-| Average review cycle time | 2.4 days | 1.1 days | **-54%** |
-| PRs merged per developer / week | 3.8 | 8.7 | **+2.3x** |
-| Time spent on convention enforcement | ~6 hrs / week | ~0.5 hrs / week | **-92%** |
+Review metrics describe a system, not a person's value. Interpret them with repository complexity, incident work, mentoring, and team responsibilities.
 
-The biggest shift isn't in the numbers — it's in the team dynamic. Senior engineers stop spending review time policing conventions and start spending it on architecture and design. Junior engineers get faster, more consistent feedback.
+Good uses include:
 
-<Note>
-  These numbers vary by team size and codebase complexity. Connect your repository and Autter will show you your own baseline from day one.
-</Note>
+- finding long waits between review stages
+- comparing a repository before and after a workflow change
+- spotting an overloaded reviewer group
+- tracking whether smaller pull requests merge faster
+- identifying recurring issue categories that need a rule or engineering investment
 
-## Metrics that move the needle
+Avoid ranking engineers from one metric. A low pull request count can reflect complex work, review load, or responsibilities outside code delivery.
 
-<CardGroup cols={2}>
-  <Card title="Cycle time tracking" icon="clock" href="/features/analytics">
-    Measure end-to-end from first commit to merge. Identify where time is being spent and optimize your workflow.
-  </Card>
-  <Card title="Review quality scores" icon="bar-chart-3" href="/features/analytics">
-    Track the depth and quality of code reviews across your team with actionable metrics.
-  </Card>
-  <Card title="Team velocity" icon="trending-up" href="/features/analytics">
-    Monitor PRs merged, lines changed, and review turnaround — broken down by team and individual.
-  </Card>
-  <Card title="Reviewer insights" icon="users" href="/features/analytics">
-    See who's reviewing what, response times, and workload distribution across your team.
-  </Card>
-  <Card title="Real-time dashboards" icon="eye" href="/features/analytics">
-    Live dashboards that update in real time so you always know the current state of your engineering org.
-  </Card>
-  <Card title="Trend analysis" icon="history" href="/features/analytics">
-    Spot patterns over weeks and months. Compare sprints, identify regressions, and celebrate improvements.
-  </Card>
-</CardGroup>
+## Add AI authorship analytics
+
+The Autter CLI can contribute explicit AI authorship and coding agent context in connected mode. This lets teams evaluate AI usage without inferring authorship from code style.
+
+See [Connect to the Autter platform](/cli/connect-platform) and [Data and privacy](/cli/data-and-privacy).

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">Autter platform dashboard screenshot placeholder</title>
+  <desc id="desc">Placeholder for a connected Autter dashboard with AI authorship metrics.</desc>
+  <rect width="1440" height="900" fill="#F1ECE0"/>
+  <rect x="70" y="70" width="1300" height="760" rx="18" fill="#FFFFFF" stroke="#1E2D4A" stroke-width="3"/>
+  <rect x="70" y="70" width="280" height="760" rx="18" fill="#1E2D4A"/>
+  <text x="120" y="155" fill="#2EFFD1" font-family="sans-serif" font-weight="700" font-size="42">autter.</text>
+  <rect x="410" y="145" width="390" height="220" rx="12" fill="#F1ECE0"/>
+  <rect x="840" y="145" width="450" height="220" rx="12" fill="#F1ECE0"/>
+  <rect x="410" y="410" width="880" height="310" rx="12" fill="#F1ECE0"/>
+  <text x="460" y="775" fill="#1E2D4A" opacity="0.65" font-family="monospace" font-size="26">TODO: Replace with connected dashboard screenshot</text>
+</svg>
