@@ -1,0 +1,123 @@
+---
+title: "MCP server"
+description: "Connect a coding agent to Autter over MCP to read reviews, fix findings, and query the codebase."
+---
+
+Autter exposes an [MCP](https://modelcontextprotocol.io) server so a coding agent such as Claude Code, Cursor, or another MCP-capable client can act on Autter data directly, without a person relaying it through the dashboard.
+
+<Info>
+  MCP is a machine interface for coding agents. If you want to browse reviews yourself, use the [Autter platform](https://app.autter.dev). If you want line-level AI authorship in Git, use the [Autter CLI](/cli/overview).
+</Info>
+
+## Why connect an agent
+
+A coding agent that can reach Autter over MCP can:
+
+- read a pull request's review findings, including the file, line, and a ready-to-use fix suggestion
+- reply to a review comment and mark it resolved once it fixes the issue
+- re-run the review after pushing changes
+- check whether a package it is about to add has known vulnerabilities
+- look up blast radius and test coverage before editing a file
+- ask a natural-language question about the codebase
+- start or check a codebase security scan
+- read and add team conventions ("learnings") so future code passes review the first time
+
+This closes the loop between "Autter found a problem" and "the agent fixed it," instead of a person copying findings between the pull request and the agent.
+
+<Card title="Connect your agent" icon="plug" href="/guides/mcp-setup">
+  Create an access token and connect Claude Code, Cursor, or another MCP client.
+</Card>
+
+## How it works
+
+The MCP server is part of the Autter platform. A client connects with an HTTP request, authenticated with an Autter [personal access token](/cli/connect-platform), and calls tools scoped to your organization.
+
+<Steps>
+  <Step title="Create an access token">
+    Create a personal access token in **Org Settings → Access Tokens**. Restrict it to MCP scopes if you only want agent access, not CLI login.
+  </Step>
+  <Step title="Point your MCP client at Autter">
+    Configure your client with the Autter MCP endpoint and the token as a bearer credential. See [Connect your agent](/guides/mcp-setup) for exact client configuration.
+  </Step>
+  <Step title="Call a tool">
+    Every tool operates on the token's organization. Most tools accept a `repo` argument as either the full `owner/repo` name or the short repository name.
+  </Step>
+</Steps>
+
+Every tool call is authenticated by the token, scoped to one organization, and logged to that organization's access token activity so you can see what an agent did and when.
+
+## Available tools
+
+<Tabs>
+  <Tab title="Pull request review">
+    | Tool | What it does |
+    | --- | --- |
+    | `whoami` | Show the authenticated user, organization, and connected repositories |
+    | `list_prs` | List tracked pull requests for a repository with their review status |
+    | `get_pr_review` | Get a pull request's review summary, check status, and findings with file, line, severity, and a suggested fix |
+    | `reply_to_review_comment` | Reply to a review comment, for example to report a fix |
+    | `resolve_review_thread` | Resolve or reopen a review thread |
+    | `trigger_review` | Re-run the review of a pull request's latest revision |
+  </Tab>
+  <Tab title="Codebase intelligence">
+    | Tool | What it does |
+    | --- | --- |
+    | `query_codebase` | Ask a natural-language question about the repository and get a cited answer |
+    | `get_impact_analysis` | Check blast radius, churn, and test coverage for files you are about to change |
+    | `get_symbol_info` | Look up a function, class, or type and its callers |
+    | `get_repo_health` | Get an architecture and risk summary for a repository |
+  </Tab>
+  <Tab title="Security and scans">
+    | Tool | What it does |
+    | --- | --- |
+    | `get_scan_findings` | Read findings from a codebase scan, filterable by severity or check |
+    | `check_dependency` | Check a package for known vulnerabilities and upgrade advice before adding or updating it |
+    | `trigger_scan` | Start a codebase scan |
+    | `get_scan_status` | Check the status of a running scan |
+  </Tab>
+  <Tab title="Team conventions">
+    | Tool | What it does |
+    | --- | --- |
+    | `get_learnings` | Read team conventions Autter has learned for a repository or the organization |
+    | `add_learning` | Add a convention so future reviews apply it |
+  </Tab>
+</Tabs>
+
+<Note>
+  `query_codebase` answers from generated repository documentation. Generate docs for a repository from its **Wiki** tab before an agent relies on this tool for that repository. See [Repository wiki](/features/wiki).
+</Note>
+
+## Access and scopes
+
+A token used with MCP can be unrestricted, meaning it works for both CLI login and every MCP tool, or restricted to specific scopes so an agent can only do what you allow:
+
+| Scope | Grants |
+| --- | --- |
+| `mcp:read` | Every read-only tool: reviews, findings, learnings, codebase intelligence, scan status |
+| `mcp:write` | `reply_to_review_comment`, `resolve_review_thread`, `trigger_review`, `add_learning`, `trigger_scan` |
+| `mcp:llm` | `query_codebase` |
+
+A token restricted to MCP scopes cannot sign in to the Autter CLI. Create an unrestricted token if you need CLI login and MCP access on the same token.
+
+<Warning>
+  Treat an Autter access token like a password. Give an agent only the scopes it needs, and revoke a token in **Org Settings → Access Tokens** if it is exposed.
+</Warning>
+
+## Usage limits
+
+Each token has its own request budget so a runaway agent loop cannot exhaust the connection: 60 read calls, 10 write calls, and 6 `query_codebase` calls per minute. A tool call that exceeds its budget returns a rate-limited error; wait a few seconds and retry.
+
+Codebase scans still count toward your plan's included scan volume when started with `trigger_scan`, the same as starting one from the dashboard.
+
+{/* TODO: Confirm the published billing treatment for query_codebase once Autter announces AI-query pricing. */}
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Connect your agent" icon="plug" href="/guides/mcp-setup">
+    Create a token and configure Claude Code, Cursor, or another MCP client.
+  </Card>
+  <Card title="Manage access tokens" icon="key" href="/cli/connect-platform">
+    Review, scope, and revoke tokens for the CLI and MCP.
+  </Card>
+</CardGroup>

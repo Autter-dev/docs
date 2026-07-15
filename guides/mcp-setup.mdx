@@ -1,0 +1,120 @@
+---
+title: "Connect an agent over MCP"
+description: "Create an access token and connect Claude Code, Cursor, or another MCP client to Autter."
+---
+
+Connect a coding agent to Autter's [MCP server](/features/mcp) so it can read review findings and act on them directly.
+
+## Before you begin
+
+You need an Autter account, membership in the organization you want to connect, and an MCP-capable client such as Claude Code or Cursor.
+
+## Create an access token
+
+<Steps>
+  <Step title="Open Access Tokens">
+    Sign in to the [Autter platform](https://app.autter.dev), open the organization you want to connect, and go to **Org Settings → Access Tokens**.
+  </Step>
+  <Step title="Start a new token">
+    Select the option to create a token and give it a descriptive name, for example `claude-code-mcp`.
+  </Step>
+  <Step title="Restrict it to MCP scopes">
+    Enable the MCP scope restriction and choose the scopes the agent needs:
+
+    - `mcp:read` for reviews, findings, learnings, and codebase intelligence
+    - `mcp:write` to let the agent reply to comments, resolve threads, re-run reviews, add learnings, and start scans
+    - `mcp:llm` for `query_codebase`
+
+    A restricted token only works with MCP. Leave the restriction off if you also want this token to work with `autter login`.
+  </Step>
+  <Step title="Copy the token">
+    Copy the token now. Autter shows the raw value only once.
+  </Step>
+</Steps>
+
+<Frame caption="Placeholder: replace with an approved Access Tokens screenshot showing the MCP scope selection.">
+  <img src="/images/placeholders/platform-settings.svg" alt="Placeholder showing the Autter Access Tokens screen with MCP scope checkboxes" />
+</Frame>
+
+<Warning>
+  Treat the token like a password. Do not commit it, paste it into a ticket, or share it in chat.
+</Warning>
+
+## Connect your client
+
+The Autter MCP server accepts Streamable HTTP connections at:
+
+```text
+https://api.autter.dev/mcp
+```
+
+Send the token as a bearer credential on every request: `Authorization: Bearer autter_pat_xxxxxxxx`.
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add --transport http autter https://api.autter.dev/mcp \
+      --header "Authorization: Bearer autter_pat_xxxxxxxx"
+    ```
+  </Tab>
+  <Tab title="Cursor and other JSON-config clients">
+    Add an entry to the client's MCP server configuration:
+
+    ```json
+    {
+      "mcpServers": {
+        "autter": {
+          "type": "http",
+          "url": "https://api.autter.dev/mcp",
+          "headers": {
+            "Authorization": "Bearer autter_pat_xxxxxxxx"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="MCP Inspector">
+    Use the [MCP Inspector](https://github.com/modelcontextprotocol/inspector) to test the connection directly:
+
+    ```bash
+    npx @modelcontextprotocol/inspector
+    ```
+
+    Choose the Streamable HTTP transport, enter `https://api.autter.dev/mcp` as the URL, and add the `Authorization` header above.
+  </Tab>
+</Tabs>
+
+{/* TODO: Confirm whether a stdio-based Autter CLI proxy (for clients that only support local MCP servers) ships alongside this HTTP endpoint. */}
+
+## Verify the connection
+
+Ask your agent to call the `whoami` tool, or run a tool list from the MCP Inspector. A working connection returns your user, organization, and the repositories Autter has indexed for that organization.
+
+If the connection fails, check:
+
+- the `Authorization` header is present and starts with `Bearer autter_pat_`
+- the token has not been revoked or expired in **Org Settings → Access Tokens**
+- the token has the scope the tool you are calling requires, if you restricted it
+
+<Note>
+  A missing or invalid token returns a 401 response. A tool call outside the token's scopes returns an `insufficient_scope` error naming the required scope.
+</Note>
+
+## Try it
+
+Once connected, ask your agent something like:
+
+> Use the Autter MCP tools to fetch the review for PR 142 in `owner/repo`, fix every finding, then reply to each comment and resolve the thread.
+
+Or, before adding a dependency:
+
+> Check whether `left-pad` has any known vulnerabilities before I add it, using Autter.
+
+## Manage and revoke access
+
+Open **Org Settings → Access Tokens** to review a token's activity, change its scopes by creating a new token, or revoke it. Revoking a token stops it immediately.
+
+<Card title="MCP server overview" icon="plug" href="/features/mcp">
+  Read the full tool catalog, scope model, and usage limits.
+</Card>

@@ -88,7 +88,8 @@
               "features/analytics",
               "features/ai-chat",
               "features/custom-agents",
-              "features/integrations"
+              "features/integrations",
+              "features/mcp"
             ]
           },
           {
@@ -104,6 +105,7 @@
             "pages": [
               "guides/github-setup",
               "guides/gitlab-setup",
+              "guides/mcp-setup",
               "guides/custom-rules",
               "guides/team-onboarding",
               "guides/add-your-agent"
