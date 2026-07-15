@@ -1,0 +1,106 @@
+cli/connect-platform.mdx
+  s_f182dca2be1b86::t_dee28c8a3c97ca 102-105
+docs.json
+  s_f182dca2be1b86::t_b8ec5d60f6313d 108
+  s_f182dca2be1b86::t_14a7909e003072 91-92
+features/integrations.mdx
+  s_f182dca2be1b86::t_17bc52b343c293 57-64
+faq.mdx
+  s_f182dca2be1b86::t_0d41c9f615ff74 35-38
+features/platform-overview.mdx
+  s_f182dca2be1b86::t_f709c4a44abd1b 30-32
+features/mcp.mdx
+  s_f182dca2be1b86::t_81781b7229a84e 1-123
+guides/mcp-setup.mdx
+  s_f182dca2be1b86::t_3c55d6abeb6d23 1-120
+index.mdx
+  s_f182dca2be1b86::t_724bc1a55672da 79-81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "autter_version": "development:1.6.7",
+  "base_commit_sha": "598679ad11187db4c1020053aadc914c85a3a346",
+  "branch": "posthog-code/mcp-server-docs",
+  "prompts": {
+    "s_f182dca2be1b86": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "019f6502-e26c-72bb-99ef-833164b91f16",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Sagnik Ghosh <sagnik@worqhat.com>",
+      "messages_url": "cas:49163802f2d540377263f5b2ab40179be230a2dc2975f176d80505d0ff805970",
+      "total_additions": 268,
+      "total_deletions": 4,
+      "accepted_lines": 268,
+      "overriden_lines": 0
+    }
+  },
+  "sessions": {
+    "s_f182dca2be1b86": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "019f6502-e26c-72bb-99ef-833164b91f16",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Sagnik Ghosh <sagnik@worqhat.com>",
+      "messages_url": "cas:49163802f2d540377263f5b2ab40179be230a2dc2975f176d80505d0ff805970",
+      "stats": {
+        "total_additions": 268,
+        "total_deletions": 4,
+        "accepted_lines": 268,
+        "overriden_lines": 0,
+        "files": {
+          "cli/connect-platform.mdx": {
+            "total_additions": 4,
+            "total_deletions": 0,
+            "accepted_lines": 4,
+            "overriden_lines": 0
+          },
+          "docs.json": {
+            "total_additions": 3,
+            "total_deletions": 1,
+            "accepted_lines": 3,
+            "overriden_lines": 0
+          },
+          "faq.mdx": {
+            "total_additions": 4,
+            "total_deletions": 0,
+            "accepted_lines": 4,
+            "overriden_lines": 0
+          },
+          "features/integrations.mdx": {
+            "total_additions": 8,
+            "total_deletions": 3,
+            "accepted_lines": 8,
+            "overriden_lines": 0
+          },
+          "features/mcp.mdx": {
+            "total_additions": 123,
+            "total_deletions": 0,
+            "accepted_lines": 123,
+            "overriden_lines": 0
+          },
+          "features/platform-overview.mdx": {
+            "total_additions": 3,
+            "total_deletions": 0,
+            "accepted_lines": 3,
+            "overriden_lines": 0
+          },
+          "guides/mcp-setup.mdx": {
+            "total_additions": 120,
+            "total_deletions": 0,
+            "accepted_lines": 120,
+            "overriden_lines": 0
+          },
+          "index.mdx": {
+            "total_additions": 3,
+            "total_deletions": 0,
+            "accepted_lines": 3,
+            "overriden_lines": 0
+          }
+        }
+      }
+    }
+  }
+}
