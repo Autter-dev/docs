@@ -54,8 +54,13 @@ Use Slack when review events need visibility outside the source control provider
 
 The public product lists a VS Code integration. The open source CLI also supports editor extensions that visualize AI authorship.
 
-<Card title="AI blame" icon="code" href="/cli/ai-blame">
-  Inspect line-level AI authorship in the terminal and supported editor extensions.
-</Card>
+<CardGroup cols={2}>
+  <Card title="AI blame" icon="code" href="/cli/ai-blame">
+    Inspect line-level AI authorship in the terminal and supported editor extensions.
+  </Card>
+  <Card title="MCP server" icon="bot" href="/features/mcp">
+    Connect Claude Code, Cursor, or another MCP client directly to Autter review data.
+  </Card>
+</CardGroup>
 
 {/* TODO: Add setup guides for Jira, Linear, Slack, and VS Code after their current authorization scopes and UI flows are approved. */}

@@ -32,6 +32,10 @@ description: "Answers about Autter reviews, integrations, AI authorship, pricing
     Autter publicly lists Jira, Linear, Slack, and VS Code alongside GitHub and GitLab. Availability can vary by plan. See [Integrations](/features/integrations) and [current pricing](https://www.autter.dev/pricing).
   </Accordion>
 
+  <Accordion title="Can a coding agent connect to Autter directly?">
+    Yes. Autter provides an MCP server so agents such as Claude Code and Cursor can read review findings, reply to comments, re-run reviews, and query the codebase using a scoped access token. See [MCP server](/features/mcp) and [Connect an agent over MCP](/guides/mcp-setup).
+  </Accordion>
+
   <Accordion title="How is source code and prompt data handled?">
     Data handling depends on the product and mode you choose. In CLI local-only mode, code, prompts, and agent usage data are not uploaded to Autter, although error telemetry is enabled by default. Team deployments process pull request diffs to compute AI percentage without storing those diffs. See [Data and privacy](/cli/data-and-privacy) for the full breakdown.
   </Accordion>
