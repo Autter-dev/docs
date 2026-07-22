@@ -1,14 +1,15 @@
 ---
 title: "Introduction"
-description: "Learn how the Autter platform reviews pull requests and how the Autter CLI records AI authorship."
+description: "Learn how the Autter platform reviews pull requests, how the Autter CLI records AI authorship, and how Autter Runtime tracks errors and usage after code ships."
 ---
 
-Autter has two complementary products:
+Autter has three complementary products:
 
 - **Autter platform** reviews proposed changes before merge.
 - **Autter CLI** records AI authorship as developers and coding agents edit code.
+- **Autter Runtime** tracks errors and usage in your app after that code ships.
 
-You can use either product independently or connect them for team-level attribution and analytics.
+You can use any product independently, or connect them for team-level attribution and analytics.
 
 ## Autter platform
 
@@ -35,6 +36,21 @@ The CLI links AI-authored lines to the coding agent, model, and prompt context. 
   Local-only mode works without an account. Connected mode sends selected attribution and prompt data to your Autter organization. Review [Data and privacy](/cli/data-and-privacy) before choosing a mode.
 </Info>
 
+## Autter Runtime
+
+Autter Runtime is an open source, lightweight runtime telemetry system — a dependency-free browser error and usage tracker paired with a curated Node OpenTelemetry setup, both funneling into a self-hostable ingester.
+
+The Runtime can help you:
+
+- capture unhandled and handled errors from the browser and the server
+- trace requests with standard OpenTelemetry on the backend
+- see per-route usage and error rollups, grouped per repository
+- self-host the ingester, or use Autter's hosted endpoint
+
+<Info>
+  Autter Runtime does not require an Autter platform or CLI account. It's independently usable and works with any language that has an OpenTelemetry SDK. See [Using Autter Runtime without npm](/runtime/without-npm).
+</Info>
+
 ## How the products fit together
 
 | Need | Use |
@@ -44,6 +60,7 @@ The CLI links AI-authored lines to the coding agent, model, and prompt context. 
 | Track who or what authored each line | Autter CLI |
 | Keep attribution entirely on one machine | Autter CLI in local-only mode |
 | Compare AI usage across a team | Autter CLI in connected mode with the Autter platform |
+| Track errors and usage after code ships | Autter Runtime |
 
 ## Next steps
 
@@ -53,5 +70,8 @@ The CLI links AI-authored lines to the coding agent, model, and prompt context. 
   </Card>
   <Card title="CLI installation" icon="terminal" href="/cli/install">
     Install `autter` and verify line-level attribution.
+  </Card>
+  <Card title="Runtime quickstart" icon="satellite-dish" href="/runtime/quickstart">
+    Add error and usage tracking to your app.
   </Card>
 </CardGroup>

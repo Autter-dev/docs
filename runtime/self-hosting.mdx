@@ -1,0 +1,56 @@
+---
+title: "Self-hosting"
+description: "Run the Autter Runtime ingester yourself, or use Autter's hosted endpoint."
+---
+
+The ingester is a small, stateless service: it receives OTLP traces/metrics and browser payloads, normalizes and fingerprints them, and writes ClickHouse. You can use Autter's hosted ingester, or run it yourself.
+
+## Autter cloud
+
+Autter cloud hosts the ingester at `otlp.autter.dev` — the default endpoint for every SDK. No infrastructure to run.
+
+## Self-hosting on your own server
+
+For a single small EC2 or Lightsail box running the ingester and ClickHouse together via Docker Compose, with Caddy handling HTTPS automatically — no VPC or ECS setup required — see [`deploy/single-server`](https://github.com/Autter-dev/autter-runtime/tree/main/deploy/single-server) in the repo.
+
+## Self-hosting, bring-your-own-infra
+
+A prebuilt multi-arch image is available — no clone needed:
+
+```bash
+docker run -p 4318:4318 \
+  -e CLICKHOUSE_URL=… -e CLICKHOUSE_PASSWORD=… \
+  -e AUTTER_INGEST_KEYS='[{"key":"…","orgId":"o","repositoryId":"r"}]' \
+  ghcr.io/autter-dev/otlp-ingester:latest
+```
+
+For an AWS/ECS deployment runbook and scripts, see [`deploy/aws`](https://github.com/Autter-dev/autter-runtime/tree/main/deploy/aws).
+
+## Local development
+
+For local development with a bundled ClickHouse:
+
+```bash
+git clone https://github.com/Autter-dev/autter-runtime
+cd autter-runtime
+docker compose up   # local ClickHouse + ingester on :4318, key "dev-key"
+```
+
+Point your OpenTelemetry exporter at it:
+
+```ts
+new OTLPTraceExporter({
+  url: "http://localhost:4318/v1/traces",
+  headers: { authorization: "Bearer dev-key" },
+});
+```
+
+Query ClickHouse directly with `docker compose exec clickhouse clickhouse-client --password dev`.
+
+## Configuring keys
+
+Configure ingest keys via the `AUTTER_INGEST_KEYS` environment variable (or point `AUTTER_KEY_VALIDATOR_URL` at your own key service). See [Environment variables](/runtime/environment-variables) for the full reference, including how to generate a key and how server keys differ from client keys.
+
+<Card title="Environment variables" icon="sliders" href="/runtime/environment-variables">
+  Full reference for configuring the ingester and the server SDK.
+</Card>

@@ -1,0 +1,145 @@
+---
+title: "Quickstart"
+description: "Go from zero to seeing error and usage data flowing through Autter Runtime."
+---
+
+Autter Runtime tracks runtime errors and usage from your frontend and backend with two small packages and one ingest endpoint. This guide takes you from zero to seeing data in ClickHouse.
+
+<Info>
+  Prefer to have an AI coding agent set this up for you? Install the companion skills, then tell your agent *"install Autter Runtime in this project"*: `npx skills add Autter-dev/autter-skills --all`. See [Autter-dev/autter-skills](https://github.com/Autter-dev/autter-skills).
+</Info>
+
+## Concepts
+
+**Two kinds of keys** — never mix them up:
+
+| | Server key | Client key |
+| --- | --- | --- |
+| Looks like | `autter_rt_…` | `autter_rtc_…` |
+| Secrecy | **secret** — env vars only, never in a browser bundle | **publishable** — safe to ship in frontend JS |
+| Can send | OTLP traces + metrics, browser events | browser events only (`/v1/browser`) |
+| Extra protection | — | per-key origin allow-list, tighter rate limit |
+
+**Two ways to send browser events:**
+
+- **Relay** (recommended when you have a backend) — the browser posts to a route on *your* server, which forwards to the ingester with your server key. No key in the browser, immune to ad-blockers, no CSP changes.
+- **Direct** (static sites / no backend) — the browser posts straight to the ingester with a publishable client key.
+
+**What is never sent:** cookies, DOM content, form values, request/response bodies, headers, emails, full URLs with query strings.
+
+<Steps>
+  <Step title="Run the ingester">
+    For a local try-out, clone the repo and start ClickHouse plus the ingester with Docker Compose:
+
+    ```bash
+    git clone https://github.com/Autter-dev/autter-runtime
+    cd autter-runtime
+    docker compose up   # ClickHouse + ingester on :4318, key "dev-key"
+    ```
+
+    For real deployments, see [Self-hosting](/runtime/self-hosting) or use Autter's hosted ingester at `otlp.autter.dev`.
+  </Step>
+  <Step title="Instrument your backend">
+    ```bash
+    npm install @autter/runtime-node
+    ```
+
+    Create `instrument.cjs` — it must load **before** your app:
+
+    ```js
+    const { initAutterServer } = require("@autter/runtime-node");
+
+    initAutterServer({
+      apiKey: process.env.AUTTER_RUNTIME_KEY,   // server key
+      endpoint: process.env.AUTTER_ENDPOINT,     // your ingester URL
+      service: "payments-api",
+      environment: process.env.NODE_ENV,
+      release: process.env.GIT_SHA,              // enables "broke in release X"
+    });
+    ```
+
+    ```bash
+    node --require ./instrument.cjs server.js
+    ```
+
+    That alone traces every incoming HTTP request, rolls up request/error/duration per route, and captures crashes. For handled errors:
+
+    ```js
+    const { captureException } = require("@autter/runtime-node");
+
+    try {
+      await chargeCard(order);
+    } catch (err) {
+      captureException(err, { "order.id": order.id });
+      throw err;
+    }
+    ```
+  </Step>
+  <Step title="Instrument your frontend">
+    ```bash
+    npm install @autter/runtime-browser
+    ```
+
+    Add a relay route to your backend (the key stays server-side):
+
+    ```js
+    // Express
+    const { createBrowserRelayHandler } = require("@autter/runtime-node");
+    app.post("/api/autter-runtime",
+      createBrowserRelayHandler({ apiKey: process.env.AUTTER_RUNTIME_KEY,
+                                  endpoint: process.env.AUTTER_ENDPOINT }));
+    ```
+
+    Then initialize the tracker in your frontend entry point:
+
+    ```ts
+    import { initAutterBrowser, captureException, trackEvent } from "@autter/runtime-browser";
+
+    initAutterBrowser({
+      endpoint: "/api/autter-runtime",   // same-origin — no key here
+      service: "web-app",
+      release: import.meta.env.VITE_GIT_SHA,
+    });
+
+    captureException(err, { operation: "start-checkout" }); // handled errors
+    trackEvent("clicked_upgrade");                          // usage counters
+    ```
+
+    No backend? See the direct setup and full walkthrough in [Installation](/runtime/installation).
+  </Step>
+  <Step title="Verify data is flowing">
+    Trigger a test error, then query ClickHouse:
+
+    ```sql
+    SELECT service, error_type, message, route, occurred_at
+    FROM autter_runtime.runtime_error_occurrences
+    ORDER BY occurred_at DESC LIMIT 10;
+
+    SELECT service, route, sum(request_count) AS requests, sum(error_count) AS errors
+    FROM autter_runtime.runtime_metrics_1m
+    WHERE bucket_at > now() - INTERVAL 1 HOUR
+    GROUP BY service, route;
+    ```
+
+    With the local Compose setup: `docker compose exec clickhouse clickhouse-client --password dev`.
+  </Step>
+</Steps>
+
+## Production checklist
+
+- Server keys only in backend env vars; client keys only where a relay is genuinely impossible.
+- Client keys have `allowedOrigins` set to your exact app origins.
+- `release` is wired to your git SHA in **both** frontend and backend — it powers regression detection ("broke in release X").
+- Keep trace sampling at ~1% (`traceSampleRate`) — errors are always captured regardless.
+- The relay route keeps its built-in per-IP rate limit, or your WAF covers it (`perIpRateLimit: false`).
+- Direct browser ingest: your CSP includes `connect-src https://your-ingester…`, and you accept that ad-blockers may drop some events (the relay avoids this).
+- The ingester's `/healthz` is wired to your load balancer health check.
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/runtime/installation">
+    Install the right package for your stack, including Next.js.
+  </Card>
+  <Card title="Stack integrations" icon="plug" href="/runtime/integrations">
+    Per-stack setup for React, Node, Next.js, Go, Rust, and any OpenTelemetry SDK.
+  </Card>
+</CardGroup>

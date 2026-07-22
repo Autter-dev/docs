@@ -1,0 +1,79 @@
+---
+title: "Installation"
+description: "Install Autter Runtime for your frontend, backend, or Next.js app."
+---
+
+Install the package that matches your stack. You can mix and match — for example, `@autter/runtime-browser` on the frontend with `@autter/runtime-node` on an Express backend.
+
+```bash
+npm install @autter/runtime-browser   # frontend (React, Vue, any SPA, static sites)
+npm install @autter/runtime-node      # backend (Express, Fastify, Koa, Nest, plain Node)
+npm install @autter/runtime-next      # Next.js (both halves in one package)
+```
+
+<Tabs>
+  <Tab title="Frontend">
+    Errors and usage, automatic from init:
+
+    ```ts
+    import { initAutterBrowser, captureException, trackEvent } from "@autter/runtime-browser";
+
+    initAutterBrowser({
+      endpoint: "/api/autter-runtime",   // your relay route (recommended), or
+      // endpoint: "https://otlp.autter.dev/v1/browser", clientKey: "autter_rtc_…",
+      service: "web-app",
+      release: import.meta.env.VITE_GIT_SHA,
+    });
+
+    captureException(err, { operation: "start-checkout" });
+    trackEvent("clicked_upgrade");
+    ```
+
+    React render errors don't reach `window.onerror` — wrap your app with the error boundary (exported from `@autter/runtime-next`, works in any React app):
+
+    ```tsx
+    <AutterErrorBoundary fallback={<ErrorPage />}>
+      <App />
+    </AutterErrorBoundary>
+    ```
+  </Tab>
+  <Tab title="Backend">
+    One preloaded file, requests traced automatically:
+
+    ```js
+    // instrument.cjs — run with: node --require ./instrument.cjs server.js
+    const { initAutterServer } = require("@autter/runtime-node");
+    initAutterServer({
+      apiKey: process.env.AUTTER_RUNTIME_KEY,   // secret server key
+      service: "payments-api",
+      release: process.env.GIT_SHA,
+    });
+    ```
+
+    ESM-only app? Use `--import` plus OpenTelemetry's loader hook — see the [`@autter/runtime-node` package README](https://github.com/Autter-dev/autter-runtime/tree/main/packages/runtime-node).
+  </Tab>
+  <Tab title="Next.js">
+    ```bash
+    npm install @autter/runtime-next
+    ```
+
+    Three files give you server tracing, browser tracking, the relay, and the error boundary — `instrumentation.ts`, `app/api/autter-runtime/route.ts`, and a client component. See the [`@autter/runtime-next` package README](https://github.com/Autter-dev/autter-runtime/tree/main/packages/runtime-next) for the exact snippets.
+  </Tab>
+</Tabs>
+
+## Get a key
+
+Every ingest key is scoped to one `orgId` + `repositoryId`. If you're self-hosting the ingester, generate a key yourself — see [Environment variables](/runtime/environment-variables#autter_ingest_keys). If you're using Autter's hosted ingester at `otlp.autter.dev`, create a key from your Autter organization.
+
+## No npm in this codebase?
+
+Any language with an OpenTelemetry SDK can send server telemetry with configuration only — no `@autter/*` package required. See [Using Autter Runtime without npm](/runtime/without-npm).
+
+<CardGroup cols={2}>
+  <Card title="Stack integrations" icon="plug" href="/runtime/integrations">
+    Per-stack setup snippets — React, Node, Next.js, Go, Rust, and any OTel SDK.
+  </Card>
+  <Card title="Self-hosting" icon="server" href="/runtime/self-hosting">
+    Run the ingester yourself, or point at Autter's hosted endpoint.
+  </Card>
+</CardGroup>

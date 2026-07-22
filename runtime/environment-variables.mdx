@@ -1,0 +1,53 @@
+---
+title: "Environment variables"
+description: "Configuration reference for the Autter Runtime SDKs and the self-hosted ingester."
+---
+
+## SDK configuration (backend)
+
+| Variable | Used by | Description |
+| --- | --- | --- |
+| `AUTTER_RUNTIME_KEY` | `@autter/runtime-node`, any OTel SDK | Secret **server key** (`autter_rt_…`). Passed as `apiKey` to `initAutterServer` / `createBrowserRelayHandler`, or as the `Authorization: Bearer` header for a raw OTLP exporter. |
+| `AUTTER_ENDPOINT` | `@autter/runtime-node` | Base URL of your ingester. Defaults to Autter's hosted endpoint (`https://otlp.autter.dev`) if unset. |
+| `GIT_SHA` | any | Convention used in the docs and examples for the `release` field — wire it to your build's git commit so regressions can be traced to a release. |
+| `NODE_ENV` | `@autter/runtime-node` | Commonly passed through as `environment`. |
+
+Frontend equivalents are passed directly to `initAutterBrowser({...})` rather than read from `process.env` (bundlers don't expose server env vars to the browser by default) — for example `import.meta.env.VITE_GIT_SHA` for `release`.
+
+## Ingester configuration (self-hosted)
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `CLICKHOUSE_URL` | yes | ClickHouse HTTP(S) endpoint the ingester writes to. |
+| `CLICKHOUSE_PASSWORD` | yes | ClickHouse password for the ingester's user. |
+| `AUTTER_INGEST_KEYS` | yes, unless using `AUTTER_KEY_VALIDATOR_URL` | JSON array mapping ingest keys to `{orgId, repositoryId}`. See format below. |
+| `AUTTER_KEY_VALIDATOR_URL` | alternative to `AUTTER_INGEST_KEYS` | URL of your own key-validation service, for dynamic key management instead of a static env-var list. |
+| `AUTTER_SINK_URL` | no | Optional webhook. Each ingest batch is POSTed here as normalized occurrences — see [Architecture](/runtime/architecture#sink-webhook-v1). Delivery is best-effort, fire-and-forget. |
+
+### `AUTTER_INGEST_KEYS`
+
+A JSON array, one entry per key:
+
+```bash
+AUTTER_INGEST_KEYS='[
+  {"key":"autter_rt_REPLACE_ME","orgId":"my-org","repositoryId":"my-app"},
+  {"key":"autter_rtc_REPLACE_ME","orgId":"my-org","repositoryId":"my-app",
+   "scope":"client","allowedOrigins":["https://app.example.com"]}
+]'
+```
+
+- **Server keys** (`autter_rt_…`) have no `scope` field and can send OTLP traces/metrics plus relay browser events.
+- **Client keys** (`autter_rtc_…`) need `"scope": "client"` and an `allowedOrigins` list — the ingester rejects `/v1/browser` requests whose `Origin` isn't on the list.
+- One key pair per app or repository — `repositoryId` is how data is grouped for analysis.
+
+Generate keys with anything sufficiently random, for example:
+
+```bash
+echo "autter_rt_$(openssl rand -hex 16)"
+```
+
+Full config reference: [`packages/otlp-ingester`](https://github.com/Autter-dev/autter-runtime/tree/main/packages/otlp-ingester).
+
+<Card title="Self-hosting" icon="server" href="/runtime/self-hosting">
+  Run the ingester locally, on a single server, or on AWS.
+</Card>
