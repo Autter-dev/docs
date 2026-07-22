@@ -1,9 +1,9 @@
 ---
 title: "Autter documentation"
-description: "Set up AI code review with the Autter platform or track AI authorship with the open source Autter CLI."
+description: "Set up AI code review with the Autter platform, track AI authorship with the open source Autter CLI, or add runtime telemetry with Autter Runtime."
 ---
 
-Autter helps engineering teams review pull requests and understand AI-authored code.
+Autter helps engineering teams review pull requests, understand AI-authored code, and track what happens to that code at runtime.
 
 Choose the product that matches what you want to accomplish:
 
@@ -13,6 +13,9 @@ Choose the product that matches what you want to accomplish:
   </Card>
   <Card title="Autter CLI" icon="terminal" href="/cli/overview">
     Record line-level AI authorship in Git and inspect the agent, model, and prompt behind a change.
+  </Card>
+  <Card title="Autter Runtime" icon="satellite-dish" href="/runtime/introduction">
+    Add lightweight, open source error and usage tracking to your app's frontend and backend.
   </Card>
 </CardGroup>
 
@@ -78,5 +81,23 @@ autter status
   </Card>
   <Card title="MCP server" icon="bot" href="/features/mcp">
     Connect a coding agent to read reviews, fix findings, and query the codebase.
+  </Card>
+</CardGroup>
+
+## Start with Autter Runtime
+
+Autter Runtime is an open source, dependency-light way to track runtime errors and usage in your own app — a &lt;5 KB browser tracker, a curated Node OpenTelemetry setup, and a self-hostable ingester.
+
+```bash
+npm install @autter/runtime-browser   # frontend
+npm install @autter/runtime-node      # backend
+```
+
+<CardGroup cols={2}>
+  <Card title="Runtime quickstart" icon="rocket" href="/runtime/quickstart">
+    Go from zero to seeing error and usage data flowing.
+  </Card>
+  <Card title="Runtime introduction" icon="satellite-dish" href="/runtime/introduction">
+    Understand the packages, supported stacks, and data model.
   </Card>
 </CardGroup>

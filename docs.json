@@ -118,6 +118,34 @@
         ]
       },
       {
+        "tab": "Runtime",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": [
+              "runtime/introduction",
+              "runtime/quickstart",
+              "runtime/installation"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "runtime/integrations",
+              "runtime/without-npm",
+              "runtime/self-hosting"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "runtime/environment-variables",
+              "runtime/architecture"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "CLI",
         "groups": [
           {
