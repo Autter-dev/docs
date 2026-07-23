@@ -1,0 +1,93 @@
+---
+title: "AI agent skills"
+description: "Let a coding agent install Autter Runtime for you, in any language, using the autter-skills repo."
+---
+
+[Autter Skills](https://github.com/Autter-dev/autter-skills) are [Agent
+Skills](https://agentskills.io) that teach a coding agent — Claude Code,
+Cursor, Codex, or anything else that supports the standard — how to install
+Autter Runtime into a codebase. Point your agent at them once, and it
+inventories your repo, picks the right integration per service, and wires up
+telemetry without you writing the instrumentation by hand.
+
+<Info>
+  This is the fastest path to a working setup. If you'd rather do it
+  yourself, see [Quickstart](/runtime/quickstart) (npm packages) or [Using
+  Autter Runtime without npm](/runtime/without-npm) (any other language).
+</Info>
+
+## Install the skills
+
+Requires only Node/`npx` on the machine running the agent — the target
+codebase doesn't need Node at all.
+
+```bash
+npx skills add Autter-dev/autter-skills --all
+```
+
+This drops the skill files into your project (or wherever your agent looks
+for skills). Then just tell your agent:
+
+> Use the skills to install Autter Runtime in this project.
+
+Want a single skill instead of the full set — for example if you already
+know your stack is Python — install just that one:
+
+```bash
+npx skills add Autter-dev/autter-skills --skill otel-python-style
+```
+
+## What happens when your agent runs it
+
+1. **`autter-runtime-setup` runs first.** It inventories every service in
+   your repo (languages, frameworks, monorepo packages) and asks you for an
+   ingest key if you haven't already created one — see [Getting an ingest
+   key](#getting-an-ingest-key) below.
+2. **Each service gets routed to the right style skill** automatically —
+   you never have to pick one yourself:
+
+   | Skill | Covers |
+   | --- | --- |
+   | [`otel-node-style`](https://github.com/Autter-dev/autter-skills/tree/main/otel-node-style) | Node.js (Express, Fastify, Koa, NestJS) and Next.js, via `@autter/runtime-node` / `@autter/runtime-next` |
+   | [`otel-browser-style`](https://github.com/Autter-dev/autter-skills/tree/main/otel-browser-style) | Browser apps — React, Vue, Svelte, Angular, vanilla SPA, static sites — via `@autter/runtime-browser` |
+   | [`otel-python-style`](https://github.com/Autter-dev/autter-skills/tree/main/otel-python-style) | FastAPI, Flask, Django, plain WSGI/ASGI, via the standard OpenTelemetry Python SDK |
+   | [`otel-go-rust-style`](https://github.com/Autter-dev/autter-skills/tree/main/otel-go-rust-style) | Go and Rust backends, via each language's official OTel SDK |
+   | [`otel-generic-style`](https://github.com/Autter-dev/autter-skills/tree/main/otel-generic-style) | Everything else — Java, .NET, PHP, Ruby, Elixir, Kotlin, … — via standard OTLP/HTTP + OTel env vars |
+
+3. **The agent verifies telemetry actually arrives** — it triggers a test
+   error or request and checks it lands in ClickHouse before calling the
+   setup done.
+
+## Getting an ingest key
+
+Create one on your Autter dashboard: **Settings → Access Tokens → Runtime
+ingest keys → Create key**. Pick the repository, then choose:
+
+- **Server** (`autter_rt_…`) — secret, for backends and relays. Keep it in
+  env vars, never commit it.
+- **Client** (`autter_rtc_…`) — publishable, for browser-only apps with no
+  backend. Scoped to the exact origins you register it for.
+
+Your agent will ask for whichever key kind the service it's instrumenting
+needs.
+
+## Updating or removing
+
+Re-run the install command to pick up new skill versions:
+
+```bash
+npx skills add Autter-dev/autter-skills --all
+```
+
+To stop using a skill, delete its folder from wherever `npx skills add`
+placed it in your project — skills are just files, there's nothing to
+uninstall from a package manager.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/runtime/quickstart">
+    The manual npm-package path, if you'd rather set it up by hand.
+  </Card>
+  <Card title="Without npm" icon="terminal" href="/runtime/without-npm">
+    Wire up any language with a plain OTel SDK or OTLP/HTTP.
+  </Card>
+</CardGroup>

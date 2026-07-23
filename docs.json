@@ -131,6 +131,7 @@
           {
             "group": "Guides",
             "pages": [
+              "runtime/skills",
               "runtime/integrations",
               "runtime/without-npm",
               "runtime/self-hosting"
