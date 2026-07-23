@@ -1,0 +1,73 @@
+docs.json
+  s_a0d19a72113fab::t_7dcbb141f16628 134
+runtime/quickstart.mdx
+  s_a0d19a72113fab::t_044f83a59058fe 9
+runtime/skills.mdx
+  s_a0d19a72113fab::t_c1bad971da87a5 1-93
+runtime/without-npm.mdx
+  s_a0d19a72113fab::t_59869fe868ddce 134
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "autter_version": "development:1.6.7",
+  "base_commit_sha": "34fca2cf80a58dfbaa286b34f63ce99202a01077",
+  "branch": "posthog-code/add-runtime-docs",
+  "prompts": {
+    "s_a0d19a72113fab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "019f8637-ccee-747e-afdf-55696dcbd473",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Sagnik Ghosh <sagnik@worqhat.com>",
+      "messages_url": "cas:214c61aff0bedd61c3b1326419bc84b92abbf5253af6abef25d9c988e29257a7",
+      "total_additions": 96,
+      "total_deletions": 2,
+      "accepted_lines": 96,
+      "overriden_lines": 0
+    }
+  },
+  "sessions": {
+    "s_a0d19a72113fab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "019f8637-ccee-747e-afdf-55696dcbd473",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Sagnik Ghosh <sagnik@worqhat.com>",
+      "messages_url": "cas:214c61aff0bedd61c3b1326419bc84b92abbf5253af6abef25d9c988e29257a7",
+      "stats": {
+        "total_additions": 96,
+        "total_deletions": 2,
+        "accepted_lines": 96,
+        "overriden_lines": 0,
+        "files": {
+          "docs.json": {
+            "total_additions": 1,
+            "total_deletions": 0,
+            "accepted_lines": 1,
+            "overriden_lines": 0
+          },
+          "runtime/quickstart.mdx": {
+            "total_additions": 1,
+            "total_deletions": 1,
+            "accepted_lines": 1,
+            "overriden_lines": 0
+          },
+          "runtime/skills.mdx": {
+            "total_additions": 93,
+            "total_deletions": 0,
+            "accepted_lines": 93,
+            "overriden_lines": 0
+          },
+          "runtime/without-npm.mdx": {
+            "total_additions": 1,
+            "total_deletions": 1,
+            "accepted_lines": 1,
+            "overriden_lines": 0
+          }
+        }
+      }
+    }
+  }
+}
