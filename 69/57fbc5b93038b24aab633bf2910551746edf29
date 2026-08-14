@@ -1,0 +1,83 @@
+quickstart.mdx
+  s_927a5967c10bb7::t_9ab0cf23e20a36 80
+cli/install.mdx
+  s_927a5967c10bb7::t_145a36547061fd 22
+  s_927a5967c10bb7::t_7f8ff6527351d8 29
+installation.mdx
+  s_927a5967c10bb7::t_361cb5051740e3 67
+  s_927a5967c10bb7::t_0b6303f8bca340 62
+index.mdx
+  s_927a5967c10bb7::t_1ae7c83642ab0c 54
+guides/team-onboarding.mdx
+  s_927a5967c10bb7::t_844ab46f1c2b34 46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "autter_version": "development:1.6.7",
+  "base_commit_sha": "6957fbc5b93038b24aab633bf2910551746edf29",
+  "branch": "posthog/fix-installer-urls",
+  "prompts": {
+    "s_927a5967c10bb7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "019ffee4-d584-741e-ba42-ece0d4a35923",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Sagnik Ghosh <sagnik@worqhat.com>",
+      "messages_url": "cas:b325aac84cadbc7e27541a603d608f0fb71525f4b1db7369dfdaa77bf729dc7c",
+      "total_additions": 7,
+      "total_deletions": 7,
+      "accepted_lines": 7,
+      "overriden_lines": 0
+    }
+  },
+  "sessions": {
+    "s_927a5967c10bb7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "019ffee4-d584-741e-ba42-ece0d4a35923",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Sagnik Ghosh <sagnik@worqhat.com>",
+      "messages_url": "cas:b325aac84cadbc7e27541a603d608f0fb71525f4b1db7369dfdaa77bf729dc7c",
+      "stats": {
+        "total_additions": 7,
+        "total_deletions": 7,
+        "accepted_lines": 7,
+        "overriden_lines": 0,
+        "files": {
+          "cli/install.mdx": {
+            "total_additions": 2,
+            "total_deletions": 2,
+            "accepted_lines": 2,
+            "overriden_lines": 0
+          },
+          "guides/team-onboarding.mdx": {
+            "total_additions": 1,
+            "total_deletions": 1,
+            "accepted_lines": 1,
+            "overriden_lines": 0
+          },
+          "index.mdx": {
+            "total_additions": 1,
+            "total_deletions": 1,
+            "accepted_lines": 1,
+            "overriden_lines": 0
+          },
+          "installation.mdx": {
+            "total_additions": 2,
+            "total_deletions": 2,
+            "accepted_lines": 2,
+            "overriden_lines": 0
+          },
+          "quickstart.mdx": {
+            "total_additions": 1,
+            "total_deletions": 1,
+            "accepted_lines": 1,
+            "overriden_lines": 0
+          }
+        }
+      }
+    }
+  }
+}
