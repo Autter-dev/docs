@@ -13,6 +13,22 @@ autter whoami
 autter config
 ```
 
+## `autter: command not found`
+
+In an already-open terminal on macOS, Linux, or WSL, load the installer's `PATH` entry directly:
+
+```bash
+source "$HOME/.autter/env"
+```
+
+For fish, use `source "$HOME/.autter/env.fish"`. New terminals load it automatically through your shell configuration; IDE terminals need an IDE restart, not just a new terminal tab.
+
+If the command is still not found in a fresh terminal, the installer could not detect a shell configuration file. Add this line to your shell configuration (the `env.fish` variant for fish) and restart the shell:
+
+```bash
+. "$HOME/.autter/env"
+```
+
 ## No attribution appears
 
 <Steps>
