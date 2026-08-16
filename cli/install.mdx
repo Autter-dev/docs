@@ -29,6 +29,15 @@ Install Autter once on each developer machine. You do not need per-repository se
     powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://api.autter.dev/install.ps1 | iex"
     ```
   </Tab>
+  <Tab title="npm">
+    Requires Node.js 18 or later:
+
+    ```bash
+    npm install -g @autter/cli
+    ```
+
+    The npm package is a thin bootstrapper: it downloads the same release binary into `~/.autter/bin` and verifies its checksum, so integrations and background-service updates work identically to the script installs. `npx @autter/cli onboard` bootstraps without a global install.
+  </Tab>
 </Tabs>
 
 <Warning>
@@ -37,7 +46,15 @@ Install Autter once on each developer machine. You do not need per-repository se
 
 The installer places Autter in `~/.autter/bin`, adds it to your user `PATH`, configures supported coding agents and editors, and starts the background service.
 
-Close and reopen your terminal and IDE after installation. Interactive macOS, Linux, and WSL installs start onboarding automatically. If the installer runs without an interactive terminal, complete onboarding later with `autter onboard`.
+On macOS, Linux, and WSL, make `autter` available in the terminal you already have open (the installer prints this command at the end too):
+
+```bash
+source "$HOME/.autter/env"
+```
+
+For fish, use `source "$HOME/.autter/env.fish"`. New terminals pick up the `PATH` automatically. Restart your IDE — not just its terminal tab — so IDE terminals and coding agents see it too.
+
+Interactive macOS, Linux, and WSL installs start onboarding automatically. If the installer runs without an interactive terminal, complete onboarding later with `autter onboard`.
 
 ## Complete onboarding
 
@@ -110,6 +127,8 @@ autter upgrade
 ```
 
 Use `autter upgrade --force` to reinstall the latest release.
+
+This works for every install method, including npm: the npm package is only a bootstrapper, and `autter upgrade` (or the background service's automatic update) replaces the binary in `~/.autter/bin` directly. Running `npm update -g @autter/cli` is not required.
 
 ## Next step
 
