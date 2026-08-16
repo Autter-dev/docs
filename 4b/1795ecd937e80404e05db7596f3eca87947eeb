@@ -1,0 +1,74 @@
+cli/troubleshooting.mdx
+  s_4b50dacd3d0dd0::t_f62b5964397432 16-31
+cli/install.mdx
+  s_4b50dacd3d0dd0::t_c3e0719b922d89 32-40
+  s_4b50dacd3d0dd0::t_3e10fbe59ea922 49-57
+installation.mdx
+  s_4b50dacd3d0dd0::t_925d75474bc550 70-76
+guides/team-onboarding.mdx
+  s_4b50dacd3d0dd0::t_0de45f0507d135 50-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "autter_version": "1.6.7",
+  "base_commit_sha": "4b1795ecd937e80404e05db7596f3eca87947eeb",
+  "branch": "posthog/install-activation-and-npm-docs",
+  "prompts": {
+    "s_4b50dacd3d0dd0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a00b86-c4ff-75ea-9e0f-76e42e21a085",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Sagnik Ghosh <sagnik@worqhat.com>",
+      "messages_url": "cas:16260bdbfc43ec3f809c42f8661d1b8a1899b571babde339a8e00ebbc88839df",
+      "total_additions": 43,
+      "total_deletions": 1,
+      "accepted_lines": 43,
+      "overriden_lines": 0
+    }
+  },
+  "sessions": {
+    "s_4b50dacd3d0dd0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a00b86-c4ff-75ea-9e0f-76e42e21a085",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Sagnik Ghosh <sagnik@worqhat.com>",
+      "messages_url": "cas:16260bdbfc43ec3f809c42f8661d1b8a1899b571babde339a8e00ebbc88839df",
+      "stats": {
+        "total_additions": 43,
+        "total_deletions": 1,
+        "accepted_lines": 43,
+        "overriden_lines": 0,
+        "files": {
+          "cli/install.mdx": {
+            "total_additions": 18,
+            "total_deletions": 1,
+            "accepted_lines": 18,
+            "overriden_lines": 0
+          },
+          "cli/troubleshooting.mdx": {
+            "total_additions": 16,
+            "total_deletions": 0,
+            "accepted_lines": 16,
+            "overriden_lines": 0
+          },
+          "guides/team-onboarding.mdx": {
+            "total_additions": 2,
+            "total_deletions": 0,
+            "accepted_lines": 2,
+            "overriden_lines": 0
+          },
+          "installation.mdx": {
+            "total_additions": 7,
+            "total_deletions": 0,
+            "accepted_lines": 7,
+            "overriden_lines": 0
+          }
+        }
+      }
+    }
+  }
+}
