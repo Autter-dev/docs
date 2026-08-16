@@ -1,0 +1,65 @@
+installation.mdx
+  s_4b50dacd3d0dd0::t_7550efae64f39a 72
+guides/team-onboarding.mdx
+  s_4b50dacd3d0dd0::t_af23b2fdf5799d 50
+cli/install.mdx
+  s_4b50dacd3d0dd0::t_10775803de0f7a 36,39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "autter_version": "1.6.7",
+  "base_commit_sha": "57a714865759cb2f68640776874aadc091c3a44a",
+  "branch": "posthog/install-activation-and-npm-docs",
+  "prompts": {
+    "s_4b50dacd3d0dd0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a00b86-c4ff-75ea-9e0f-76e42e21a085",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Sagnik Ghosh <sagnik@worqhat.com>",
+      "messages_url": "cas:31c7a1991ce3e7723260009f02c086918fefbabec694c23136a58428e8de9491",
+      "total_additions": 4,
+      "total_deletions": 4,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  },
+  "sessions": {
+    "s_4b50dacd3d0dd0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a00b86-c4ff-75ea-9e0f-76e42e21a085",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Sagnik Ghosh <sagnik@worqhat.com>",
+      "messages_url": "cas:31c7a1991ce3e7723260009f02c086918fefbabec694c23136a58428e8de9491",
+      "stats": {
+        "total_additions": 4,
+        "total_deletions": 4,
+        "accepted_lines": 4,
+        "overriden_lines": 0,
+        "files": {
+          "cli/install.mdx": {
+            "total_additions": 2,
+            "total_deletions": 2,
+            "accepted_lines": 2,
+            "overriden_lines": 0
+          },
+          "guides/team-onboarding.mdx": {
+            "total_additions": 1,
+            "total_deletions": 1,
+            "accepted_lines": 1,
+            "overriden_lines": 0
+          },
+          "installation.mdx": {
+            "total_additions": 1,
+            "total_deletions": 1,
+            "accepted_lines": 1,
+            "overriden_lines": 0
+          }
+        }
+      }
+    }
+  }
+}
