@@ -1,0 +1,8 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "autter_version": "1.6.7",
+  "base_commit_sha": "4bb60455587c25f7685cb05aba4cbf7249ac649d",
+  "branch": "posthog/install-activation-and-npm-docs",
+  "prompts": {}
+}
