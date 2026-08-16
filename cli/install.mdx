@@ -128,6 +128,8 @@ autter upgrade
 
 Use `autter upgrade --force` to reinstall the latest release.
 
+This works for every install method, including npm: the npm package is only a bootstrapper, and `autter upgrade` (or the background service's automatic update) replaces the binary in `~/.autter/bin` directly. Running `npm update -g @autter/cli` is not required.
+
 ## Next step
 
 <Card title="Connect to the platform" icon="cloud" href="/cli/connect-platform">
