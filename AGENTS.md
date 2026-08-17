@@ -26,6 +26,9 @@
 - Use “AI authorship” and “line-level attribution,” not “AI detection.”
 - Use “coding agent” for tools such as Codex, Claude Code, Cursor, and GitHub Copilot.
 - Use “organization,” “repository,” “pull request,” and “merge request” where appropriate.
+- Use “Autter Runtime” only for the production telemetry product (the open source SDKs and ingester).
+- Use “review sandbox” for the isolated environment where the platform checks out, builds, or tests a pull request. Never call it a runtime.
+- Avoid generic “runtime” phrasing elsewhere; prefer “performance,” “execution,” or “while running” so “Runtime” stays unambiguous.
 
 ## Style preferences
 

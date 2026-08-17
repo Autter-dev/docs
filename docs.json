@@ -117,6 +117,7 @@
             "pages": [
               "features/platform-overview",
               "features/code-review",
+              "features/calibration",
               "features/codebase-scans",
               "features/wiki",
               "features/pipeline",
@@ -175,6 +176,7 @@
           {
             "group": "Reference",
             "pages": [
+              "runtime/error-lifecycle",
               "runtime/environment-variables",
               "runtime/architecture"
             ]

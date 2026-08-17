@@ -1,0 +1,73 @@
+---
+title: "Calibration"
+description: "How Autter measures whether findings earn attention and tunes every repository's review from your team's feedback."
+---
+
+An AI review is only useful if its findings get acted on. Autter treats that as a measurable number per repository, feeds reviewer feedback back into the next review, and demotes checks that cost attention without earning it. This page collects the whole loop in one place.
+
+## The signals Autter learns from
+
+Autter reads feedback the way your team already gives it — no extra process required:
+
+| Signal | What it tells Autter |
+| --- | --- |
+| Fixed before merge | The flagged lines changed between the review and the merged code |
+| Thumbs feedback | A direct rating on a finding, where available |
+| Replies | Pushback or agreement on a finding's thread |
+| 👎 reactions | A negative reaction on a finding comment |
+| Deleted comments | A maintainer removed an Autter comment |
+| Resolved without change | The thread was resolved while the flagged code stayed as it was |
+| Ignored | The pull request merged with the flagged lines untouched and no other signal |
+
+When a pull request closes, Autter records an outcome — **fixed**, **dismissed**, or **ignored** — for every finding that was actually shown to a reader. Findings on pull requests that close without merging are excluded, so abandoned work never skews the numbers.
+
+## The acted-on rate
+
+The **Review signal** section on a repository's **Health** tab shows the acted-on rate: of the findings Autter surfaced, how many were fixed before merge versus dismissed or ignored.
+
+- **Overall acted-on rate** — one headline number for the repository.
+- **Week-by-week trend** — whether the review is getting more or less useful over time.
+- **Worst-first breakdown by check** — the checks costing attention without earning it sit at the top.
+- **In your digest** — the headline number and the worst-performing check are included in the weekly digest email and Slack message.
+
+## What the feedback changes
+
+Four mechanisms turn those signals into different future reviews.
+
+### Learnings
+
+Feedback becomes repository-scoped learnings: durable conventions Autter applies to every later review of the same repository. Learnings never leak across repositories. View, accept, or reject them on the repository's **Learnings** tab, and let coding agents read or add them over [MCP](/features/mcp) with `get_learnings` and `add_learning`.
+
+### Muting
+
+Dismissing a finding — deleting the comment, a 👎 reaction, a pushback reply, or resolving the thread without changing the code — mutes that check on that file path in future reviews. The mute is stored as a learning, so it is visible and reversible on the **Learnings** tab.
+
+### Auto-demotion
+
+A check with a persistently low acted-on rate in your repository is automatically moved out of the way, in stages: first out of inline comments and into the review summary, then out of the pull request entirely. Demotion looks at the trailing 90 days of merged pull requests, so checks recover on their own when they start being useful again — and a full demotion appears on the **Learnings** tab, where rejecting it reverses the demotion.
+
+### Verification skepticism
+
+Precision history feeds the verification pass that runs before findings post. A check your team chronically dismisses needs stronger evidence to publish a finding; a check you consistently act on gets the benefit of the doubt.
+
+## Reviewer training
+
+Autter can also learn from reviews your team wrote before Autter existed. Name trusted reviewers for a repository, and Autter mines their past pull request comments, keeps the substantive ones, and distills up to twenty repository guidelines that are applied like accepted learnings. Re-running training replaces the previously trained guidelines, so the output always reflects the current trainer list. Training is opt-in per repository.
+
+## Controls
+
+- Learnings can be turned on or off for the organization and per repository.
+- Per repository, choose which signals create learnings: thumbs feedback, dismissed findings, and applied auto-fixes.
+- The trainer list for reviewer training is set per repository.
+- Every mute and demotion is a visible entry on the **Learnings** tab and can be rejected to reverse it.
+
+{/* TODO: Add exact navigation labels for the Health and Learnings tabs once the production UI is approved for documentation. */}
+
+<CardGroup cols={2}>
+  <Card title="Code review" icon="git-pull-request" href="/features/code-review">
+    See what context a review reads and how findings are produced.
+  </Card>
+  <Card title="Review rules" icon="shield-check" href="/configuration/rules">
+    Write the explicit standards that calibration then keeps honest.
+  </Card>
+</CardGroup>

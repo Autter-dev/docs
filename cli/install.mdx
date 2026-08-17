@@ -56,38 +56,43 @@ For fish, use `source "$HOME/.autter/env.fish"`. New terminals pick up the `PATH
 
 Interactive macOS, Linux, and WSL installs start onboarding automatically. If the installer runs without an interactive terminal, complete onboarding later with `autter onboard`.
 
+## What the installer changes
+
+Every install method makes the same changes, all scoped to your user account:
+
+| Change | Detail |
+| --- | --- |
+| Binary | `~/.autter/bin/autter` (Windows: `%USERPROFILE%\.autter\bin\autter.exe`). On macOS and Linux, a convenience symlink at `~/.local/bin/autter` when that directory exists. |
+| `PATH` | Writes `~/.autter/env` (and `~/.autter/env.fish`), then appends one line that sources it — marked `# Added by autter installer` — to the shell files that exist on your machine: `~/.bashrc`, `~/.bash_profile`, `~/.zshrc`, or `~/.config/fish/config.fish`. On Windows, adds `%USERPROFILE%\.autter\bin` to your user `PATH` (never the system `PATH`) and, when Git Bash is detected, a `PATH` export in `~/.bashrc`. |
+| Settings and state | Settings in `~/.autter/config.json`. Credentials in your operating system keyring when available, otherwise in `~/.autter/internal/credentials` with owner-only permissions. The telemetry audit log at `~/.autter/internal/telemetry.log`. |
+| Coding-agent integrations | Adds checkpoint hooks to each detected agent's own configuration (for example, Claude Code's `~/.claude/settings.json`) so edits are attributed as they happen. Refresh anytime with `autter install-hooks`. |
+| Git observation | Sets the global `trace2.eventTarget` and `trace2.eventNesting` Git configuration keys so the background service can observe when commits complete. Trace2 is Git's built-in event stream; it does not change how Git behaves. |
+| Background service | Starts the Autter background service, which turns recorded checkpoints into Git notes under `refs/notes/ai` after each commit. |
+
+Autter does not install Git hooks, does not wrap the `git` command, and does not edit any per-repository configuration.
+
 ## Complete onboarding
 
-The installer asks whether you want local-only or connected mode.
+Interactive installs start `autter onboard` automatically; run it yourself anytime. The guided flow takes about a minute and asks two questions.
 
 <Frame caption="Replace this placeholder with the final onboarding terminal screenshot.">
   <img src="/images/placeholders/cli-onboarding.svg" alt="Placeholder for the Autter CLI onboarding choices" />
 </Frame>
 
-<Tabs>
-  <Tab title="Local-only">
-    Choose local-only mode to keep prompts on the machine and use Git notes for attribution.
+<Steps>
+  <Step title="Choose a storage mode">
+    - **Connected** links the machine to your Autter organization. Sign-in opens in your browser; the CLI never sees your password. Attribution is still written to local Git notes, and prompt and usage data also syncs to your organization's dashboards. If browser sign-in cannot complete, use the [PAT fallback](/cli/connect-platform#pat-fallback).
+    - **Local-only** keeps everything on the machine. No account is needed and nothing uploads. Switch anytime with `autter onboard --connect`.
+  </Step>
+  <Step title="Decide on anonymous telemetry">
+    Autter asks before sending anonymous usage analytics: a random install ID, coarse device info, and the Autter version — never code, prompts, or personal data. Every event sent is mirrored to `~/.autter/internal/telemetry.log` so you can audit it, and `autter telemetry off` disables it at any time.
+  </Step>
+  <Step title="Done — attribution is automatic">
+    The background service restarts with your choices, and authorship is recorded on every commit from here on. After your next AI-assisted commit, try `autter stats`, `autter blame <file>`, or `autter log`.
+  </Step>
+</Steps>
 
-    You can select it again later:
-
-    ```bash
-    autter onboard --local --force
-    ```
-  </Tab>
-  <Tab title="Connected">
-    Choose connected mode to sign in and sync attribution to the Autter platform.
-
-    You can start the flow later:
-
-    ```bash
-    autter onboard
-    ```
-
-    To select connected mode directly, run `autter onboard --connect`.
-
-    If onboarding cannot complete, use the [PAT fallback](/cli/connect-platform#pat-fallback).
-  </Tab>
-</Tabs>
+To redo onboarding, run `autter onboard --force`. For unattended setups, script the same choices with flags: `autter onboard --local --no-telemetry` or `autter onboard --connect`.
 
 ## Verify the installation
 
@@ -129,6 +134,44 @@ autter upgrade
 Use `autter upgrade --force` to reinstall the latest release.
 
 This works for every install method, including npm: the npm package is only a bootstrapper, and `autter upgrade` (or the background service's automatic update) replaces the binary in `~/.autter/bin` directly. Running `npm update -g @autter/cli` is not required.
+
+## Uninstall
+
+Removal is the install in reverse. Autter keeps its state under `~/.autter`, so there is nothing scattered to hunt down.
+
+<Steps>
+  <Step title="Stop the background service and remove integrations">
+    ```bash
+    autter bg shutdown
+    autter uninstall-hooks
+    ```
+
+    `autter uninstall-hooks` removes the checkpoint entries Autter added to your coding agents' configuration files. If the machine was connected, run `autter logout` first to clear credentials.
+  </Step>
+  <Step title="Remove the Git tracing keys">
+    ```bash
+    git config --global --unset trace2.eventTarget
+    git config --global --unset trace2.eventNesting
+    ```
+  </Step>
+  <Step title="Delete the binary and state">
+    ```bash
+    rm -rf ~/.autter
+    rm -f ~/.local/bin/autter
+    ```
+
+    On Windows, run `Remove-Item -Recurse -Force "$HOME\.autter"`, then remove `%USERPROFILE%\.autter\bin` from your user `PATH` under **Settings → Environment variables**.
+  </Step>
+  <Step title="Drop the PATH line">
+    Delete the block marked `# Added by autter installer` from `~/.bashrc`, `~/.bash_profile`, `~/.zshrc`, or `~/.config/fish/config.fish` — whichever exist. For Git Bash on Windows, remove the same block from `~/.bashrc`.
+  </Step>
+</Steps>
+
+Attribution already recorded in your repositories is not touched: it lives in each repository's Git notes under `refs/notes/ai`. To remove it from one repository, run `git update-ref -d refs/notes/ai` there. Uninstalling also does not delete data previously uploaded in connected mode — see [Opt out of cloud storage](/cli/data-and-privacy#opt-out-of-cloud-storage).
+
+<Tip>
+  To stop syncing without uninstalling, switch the machine to local-only mode with `autter logout` followed by `autter onboard --local --force`. To turn Autter off for a single repository, see [Disable Autter for a repository](/cli/data-and-privacy#disable-autter-for-a-repository).
+</Tip>
 
 ## Next step
 

@@ -30,6 +30,10 @@ Use AI chat to ask about complex logic, architecture, repository patterns, or a 
 
 Ask focused questions and name the relevant module or behavior. Specific questions make it easier to verify the answer against code.
 
+### What chat can read
+
+Chat is grounded in the same context as [review](/features/code-review#what-autter-reads-during-a-review): the repository index, the generated repository docs, and — on a pull request — the diff, the comment thread, and existing findings. When you mention `@autter` on a pull request, the agent additionally works from a checkout of the pull request head in an isolated review sandbox, so it can open any file in the repository to answer. Questions run read-only; asking for a fix uses the same sandbox and pushes a branch for your review.
+
 ## Suggested fixes
 
 Autter can propose concrete fixes for review findings. Before applying one:
@@ -48,7 +52,7 @@ Autter can propose concrete fixes for review findings. Before applying one:
 - write narrow, testable [review rules](/configuration/rules)
 - connect relevant issues and documentation
 - keep pull requests focused
-- use thumbs feedback where available to help calibrate results
+- give thumbs and reaction feedback on findings — it feeds [calibration](/features/calibration) directly
 - revise rules that repeatedly flag valid code
 
 {/* TODO: Add the exact chat entry points and feedback controls after the production UI is approved. */}
