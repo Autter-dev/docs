@@ -5,27 +5,1147 @@ icon: "clock-rotate-left"
 mode: "wide"
 ---
 
-Follow the features and improvements shipped across Autter. The newest release appears first.
+Follow the features and improvements shipped across Autter. The newest release appears first, and releases that shipped on the same day share a date.
+
+{/* Generated from the website repo's src/lib/changelog.ts, the source of truth behind autter.dev/changelog. Update that file first, then regenerate this page so the two never drift. */}
+
+<Update
+  label="2026-08-15"
+  description="Connecting your AI models now takes one line of code"
+  tags={["New feature"]}
+  rss={{
+    title: "Connecting your AI models now takes one line of code",
+    description: "Setting up AI monitoring used to mean a multi-step configuration walkthrough. Now the LLM tab shows you a single line to add, plus a prove-it-works button that sends a harmless test call, no tokens spent, no real request made, so you can confirm everything is wired up before you go anywhere near production traffic."
+  }}
+>
+  ## Connecting your AI models now takes one line of code
+
+  Setting up AI monitoring used to mean a multi-step configuration walkthrough. Now the LLM tab shows you a single line to add, plus a prove-it-works button that sends a harmless test call, no tokens spent, no real request made, so you can confirm everything is wired up before you go anywhere near production traffic.
+
+  - **The page updates live**: The moment that test call lands the tab reflects it, so there is no guessing whether it worked.
+  - **Or let the setup agent do it**: The agent instructions now handle the wiring and run the verification for you automatically.
+</Update>
+
+<Update
+  label="2026-08-15"
+  description="Slow and expensive AI calls now get flagged within minutes, not the next day"
+  tags={["New feature"]}
+  rss={{
+    title: "Slow and expensive AI calls now get flagged within minutes, not the next day",
+    description: "Autter now checks your AI traffic every ten minutes instead of every half hour, and it is watching for two new problems. In practice this means you find out about a slowdown or a runaway bill while it is happening, rather than discovering it in the next day's numbers."
+  }}
+>
+  ## Slow and expensive AI calls now get flagged within minutes, not the next day
+
+  Autter now checks your AI traffic every ten minutes instead of every half hour, and it is watching for two new problems. In practice this means you find out about a slowdown or a runaway bill while it is happening, rather than discovering it in the next day's numbers.
+
+  - **It learns what normal looks like**: For each individual model you use, Autter learns the typical response time and raises a flag when responses start dragging well past it.
+  - **Runaway single requests get named**: Any one request that costs an unusually large amount on its own gets called out, the classic sign that a prompt has quietly ballooned or an output ran away with itself.
+</Update>
+
+<Update
+  label="2026-08-15"
+  description="Autter can now open a pull request that fixes an AI performance or cost problem"
+  tags={["New feature"]}
+  rss={{
+    title: "Autter can now open a pull request that fixes an AI performance or cost problem",
+    description: "When a slow-response or expensive-call flag fires, Autter does not just tell you, it investigates. It gathers the worst offending calls, then traces backwards to find which part of your application actually triggered them, so it understands the real context rather than just the symptom."
+  }}
+>
+  ## Autter can now open a pull request that fixes an AI performance or cost problem
+
+  When a slow-response or expensive-call flag fires, Autter does not just tell you, it investigates. It gathers the worst offending calls, then traces backwards to find which part of your application actually triggered them, so it understands the real context rather than just the symptom.
+
+  - **Safe fixes arrive as pull requests**: If there is a safe, behaviour-preserving improvement available, caching, trimming a prompt, capping tokens, adding a timeout or a retry, batching requests, it opens a pull request with the change for you to review.
+  - **Honest when there is no safe fix**: If it decides a safe fix does not exist, it says so on the incident timeline and explains its reasoning, so you are never left wondering whether it looked.
+</Update>
+
+<Update
+  label="2026-08-15"
+  description="A daily summary of your AI spend and health, delivered to your notifications"
+  tags={["New feature"]}
+  rss={{
+    title: "A daily summary of your AI spend and health, delivered to your notifications",
+    description: "Every organisation with AI traffic now gets one report per day: what you spent and how that compares to yesterday, how many calls and tokens went through, your error rate, typical and worst-case response times, how many slow or expensive calls got flagged, your busiest model, and where you stand against your budget."
+  }}
+>
+  ## A daily summary of your AI spend and health, delivered to your notifications
+
+  Every organisation with AI traffic now gets one report per day: what you spent and how that compares to yesterday, how many calls and tokens went through, your error rate, typical and worst-case response times, how many slow or expensive calls got flagged, your busiest model, and where you stand against your budget.
+
+  It arrives in the same place as your budget alerts and links straight through to the full view. If your error rate climbs or new flags appear, the summary is marked as needing attention so it does not blend into the background.
+</Update>
+
+<Update
+  label="2026-08-15"
+  description="See your slowest and most expensive calls at a glance"
+  tags={["New feature"]}
+  rss={{
+    title: "See your slowest and most expensive calls at a glance",
+    description: "The LLM tab has two new cards listing your worst-performing requests side by side, one ranked by response time, one by cost. It is the fastest way to go from our AI bill went up to this is the exact request that did it."
+  }}
+>
+  ## See your slowest and most expensive calls at a glance
+
+  The LLM tab has two new cards listing your worst-performing requests side by side, one ranked by response time, one by cost. It is the fastest way to go from our AI bill went up to this is the exact request that did it.
+
+  Each entry shows the tokens used, what it cost, how long it took, whether it errored, and a reference you can use to dig into that specific call.
+</Update>
+
+<Update
+  label="2026-08-15"
+  description="The Runtime LLM tab no longer shows an error before your first data arrives"
+  tags={["Improvement"]}
+  rss={{
+    title: "The Runtime LLM tab no longer shows an error before your first data arrives",
+    description: "Some organisations were seeing the LLM tab fail to load entirely. The cause was a timing gap: the dashboard was ready to read AI usage data slightly before the system that stores it had finished preparing."
+  }}
+>
+  ## The Runtime LLM tab no longer shows an error before your first data arrives
+
+  Some organisations were seeing the LLM tab fail to load entirely. The cause was a timing gap: the dashboard was ready to read AI usage data slightly before the system that stores it had finished preparing.
+
+  Now, when that data store is not ready yet, the tab simply shows its normal setup and getting-started view instead of an error page, and the same protection applies automatically to any future data we add, so this class of problem cannot resurface. The background monitor that was quietly failing on the same issue every sweep is fixed too. The original outage was already resolved on our side before this change shipped; this closes the door on it happening again.
+</Update>
+
+<Update
+  label="2026-08-15"
+  description="The pieces behind the one-line install all landed together"
+  tags={["Improvement"]}
+  rss={{
+    title: "The pieces behind the one-line install all landed together",
+    description: "This dashboard work landed alongside matching updates to our runtime library and setup skills, so the one-line install, the automatic tracing, and the built-in verification step all arrived together rather than in pieces. We also cleaned up an internal data-formatting issue that had been making one of our source files hard to review, invisible to you, but it makes our own changes easier to check going forward."
+  }}
+>
+  ## The pieces behind the one-line install all landed together
+
+  This dashboard work landed alongside matching updates to our runtime library and setup skills, so the one-line install, the automatic tracing, and the built-in verification step all arrived together rather than in pieces. We also cleaned up an internal data-formatting issue that had been making one of our source files hard to review, invisible to you, but it makes our own changes easier to check going forward.
+</Update>
+
+<Update
+  label="2026-08-13"
+  description="Your first repository gets scanned automatically, with no button to find"
+  tags={["New feature"]}
+  rss={{
+    title: "Your first repository gets scanned automatically, with no button to find",
+    description: "Connect your first repository and Autter queues a fast scan for you, starting it the moment indexing finishes. It runs a focused set of checks, secrets, dependencies, configuration, licence and inventory, access rules, and AI-specific risks, so you get real results in minutes instead of waiting to work out where to click."
+  }}
+>
+  ## Your first repository gets scanned automatically, with no button to find
+
+  Connect your first repository and Autter queues a fast scan for you, starting it the moment indexing finishes. It runs a focused set of checks, secrets, dependencies, configuration, licence and inventory, access rules, and AI-specific risks, so you get real results in minutes instead of waiting to work out where to click.
+
+  - **Labelled for what it is**: The header marks it as a Quick scan, and a tooltip explains what the deeper full sweep adds when you are ready for it.
+  - **It does not cost you a scan**: The automatic first scan never uses up your monthly allowance, paid or free.
+</Update>
+
+<Update
+  label="2026-08-13"
+  description="Scans now tell you what needs your attention, not just a number"
+  tags={["New feature"]}
+  rss={{
+    title: "Scans now tell you what needs your attention, not just a number",
+    description: "Every scan surface now leads with a Needs attention count covering only the critical, high, and medium findings: the results header, the overview tiles, the findings list, the shareable PDF, and the Slack notification. The findings list opens filtered to those by default, with all severities still one click away."
+  }}
+>
+  ## Scans now tell you what needs your attention, not just a number
+
+  Every scan surface now leads with a Needs attention count covering only the critical, high, and medium findings: the results header, the overview tiles, the findings list, the shareable PDF, and the Slack notification. The findings list opens filtered to those by default, with all severities still one click away.
+
+  Previously a repository with a long tail of low-severity informational notes could look alarming at a glance. The headline number is now the short list you would actually work through.
+</Update>
+
+<Update
+  label="2026-08-13"
+  description="Autter names a real finding in your own code, right away"
+  tags={["New feature"]}
+  rss={{
+    title: "Autter names a real finding in your own code, right away",
+    description: "Instead of telling you it surfaced 199 findings, your dashboard scan cards now show the single most important thing found."
+  }}
+>
+  ## Autter names a real finding in your own code, right away
+
+  Instead of telling you it surfaced 199 findings, your dashboard scan cards now show the single most important thing found.
+
+  - **In the repository summary**: After indexing, the top finding sits front and centre with its description and location.
+  - **A one-time spotlight**: After your organisation's first completed scan, a spotlight card names the finding directly, with the exact file and line.
+</Update>
+
+<Update
+  label="2026-08-13"
+  description="A scan-complete email that actually tells you something"
+  tags={["New feature"]}
+  rss={{
+    title: "A scan-complete email that actually tells you something",
+    description: "When a scan you triggered finishes, the email now narrates the most important finding rather than just saying done. It also explains the difference between the quick scan and the full deep sweep, so you know what your next step is. This closes the loop the scan started email had been promising."
+  }}
+>
+  ## A scan-complete email that actually tells you something
+
+  When a scan you triggered finishes, the email now narrates the most important finding rather than just saying done. It also explains the difference between the quick scan and the full deep sweep, so you know what your next step is. This closes the loop the scan started email had been promising.
+</Update>
+
+<Update
+  label="2026-08-13"
+  description="Installing the command-line tool on Windows now just works"
+  tags={["Improvement"]}
+  rss={{
+    title: "Installing the command-line tool on Windows now just works",
+    description: "The install command we show you now runs correctly whether you paste it into Command Prompt, Windows PowerShell, or PowerShell 7. Previously it only worked in PowerShell and failed with a confusing syntax error anywhere else."
+  }}
+>
+  ## Installing the command-line tool on Windows now just works
+
+  The install command we show you now runs correctly whether you paste it into Command Prompt, Windows PowerShell, or PowerShell 7. Previously it only worked in PowerShell and failed with a confusing syntax error anywhere else.
+
+  The setup guide also gained a quick step to confirm the install succeeded, plus a reminder to restart your terminal so the command is found. An entire category of it did not work and I do not know why has been removed rather than documented around.
+</Update>
+
+<Update
+  label="2026-08-13"
+  description="The Runtime tab in the public demo no longer crashes"
+  tags={["Improvement"]}
+  rss={{
+    title: "The Runtime tab in the public demo no longer crashes",
+    description: "Opening Runtime in the try-it-yourself demo workspace previously failed every single time, showing a blank error page instead of the product. The demo now serves proper sample data for the overview, incidents, errors, services, and deployments views, and every one of those pages plus the demo home renders cleanly."
+  }}
+>
+  ## The Runtime tab in the public demo no longer crashes
+
+  Opening Runtime in the try-it-yourself demo workspace previously failed every single time, showing a blank error page instead of the product. The demo now serves proper sample data for the overview, incidents, errors, services, and deployments views, and every one of those pages plus the demo home renders cleanly.
+
+  ### Filters behave like the real thing
+
+  As part of the same fix, filtering in the demo actually filters: choosing an environment like staging narrows the KPIs and incident list to that environment, and the Errors tab's Resolved filter returns only resolved issues. Before, every filter returned the full sample set, which made the demo feel broken even once it loaded.
+
+  ### Missing data no longer breaks a page
+
+  The pages handle incomplete data gracefully now, showing an empty or could not load state instead of breaking.
+</Update>
+
+<Update
+  label="2026-08-13"
+  description="Severity drives the risk score, not volume"
+  tags={["Improvement"]}
+  rss={{
+    title: "Severity drives the risk score, not volume",
+    description: "The scoring behind the risk number was rebalanced so severity, rather than the sheer volume of minor notes, drives it. Alongside it, the scan pipeline learned to run a lighter, safely reduced set of checks for the new automatic first scan without ever counting against your usage, and our notification infrastructure was extended so scan results can be emailed straight from the scanning engine."
+  }}
+>
+  ## Severity drives the risk score, not volume
+
+  The scoring behind the risk number was rebalanced so severity, rather than the sheer volume of minor notes, drives it. Alongside it, the scan pipeline learned to run a lighter, safely reduced set of checks for the new automatic first scan without ever counting against your usage, and our notification infrastructure was extended so scan results can be emailed straight from the scanning engine.
+</Update>
+
+<Update
+  label="2026-08-12"
+  description="Setup is four steps instead of nine, and the waiting does something"
+  tags={["New feature"]}
+  rss={{
+    title: "Setup is four steps instead of nine, and the waiting does something",
+    description: "The standard signup path collapses into a single setup hub that runs while your repository is being indexed, rather than making you click through informational screens first. A live status card shows exactly which repositories are being processed, and underneath it there are tabs to install the CLI, connect your observability tools, invite teammates, and link your GitHub account. The flow ends by offering to run your first codebase scan, so you leave onboarding having seen Autter actually do something."
+  }}
+>
+  ## Setup is four steps instead of nine, and the waiting does something
+
+  The standard signup path collapses into a single setup hub that runs while your repository is being indexed, rather than making you click through informational screens first. A live status card shows exactly which repositories are being processed, and underneath it there are tabs to install the CLI, connect your observability tools, invite teammates, and link your GitHub account. The flow ends by offering to run your first codebase scan, so you leave onboarding having seen Autter actually do something.
+
+  ### What changed in the flow
+
+  - **Setup runs during indexing**: The hub is usable while the index builds in the background, not after it.
+  - **A real Windows install command**: The install guide now offers PowerShell. Previously it only ever showed the Mac and Linux command, even though Windows was supported.
+  - **Onboarding finishes itself**: When indexing completes you land on your dashboard a couple of seconds later, instead of the screen sitting on a green checkmark waiting for two more clicks. If indexing ran into problems Autter deliberately does not auto-advance, so the warning stays on screen where you can read it.
+  - **One GitHub step instead of two**: Installing the app links your personal profile at the same time, on the same screen. Signing up used to ask you to connect to GitHub twice.
+
+  ### Your remaining steps became a live checklist
+
+  The finish setting up section on the dashboard is now a proper checklist with a progress bar, and each step ticks itself off automatically based on what you have actually done: a scan that has been run, the CLI detected on your machine, observability data arriving, a teammate invited, your GitHub account linked. Hints are personalised with the repository name to scan, how many teammates you have, and which GitHub account you are connected as, and the header flips to a done state when you finish. It replaces a section that previously looked half-finished, with content floating in empty space.
+
+  ### Two things to know
+
+  - Teammates who never install anything themselves get a new Your GitHub account card in Settings, Source Control, which is also the first place in the product where you can disconnect a personal GitHub link.
+  - Linking your profile during app installation needs a small configuration change on our side to switch on, and behaves exactly as before until then.
+</Update>
+
+<Update
+  label="2026-08-12"
+  description="Bring your own monitoring: Sentry, PostHog, Grafana, or any webhook"
+  tags={["New feature"]}
+  rss={{
+    title: "Bring your own monitoring: Sentry, PostHog, Grafana, or any webhook",
+    description: "You no longer need to be using Autter's own runtime SDK to get incident investigation and automated fixes. Alerts from Sentry, PostHog, Grafana, or any tool that can send a JSON webhook now flow into the same incident pipeline: Autter correlates them with recent deployments and pull requests, investigates the root cause, and can open a fix pull request."
+  }}
+>
+  ## Bring your own monitoring: Sentry, PostHog, Grafana, or any webhook
+
+  You no longer need to be using Autter's own runtime SDK to get incident investigation and automated fixes. Alerts from Sentry, PostHog, Grafana, or any tool that can send a JSON webhook now flow into the same incident pipeline: Autter correlates them with recent deployments and pull requests, investigates the root cause, and can open a fix pull request.
+
+  - **You choose how far it goes**: Per source: just collect the data, investigate it, or investigate and auto-fix.
+  - **External alerts open an incident immediately**: Your monitoring tool already decided the alert was worth firing, so these skip Autter's usual volume threshold. When your tool marks it resolved, Autter closes it too.
+  - **Data Sources settings is fully working**: Previously a set of preview cards, now setup instructions per tool and a copyable webhook address.
+</Update>
+
+<Update
+  label="2026-08-12"
+  description="Autter Runtime now catches slow code, not just broken code"
+  tags={["New feature"]}
+  rss={{
+    title: "Autter Runtime now catches slow code, not just broken code",
+    description: "A new monitor sweeps your runtime data every half hour looking for operations that are both slow and frequent, web routes and background jobs alike. When it finds one it opens a performance incident, marked with a violet PERF badge in Runtime, Incidents, correlates it with recent deployments, and runs an automated analysis using real trace evidence to work out where the time is actually going."
+  }}
+>
+  ## Autter Runtime now catches slow code, not just broken code
+
+  A new monitor sweeps your runtime data every half hour looking for operations that are both slow and frequent, web routes and background jobs alike. When it finds one it opens a performance incident, marked with a violet PERF badge in Runtime, Incidents, correlates it with recent deployments, and runs an automated analysis using real trace evidence to work out where the time is actually going.
+
+  - **The same loop, extended to latency**: Detect, investigate, fix. If there is a safe optimisation, Autter opens a pull request with the change and a test proving it.
+  - **It tells you when it cannot help**: If it decides the code cannot safely be optimised, it says so on the incident timeline rather than staying silent.
+  - **No nagging**: An unresolved slow process will not re-alert for a week.
+</Update>
+
+<Update
+  label="2026-08-12"
+  description="Environment variables for your repositories, so checks run against real configuration"
+  tags={["New feature"]}
+  rss={{
+    title: "Environment variables for your repositories, so checks run against real configuration",
+    description: "The repository Environment variables tab is no longer a placeholder. You can paste in a .env file as a named bundle and choose which parts of Autter's testing it feeds, builds, tests, or app startup, so checks that previously stalled on missing configuration now run properly."
+  }}
+>
+  ## Environment variables for your repositories, so checks run against real configuration
+
+  The repository Environment variables tab is no longer a placeholder. You can paste in a .env file as a named bundle and choose which parts of Autter's testing it feeds, builds, tests, or app startup, so checks that previously stalled on missing configuration now run properly.
+
+  - **Import from a secret manager**: AWS Secrets Manager, Doppler, and Infisical, with a Sync now button to re-pull.
+  - **Missing variables get named**: Autter shows which variables your repository declares that you have not configured yet, and a failing build check names the missing variable and points you at the tab.
+  - **Write-only by design**: Nothing in the product or its APIs ever gives a value back. Only variable names are ever displayed.
+</Update>
+
+<Update
+  label="2026-08-12"
+  description="Scans that fail now look like it"
+  tags={["Improvement"]}
+  rss={{
+    title: "Scans that fail now look like it",
+    description: "Two fixes on the same screen: first scans that failed with a raw internal error, and failed scans that still rendered a clean bill of health."
+  }}
+>
+  ## Scans that fail now look like it
+
+  Two fixes on the same screen: first scans that failed with a raw internal error, and failed scans that still rendered a clean bill of health.
+
+  ### First scans no longer fail with a raw technical error
+
+  New users running their first codebase scan could hit a failure with an unfriendly internal error message printed directly on the dashboard. The underlying configuration gap in our processing infrastructure has been corrected and affected scans have been repaired. Beyond that, we changed the behaviour so this class of problem cannot fail a scan at all: a scan that cannot be dispatched right away now stays safely queued, and a new background sweep picks up anything waiting more than a few minutes and runs it. Internal error details go to our logs only, and you see plain-language status instead.
+
+  ### Failed scans stopped pretending they succeeded
+
+  A scan that failed partway through could still render a green shield, risk scores, and a No findings summary, reading as a clean bill of health when it was nothing of the sort. Failed scans now show a red indicator and a clear panel saying the scan did not finish, with the scores suppressed.
+
+  ### In the same pass
+
+  - The CLI install prompt no longer stacks up in three places at once.
+  - The Settings CLI screen recognises when you have already connected, instead of pitching a feature you are using.
+  - An architecture map message that implied your repository was not indexed when it was.
+  - Two pieces of misleading copy, one about how prompt data is stored, one about how CLI credentials work.
+</Update>
+
+<Update
+  label="2026-08-12"
+  description="One blocking-issue count, and verdicts that update after the deeper pass"
+  tags={["Improvement"]}
+  rss={{
+    title: "One blocking-issue count, and verdicts that update after the deeper pass",
+    description: "The pull request page is the one screen meant to tell you whether a merge is safe. Two ways it could mislead you are now fixed."
+  }}
+>
+  ## One blocking-issue count, and verdicts that update after the deeper pass
+
+  The pull request page is the one screen meant to tell you whether a merge is safe. Two ways it could mislead you are now fixed.
+
+  ### Every count on the page agrees
+
+  On a demo trial the page header said 7 hard blocks while the summary right below it said 10. The mismatch came from different parts of the page counting findings differently: some included findings the verification pass had already refuted, some did not. Every count now uses the same rule as the merge gate itself. Refuted findings still appear in the list, counted separately and labelled, so the arithmetic on screen adds up.
+
+  ### The verdict is recomputed after the deeper analysis
+
+  A test pull request with a deliberately broken import and a hardcoded API key still read 0 findings, 157 checks passed, approved and merge-ready, even though the deeper analysis pass had caught the broken import by actually running the code. The verdict had been posted earlier and nothing ever revisited it. It is now recomputed when the deeper pass completes: new problems supersede the approval with a change request and turn the check red, and if the deeper pass instead refuted the findings that were blocking, the gate re-opens. Check counts, the pill grid, and the dashboard cards all update to match.
+
+  ### Keys labelled fake are no longer discarded silently
+
+  API keys labelled fake or dummy were being silently discarded before detection ran, which is indistinguishable from not noticing them. They now surface as a clearly labelled low-risk note, so you can see the detection worked, and they never block a merge on their own.
+</Update>
+
+<Update
+  label="2026-08-12"
+  description="Automated fix runs always report back"
+  tags={["Improvement"]}
+  rss={{
+    title: "Automated fix runs always report back",
+    description: "An automated fix run could announce that it was processing fixes and then go completely silent, with no branch, no follow-up, and no explanation, when its internal safety checks decided not to ship a patch. Every one of those quiet exits now posts a closing comment explaining what happened."
+  }}
+>
+  ## Automated fix runs always report back
+
+  An automated fix run could announce that it was processing fixes and then go completely silent, with no branch, no follow-up, and no explanation, when its internal safety checks decided not to ship a patch. Every one of those quiet exits now posts a closing comment explaining what happened.
+
+  ### Effort spent where a patch can help
+
+  The fixer no longer works on findings that no patch can resolve, things like a missing linked issue or a pull request that mixes a refactor with a behaviour change. Those now get their own checklist comment addressed to you, so you can work through your half while the agent handles the automatable half, and they no longer crowd out real fixes.
+
+  ### Closed pull requests are handled honestly
+
+  Ticking the fix option on a pull request that was already closed used to start a job that could never run, leaving a processing message hanging forever. You now get an immediate reply explaining that fix runs only target open pull requests, and a run that is mid-flight when a pull request closes is cancelled with a comment instead of vanishing.
+
+  ### The patch-safety check always uses the best model
+
+  The final safety check that decides whether a generated patch is good enough to ship was being served by the economy model on lower plans, and was withholding perfectly sound fixes. That one check is now exempt from plan-based model selection for everyone. It is a tiny call, and the wrong place to economise.
+</Update>
+
+<Update
+  label="2026-08-12"
+  description="Every CLI install screen now explains why you need it"
+  tags={["Improvement"]}
+  rss={{
+    title: "Every CLI install screen now explains why you need it",
+    description: "People kept asking a fair question: \"I just connected my repository to GitHub, why am I also installing something on my machine?\" Each install screen now leads with a one-minute setup badge and a short side-by-side explanation, and it shows up everywhere the install guide appears, not just during signup."
+  }}
+>
+  ## Every CLI install screen now explains why you need it
+
+  People kept asking a fair question: "I just connected my repository to GitHub, why am I also installing something on my machine?" Each install screen now leads with a one-minute setup badge and a short side-by-side explanation, and it shows up everywhere the install guide appears, not just during signup.
+
+  - The GitHub connection reviews pull requests and indexes your code in the cloud, but only ever sees finished commits.
+  - The CLI runs where the code is actually written and records who wrote each line as it happens, which cannot be reconstructed after the fact.
+</Update>
+
+<Update
+  label="2026-08-12"
+  description="Two pieces of hardening behind the scenes"
+  tags={["Improvement"]}
+  rss={{
+    title: "Two pieces of hardening behind the scenes",
+    description: "The processes Autter runs against your code, builds, tests, and app boots, no longer inherit our internal credentials: they get a deliberately scrubbed environment containing only your own configuration. Separately, the infrastructure that hands scans off for processing was audited and corrected after the first-scan failures above, with a backstop sweep added so a similar gap cannot strand your work again."
+  }}
+>
+  ## Two pieces of hardening behind the scenes
+
+  The processes Autter runs against your code, builds, tests, and app boots, no longer inherit our internal credentials: they get a deliberately scrubbed environment containing only your own configuration. Separately, the infrastructure that hands scans off for processing was audited and corrected after the first-scan failures above, with a backstop sweep added so a similar gap cannot strand your work again.
+</Update>
+
+<Update
+  label="2026-08-09"
+  description="Search your pull requests by meaning"
+  tags={["New feature"]}
+  rss={{
+    title: "Search your pull requests by meaning",
+    description: "The Pull requests tab now has real search. Ask for what you mean rather than guessing at keywords: searching \"is this safe from attackers\" finds a pull request titled \"fix: SQL injection in search endpoint\", with no words in common."
+  }}
+>
+  ## Search your pull requests by meaning
+
+  The Pull requests tab now has real search. Ask for what you mean rather than guessing at keywords: searching "is this safe from attackers" finds a pull request titled "fix: SQL injection in search endpoint", with no words in common.
+
+  - **Meaning, not keywords**: Describe the change you are looking for and matching pull requests surface even when the words differ.
+  - **Exact lookups stay instant**: Pull request numbers, branch names, and author names still resolve instantly.
+  - **List and Board agree**: Both views always show the same matches for the same query.
+</Update>
+
+<Update
+  label="2026-08-09"
+  description="Two new review checks: row-level security and UI slop"
+  tags={["New feature"]}
+  rss={{
+    title: "Two new review checks: row-level security and UI slop",
+    description: "The review engine gained two checks aimed at the failure modes of AI-built products: database rows anyone can read, and interfaces nobody edited. Both skip themselves entirely when a change does not touch the relevant area, so they add no cost to unrelated reviews. Test, fixture, and demo files are excluded."
+  }}
+>
+  ## Two new review checks: row-level security and UI slop
+
+  The review engine gained two checks aimed at the failure modes of AI-built products: database rows anyone can read, and interfaces nobody edited. Both skip themselves entirely when a change does not touch the relevant area, so they add no cost to unrelated reviews. Test, fixture, and demo files are excluded.
+
+  ### Row-level security
+
+  Autter now checks Postgres row-level security posture on any RLS-reliant stack, including Supabase, Neon, RDS, Hasura, raw SQL, Drizzle, and Prisma. Available in pull request review and as a new RLS Security tab on codebase scans.
+
+  - Tables shipped without RLS enabled.
+  - Policies that let everyone through.
+  - Views and functions that bypass policies.
+  - Privileged keys exposed to the browser.
+  - Privileged queries that trust a client-supplied id.
+
+  ### UI design slop
+
+  Catches the tells of unedited generated interfaces before they reach production: the stock gradient hero, filler copy, leftover Lorem ipsum and Acme Corp placeholders, emoji standing in for real icons, and buttons that look clickable but do nothing.
+</Update>
+
+<Update
+  label="2026-08-09"
+  description="See how much of Autter's review you actually act on"
+  tags={["New feature"]}
+  rss={{
+    title: "See how much of Autter's review you actually act on",
+    description: "A new Review signal section on a repository's Health tab shows the acted-on rate: of the findings Autter surfaced, how many were fixed before the pull request merged, versus dismissed or ignored. You can finally see which checks earn their place and which are noise."
+  }}
+>
+  ## See how much of Autter's review you actually act on
+
+  A new Review signal section on a repository's Health tab shows the acted-on rate: of the findings Autter surfaced, how many were fixed before the pull request merged, versus dismissed or ignored. You can finally see which checks earn their place and which are noise.
+
+  ### The measurement
+
+  - **Overall acted-on rate**: One headline number for the repository.
+  - **Week-by-week trend**: Whether the review is getting more or less useful over time.
+  - **Worst-first breakdown by check**: The checks costing attention without earning it sit at the top.
+  - **In your digest**: The headline number and the worst-performing check are included in the weekly digest email and Slack message.
+
+  ### Reviews that tune themselves
+
+  This measurement now feeds back into the reviews. A check with a persistently low acted-on rate in your repository is automatically moved out of inline comments: first into the summary, then out of the pull request entirely. Checks recover on their own if they start being useful again, and you can reverse a demotion.
+</Update>
+
+<Update
+  label="2026-08-09"
+  description="Custom agents: schedules, email, and six new templates"
+  tags={["New feature"]}
+  rss={{
+    title: "Custom agents: schedules, email, and six new templates",
+    description: "Custom agents are no longer tied to pull request events. They can now run on a schedule, send email, and start from six new templates, and the agent builder's trigger step is reorganised into Pre-merge, Post-merge, and Scheduled."
+  }}
+>
+  ## Custom agents: schedules, email, and six new templates
+
+  Custom agents are no longer tied to pull request events. They can now run on a schedule, send email, and start from six new templates, and the agent builder's trigger step is reorganised into Pre-merge, Post-merge, and Scheduled.
+
+  - **Run agents on a schedule**: Daily, on weekdays, or weekly at a time you choose. Scheduled agents get a digest of recent activity, open and recently merged pull requests, as context.
+  - **Agents can send email**: A new Email tool is available to every custom agent. Agents can only email members of your organisation, never an outside address.
+  - **Six new starter templates**: Standup Summary, Weekly Review, PR Review Digest, Changelog Drafter, Dependency Update Check, and Release Notes Drafter.
+</Update>
+
+<Update
+  label="2026-08-09"
+  description="Review depth follows who wrote the code"
+  tags={["Improvement"]}
+  rss={{
+    title: "Review depth follows who wrote the code",
+    description: "For repositories using the Autter CLI, the deepest parts of the review, the verification pass and the agentic follow-up, now prioritise code written by an AI agent that no human has since edited. Nothing gets less scrutiny than before, and nothing new is flagged: Autter just spends its most careful passes on the code least likely to have been read. Repositories not using the CLI are unaffected."
+  }}
+>
+  ## Review depth follows who wrote the code
+
+  For repositories using the Autter CLI, the deepest parts of the review, the verification pass and the agentic follow-up, now prioritise code written by an AI agent that no human has since edited. Nothing gets less scrutiny than before, and nothing new is flagged: Autter just spends its most careful passes on the code least likely to have been read. Repositories not using the CLI are unaffected.
+</Update>
+
+<Update
+  label="2026-08-09"
+  description="A faster start, and workspaces you can rename"
+  tags={["Improvement"]}
+  rss={{
+    title: "A faster start, and workspaces you can rename",
+    description: "New accounts get a workspace created for them at signup instead of having to fill in a form first, and you can rename a workspace and its URL from settings at any time."
+  }}
+>
+  ## A faster start, and workspaces you can rename
+
+  New accounts get a workspace created for them at signup instead of having to fill in a form first, and you can rename a workspace and its URL from settings at any time.
+
+  One thing to know: renaming changes the workspace URL, so older links in already-sent emails and pull request descriptions will stop resolving.
+</Update>
+
+<Update
+  label="2026-08-09"
+  description="Failures that hid themselves, fixed"
+  tags={["Improvement"]}
+  rss={{
+    title: "Failures that hid themselves, fixed",
+    description: "Two fixes this week share a theme: failure should never be invisible. A review job that died partway through now reports itself, and a secret scan that never ran no longer looks like a clean one."
+  }}
+>
+  ## Failures that hid themselves, fixed
+
+  Two fixes this week share a theme: failure should never be invisible. A review job that died partway through now reports itself, and a secret scan that never ran no longer looks like a clean one.
+
+  ### Reviews were silently not posting for some organisations
+
+  Accounts created before a settings change in mid-July stopped receiving pull request reviews around 4 August: the review job was failing partway through without reporting an error. This is fixed, and Autter now repairs this class of problem automatically. Pull requests missed during the outage need a new push or an @autter comment to be reviewed.
+
+  ### A secret scan could report a clean result when it never ran
+
+  If the AI provider was unavailable, the secret scanner returned an empty result that looked identical to a clean scan. Scans affected by a provider outage are now clearly marked as incomplete.
+</Update>
+
+<Update
+  label="2026-08-05"
+  description="Stacked pull requests are now first-class in Autter"
+  tags={["New feature"]}
+  rss={{
+    title: "Stacked pull requests are now first-class in Autter",
+    description: "GitHub recently introduced native stacked pull requests, and Autter now speaks that language fluently. A stack shows up as a single entry on your dashboard instead of flooding the list with rows that only make sense read together, with a map of the layers and each one's position, and you can land the whole stack from the dashboard. The old merge button simply could not do that."
+  }}
+>
+  ## Stacked pull requests are now first-class in Autter
+
+  GitHub recently introduced native stacked pull requests, and Autter now speaks that language fluently. A stack shows up as a single entry on your dashboard instead of flooding the list with rows that only make sense read together, with a map of the layers and each one's position, and you can land the whole stack from the dashboard. The old merge button simply could not do that.
+
+  ### Reading a stack
+
+  Stacks built with other tools like Graphite or Sapling are detected and displayed too, clearly labelled so you always know which ones GitHub can merge for you and which it cannot.
+
+  - **One entry per stack**: Layers group together instead of scattering across your list.
+  - **Layer map with positions**: See the shape of the stack and where each pull request sits in it.
+  - **Third-party stacks detected**: Graphite and Sapling stacks are labelled for what they are.
+
+  ### Merging a stack
+
+  Three things come with it that we think you will feel immediately.
+
+  - The merge gate now agrees with GitHub. Instead of a vague warning that a pull request below is not ready, Autter names the layer and the finding holding the stack up.
+  - An issue found low in a stack is no longer re-reported on every layer above it, so review comments stay readable.
+  - The merge confirmation names every pull request that will land with it. No surprises.
+
+  ### Cost
+
+  Reviews across a stack are cost-aware by default, giving full attention to the layers that need it instead of re-reviewing overlapping work several times over.
+</Update>
+
+<Update
+  label="2026-08-05"
+  description="Autter can now propose how to split a large pull request into a stack"
+  tags={["New feature"]}
+  rss={{
+    title: "Autter can now propose how to split a large pull request into a stack",
+    description: "Open a big pull request and Autter can suggest a way to break it into reviewable layers, worked out from how the code in your change actually depends on itself. Each proposed layer stands on its own rather than being chopped up by folder or file count."
+  }}
+>
+  ## Autter can now propose how to split a large pull request into a stack
+
+  Open a big pull request and Autter can suggest a way to break it into reviewable layers, worked out from how the code in your change actually depends on itself. Each proposed layer stands on its own rather than being chopped up by folder or file count.
+
+  - **Dependency-aware layers**: Splits follow the real structure of the change, not the directory tree.
+  - **Deterministic and free**: The same answer every time, at no extra cost.
+  - **Quiet when it should be**: No split suggested for small or self-contained pull requests.
+  - **Nothing happens behind your back**: Accepting a proposal records your intent and shows the commands to create the branches. Autter never rewrites your pull request for you.
+</Update>
+
+<Update
+  label="2026-08-05"
+  description="Dependency chains now trace back to their origin in pnpm and yarn projects"
+  tags={["New feature"]}
+  rss={{
+    title: "Dependency chains now trace back to their origin in pnpm and yarn projects",
+    description: "If your repository uses pnpm or yarn, the Dependency Chain panel in your dependency inventory used to say origin unknown for every indirect dependency. That left the question that matters most during a security scare unanswered: what did we install that pulled this in?"
+  }}
+>
+  ## Dependency chains now trace back to their origin in pnpm and yarn projects
+
+  If your repository uses pnpm or yarn, the Dependency Chain panel in your dependency inventory used to say origin unknown for every indirect dependency. That left the question that matters most during a security scare unanswered: what did we install that pulled this in?
+
+  - **Full paths reconstructed**: Works for pnpm and yarn across every common lockfile version.
+  - **Dev and production separated**: Development-only dependencies no longer get mistaken for ones that ship to users.
+  - **Inventories that were empty now fill in**: Some older pnpm projects listed no indirect dependencies at all and will now show a complete inventory for the first time.
+</Update>
+
+<Update
+  label="2026-08-05"
+  description="Quieter errors, honest demo pricing, and reviews that stop cleanly"
+  tags={["Improvement"]}
+  rss={{
+    title: "Quieter errors, honest demo pricing, and reviews that stop cleanly",
+    description: "Three fixes that all remove work nobody asked for: phantom issues, wrong numbers, and reviews that kept running after their pull request had already shipped."
+  }}
+>
+  ## Quieter errors, honest demo pricing, and reviews that stop cleanly
+
+  Three fixes that all remove work nobody asked for: phantom issues, wrong numbers, and reviews that kept running after their pull request had already shipped.
+
+  ### Demo billing pages show the right prices again
+
+  Plan pricing in demo workspaces had drifted and was displaying figures a hundred times higher than the real thing, along with out-of-date usage limits and overage rates. Everything is realigned to the actual published pricing in both US dollars and Indian rupees, and the sample usage figures now sit sensibly within plan limits so the progress bars tell an honest story.
+
+  ### Error tracking is quieter and more useful
+
+  A noisy class of errors caused by browser extensions, not by Autter or your code, was being captured and mixed in with real problems, where it buried genuine regressions. We now filter that category out at the source while being careful not to hide real failures that happen to look similar. The practical effect: fewer phantom issues competing for your attention.
+
+  ### Reviews stop cleanly when you merge mid-flight
+
+  If you merged a pull request while its review was still generating, Autter used to keep going: finishing a review nobody would read, then kicking off its heaviest follow-up work against code that had already shipped, sometimes opening a fix pull request for a pull request that no longer existed. Autter now recognises the merge, stops in-flight work where it is safe to do so, and never queues follow-up work for a closed or merged pull request. Questions you ask Autter directly on a merged pull request still get answered, because those are intentional, not waste.
+</Update>
+
+<Update
+  label="2026-07-19"
+  description="A pull request board, stronger controls, and safer automation"
+  tags={["New feature"]}
+  rss={{
+    title: "A pull request board, stronger controls, and safer automation",
+    description: "Pull requests now have a dedicated board for managing review work, backed by stronger safeguards and more dependable automated fix runs."
+  }}
+>
+  ## A pull request board, stronger controls, and safer automation
+
+  Pull requests now have a dedicated board for managing review work, backed by stronger safeguards and more dependable automated fix runs.
+
+  ### Review board
+
+  - Added a pull request board view with clear columns for review status and requested changes.
+  - Added drag-and-drop pull request status updates for easier review management.
+
+  ### Review controls
+
+  - Strengthened review blocking for high-risk issues that could cause billing or financial impact.
+  - Added stricter free-tier limits for pull request reviews.
+  - Improved feedback handling with mute controls and cleaner display behavior.
+
+  ### Security hardening
+
+  - Fixed security gaps around file uploads, rendered content, external page fetching, and billing edge cases.
+
+  ### Fix execution
+
+  - Improved fix-run notifications and failure handling.
+  - Fixed review environment installation issues for more reliable automated runs.
+</Update>
+
+<Update
+  label="2026-07-19"
+  description="Regional pricing, subscriptions, and usage metering"
+  tags={["New feature"]}
+  rss={{
+    title: "Regional pricing, subscriptions, and usage metering",
+    description: "Pricing and subscription management now adapt more clearly across regions, with dependable invoicing and more complete usage tracking behind the scenes."
+  }}
+>
+  ## Regional pricing, subscriptions, and usage metering
+
+  Pricing and subscription management now adapt more clearly across regions, with dependable invoicing and more complete usage tracking behind the scenes.
+
+  ### Pricing and billing
+
+  - Added dual-currency pricing with clearer subscription and cancellation flows.
+  - Migrated subscriptions to a new regional payment flow with support for coupons.
+  - Improved invoice generation so payments are reflected more reliably.
+
+  ### Usage tracking
+
+  - Routed coding-agent sessions through metering for better usage tracking.
+</Update>
+
+<Update
+  label="2026-07-19"
+  description="Connected accounts and guided onboarding"
+  tags={["New feature"]}
+  rss={{
+    title: "Connected accounts and guided onboarding",
+    description: "A dedicated account-linking path and a more dependable guided setup now carry users from code hosting connection to a working demo with less friction."
+  }}
+>
+  ## Connected accounts and guided onboarding
+
+  A dedicated account-linking path and a more dependable guided setup now carry users from code hosting connection to a working demo with less friction.
+
+  - Added a dedicated account-linking flow for code hosting accounts.
+  - Improved onboarding reliability after account connection and app installation.
+  - Added copy-friendly demo setup details and a smoother guided onboarding flow.
+</Update>
+
+<Update
+  label="2026-07-19"
+  description="Meet Autter MCP: review context and actions in your AI tools"
+  tags={["New feature"]}
+  rss={{
+    title: "Meet Autter MCP: review context and actions in your AI tools",
+    description: "The new Autter MCP server gives AI tools secure access to pull requests, review intelligence, repository health, and the actions needed to move review work forward."
+  }}
+>
+  ## Meet Autter MCP: review context and actions in your AI tools
+
+  The new Autter MCP server gives AI tools secure access to pull requests, review intelligence, repository health, and the actions needed to move review work forward.
+
+  - Added secure personal access tokens for MCP and other external tool access.
+  - Added the Autter MCP server with tools for reading pull requests, review results, learnings, repository health, dependency checks, and codebase insights.
+  - Added MCP actions for replying to review comments, resolving review threads, triggering reviews, and saving team learnings.
+  - Added analytics for MCP tool usage and intent capture.
+</Update>
+
+<Update
+  label="2026-07-19"
+  description="Scoped build verification and safer automated testing"
+  tags={["New feature"]}
+  rss={{
+    title: "Scoped build verification and safer automated testing",
+    description: "Build verification now scales to larger repositories, explains failures more clearly, and can exercise uncovered test areas against disposable databases."
+  }}
+>
+  ## Scoped build verification and safer automated testing
+
+  Build verification now scales to larger repositories, explains failures more clearly, and can exercise uncovered test areas against disposable databases.
+
+  ### Build verification
+
+  - Improved production build reliability across frontend and backend.
+  - Added scoped build verification for large repositories.
+  - Added clearer explanations when builds fail.
+
+  ### Automated testing
+
+  - Added automated test-plan grading and execution for uncovered test areas.
+  - Added disposable test databases for safer automated test runs.
+</Update>
+
+<Update
+  label="2026-07-19"
+  description="More reliable connected workflows and notifications"
+  tags={["Improvement"]}
+  rss={{
+    title: "More reliable connected workflows and notifications",
+    description: "Planning tool updates, scheduled checks, and weekly digests now stay in step more reliably and give teams better control over recurring notifications."
+  }}
+>
+  ## More reliable connected workflows and notifications
+
+  Planning tool updates, scheduled checks, and weekly digests now stay in step more reliably and give teams better control over recurring notifications.
+
+  ### Connected planning
+
+  - Improved issue syncing reliability from connected planning tools.
+
+  ### Schedules and notifications
+
+  - Improved timestamp handling in alerts and suggestions so scheduled checks behave more reliably.
+  - Improved weekly digest notification settings.
+</Update>
+
+<Update
+  label="2026-07-13"
+  description="Reviews that learn, verify, and act"
+  tags={["Improvement"]}
+  rss={{
+    title: "Reviews that learn, verify, and act",
+    description: "Automated reviews now cover more of what makes software safe to ship, learn from the way each repository responds to findings, and turn confirmed issues into action with less friction."
+  }}
+>
+  ## Reviews that learn, verify, and act
+
+  Automated reviews now cover more of what makes software safe to ship, learn from the way each repository responds to findings, and turn confirmed issues into action with less friction.
+
+  - Added richer automated pull request reviews with more checks for security, reliability, performance, testing, documentation, and production readiness.
+  - Improved review accuracy by learning from user replies, reactions, and repository-specific feedback.
+  - Added stronger secret, dependency, and vulnerability detection across review workflows.
+  - Added configurable security alerts and weekly team digest notifications.
+  - Improved automated fix flows so selected fixes can be run directly from review options.
+  - Made high-risk money-loss findings block merges when confirmed by AI review.
+  - Improved nightly vulnerability scans with clearer repository summaries and better alert delivery.
+</Update>
+
+<Update
+  label="2026-07-13"
+  description="Custom agents and post-merge automation"
+  tags={["New feature"]}
+  rss={{
+    title: "Custom agents and post-merge automation",
+    description: "Teams can now bring installed and custom agents into the review pipeline, control what they are allowed to do, and continue automating work after a change lands."
+  }}
+>
+  ## Custom agents and post-merge automation
+
+  Teams can now bring installed and custom agents into the review pipeline, control what they are allowed to do, and continue automating work after a change lands.
+
+  - Added support for installed and custom review agents inside the review pipeline.
+  - Added sample agent templates and permission controls for custom automation.
+  - Added post-merge automation triggers so teams can run workflows after changes land.
+  - Improved review session routing, isolation, and diagnostics for more dependable automation.
+  - Fixed build, install, and environment issues that were blocking reliable review execution.
+</Update>
+
+<Update
+  label="2026-07-13"
+  description="Clearer diffs, repository learnings, and live issue boards"
+  tags={["Improvement"]}
+  rss={{
+    title: "Clearer diffs, repository learnings, and live issue boards",
+    description: "The product now does a better job of showing where findings came from, carrying repository knowledge forward, and keeping issue activity current without a manual refresh."
+  }}
+>
+  ## Clearer diffs, repository learnings, and live issue boards
+
+  The product now does a better job of showing where findings came from, carrying repository knowledge forward, and keeping issue activity current without a manual refresh.
+
+  - Improved pull request diff views with clearer findings, better navigation, and per-line authorship indicators.
+  - Added repository-level learnings and surfaced them in the repository overview.
+  - Improved onboarding with a guided demo path, interactive checklist, animations, and analytics.
+  - Added live issue-board updates so new issue activity appears without manual refresh.
+  - Connected inbound issue updates to the relevant repository board.
+  - Improved pull request provenance by fetching full commit history instead of partial results.
+  - Reduced noisy client-side errors in tracking so real issues are easier to see.
+  - Updated documentation and project guidance to better reflect the current product experience.
+</Update>
+
+<Update
+  label="2026-07-13"
+  description="Engineering health analytics and safer sign-in"
+  tags={["New feature"]}
+  rss={{
+    title: "Engineering health analytics and safer sign-in",
+    description: "New dashboards connect day-to-day engineering activity with delivery trends, while authentication and other sensitive product surfaces received another round of hardening."
+  }}
+>
+  ## Engineering health analytics and safer sign-in
+
+  New dashboards connect day-to-day engineering activity with delivery trends, while authentication and other sensitive product surfaces received another round of hardening.
+
+  - Added engineering analytics dashboards for usage, performance, deployment activity, and team delivery metrics.
+  - Improved executive reporting for engineering health and delivery trends.
+  - Hardened sign-in and authentication flows, including safer error handling and reduced sensitive logging.
+  - Fixed multiple security gaps around uploaded files, rendered markdown, external fetches, and billing race conditions.
+</Update>
+
+<Update
+  label="2026-07-01"
+  description="Stronger review gates and better conversations"
+  tags={["New feature"]}
+  rss={{
+    title: "Stronger review gates and better conversations",
+    description: "Pull request reviews now combine enforceable merge controls with line-level conversations, assistant chat, and better context about every commit and its authorship."
+  }}
+>
+  ## Stronger review gates and better conversations
+
+  Pull request reviews now combine enforceable merge controls with line-level conversations, assistant chat, and better context about every commit and its authorship.
+
+  - Added stronger pull request review gates to help teams catch issues before changes are merged.
+  - Improved the pull request review experience with clearer loading states, better error handling, and richer review status details.
+  - Added line-level review comments, comment threads, and reaction support for smoother review conversations.
+  - Introduced an AI-powered pull request assistant chat to help users understand and act on review feedback.
+  - Added per-commit insights so users can more easily see what changed inside a pull request.
+  - Added authorship insights to show how work was created and reviewed across pull requests.
+  - Added required status checks so review policies can be enforced directly in the development workflow.
+</Update>
+
+<Update
+  label="2026-07-01"
+  description="Broader review coverage with fewer false positives"
+  tags={["Improvement"]}
+  rss={{
+    title: "Broader review coverage with fewer false positives",
+    description: "The review engine now checks more dimensions of production readiness, verifies uncertain findings after a review, and learns from the feedback teams leave behind."
+  }}
+>
+  ## Broader review coverage with fewer false positives
+
+  The review engine now checks more dimensions of production readiness, verifies uncertain findings after a review, and learns from the feedback teams leave behind.
+
+  - Expanded automated review coverage for correctness, performance, testing, documentation, internationalization, security, and production readiness.
+  - Added post-review verification so low-confidence or outdated findings can be checked and cleaned up.
+  - Added stronger secret-detection coverage.
+  - Added support for external quality and security scanners in the review pipeline.
+  - Added a feedback loop so review findings can improve based on replies and reactions.
+  - Improved model selection, caching, and diagnostics for automated review sessions.
+  - Fixed several scanner installation, parsing, and version-detection issues.
+</Update>
+
+<Update
+  label="2026-07-01"
+  description="Automation, dependency alerts, and team digests"
+  tags={["New feature"]}
+  rss={{
+    title: "Automation, dependency alerts, and team digests",
+    description: "Merged work now refreshes project context automatically, dependency risks reach the right teams with configurable severity, and weekly digests keep quality signals visible."
+  }}
+>
+  ## Automation, dependency alerts, and team digests
+
+  Merged work now refreshes project context automatically, dependency risks reach the right teams with configurable severity, and weekly digests keep quality signals visible.
+
+  - Added automatic re-indexing after merged pull requests so project context stays up to date.
+  - Added automatic handling for assistant mentions in comments.
+  - Improved automated fix workflows to avoid repeated or recursive runs.
+  - Added dependency risk alerts with configurable severity filters and team notifications.
+  - Added weekly KPI digest notifications for review and quality metrics.
+  - Improved indexing reliability and support for incremental updates.
+</Update>
+
+<Update
+  label="2026-07-01"
+  description="Smoother connections and production reliability"
+  tags={["Improvement"]}
+  rss={{
+    title: "Smoother connections and production reliability",
+    description: "Account connections are easier to complete, indexing is more dependable, and the production foundation received cleaner configuration, routing, and networking support."
+  }}
+>
+  ## Smoother connections and production reliability
+
+  Account connections are easier to complete, indexing is more dependable, and the production foundation received cleaner configuration, routing, and networking support.
+
+  - Improved onboarding and account connection flows for the code hosting integration.
+  - Improved infrastructure and deployment configuration for the production app.
+  - Added custom domain routing and updated deployment compatibility settings.
+  - Cleaned up unused analytics and deployment configuration files.
+  - Improved backend networking permissions and deployment options.
+  - Fixed documentation and connection support for the internal search and analysis service.
+</Update>
+
+<Update
+  label="2026-06-21"
+  description="Secure sign-in, developer tokens, and the identity layer that stays out of your way"
+  tags={["New feature"]}
+  rss={{
+    title: "Secure sign-in, developer tokens, and the identity layer that stays out of your way",
+    description: "Three things shipped this week that all share a thread: getting into autter should be fast, safe, and never the reason work stalls. CLI sign-in is now secure by default. Account setup lost its friction. And personal access tokens give developers a proper way to connect their tools without sharing credentials."
+  }}
+>
+  ## Secure sign-in, developer tokens, and the identity layer that stays out of your way
+
+  Three things shipped this week that all share a thread: getting into autter should be fast, safe, and never the reason work stalls. CLI sign-in is now secure by default. Account setup lost its friction. And personal access tokens give developers a proper way to connect their tools without sharing credentials.
+
+  ### CLI sign-in and account setup
+
+  The old flow had too many steps and not enough guardrails. The new one uses secure authentication by default, cuts the setup path in half, and gets you into a working environment faster.
+
+  - **Secure CLI sign-in**: No more plaintext credentials or manual config files.
+  - **Streamlined account setup**: Fewer steps from signup to first scan.
+  - **Personal access tokens**: Connect developer tools without sharing org-wide secrets.
+
+  ### AI authorship insights
+
+  autter now tracks how code was created. Every pull request shows whether a change was human-written, AI-assisted, or AI-generated. This is not a judgement. It is context. Reviewers see provenance. Leads see patterns. Nobody has to guess.
+</Update>
+
+<Update
+  label="2026-06-21"
+  description="Sharper reviews, quieter noise, and analytics that actually tell you something"
+  tags={["Improvement"]}
+  rss={{
+    title: "Sharper reviews, quieter noise, and analytics that actually tell you something",
+    description: "The review engine got better in the way that matters most: more accurate findings, clearer comments, and fewer false positives. When autter speaks up on a PR, it is because something real needs attention, not because a heuristic fired on a pattern it half-understood."
+  }}
+>
+  ## Sharper reviews, quieter noise, and analytics that actually tell you something
+
+  The review engine got better in the way that matters most: more accurate findings, clearer comments, and fewer false positives. When autter speaks up on a PR, it is because something real needs attention, not because a heuristic fired on a pattern it half-understood.
+
+  ### Code review
+
+  - **More accurate findings**: Fewer false positives reaching reviewers.
+  - **Clearer comments**: Suggested fixes are easier to understand and apply.
+  - **Faster fix suggestions**: Less time between finding and resolution.
+  - **Infra and config security checks**: Catches misconfigurations before they ship.
+  - **Improved dependency reporting**: Vulnerability notifications with actionable detail.
+
+  ### Analytics
+
+  Pull request and repository activity metrics are now clearer and more complete. You can see what is actually happening across your codebase without building your own dashboards.
+
+  ### GitHub integration
+
+  - Reviewer assignment works correctly across team configurations.
+  - Error messaging tells you what went wrong and what to do about it.
+  - Code indexing is more reliable for large projects: no more silent failures on big repos.
+</Update>
+
+<Update
+  label="2026-06-21"
+  description="Interactive demos and the faster front door"
+  tags={["New feature"]}
+  rss={{
+    title: "Interactive demos and the faster front door",
+    description: "Two changes to how people first experience autter. Demo workspaces are now interactive. You can click through a real environment instead of watching a video. And the demo signup flow lost its rough edges, so the path from curiosity to hands-on is shorter."
+  }}
+>
+  ## Interactive demos and the faster front door
+
+  Two changes to how people first experience autter. Demo workspaces are now interactive. You can click through a real environment instead of watching a video. And the demo signup flow lost its rough edges, so the path from curiosity to hands-on is shorter.
+
+  - **Interactive demo workspaces**: Explore a real environment without creating an account.
+  - **Smoother demo signup**: Fewer steps, fewer dropoffs, faster time-to-value.
+  - **Faster org creation**: New organizations spin up quicker and more reliably.
+</Update>
+
+<Update
+  label="2026-06-21"
+  description="The quiet stuff that keeps everything running"
+  tags={["Improvement"]}
+  rss={{
+    title: "The quiet stuff that keeps everything running",
+    description: "Not everything that ships is visible from the outside. This week: progress notifications now include direct links to completed work, important account and billing actions are fully tracked, and deployment reliability improved across the board."
+  }}
+>
+  ## The quiet stuff that keeps everything running
+
+  Not everything that ships is visible from the outside. This week: progress notifications now include direct links to completed work, important account and billing actions are fully tracked, and deployment reliability improved across the board.
+
+  - **Progress notifications with direct links**: Go straight to the result instead of searching for it.
+  - **Complete audit trail**: Every important account and billing change is logged and traceable.
+  - **Improved deployment reliability**: Fewer incidents, faster recovery.
+
+  > Ship the gates, ship the guardrails, then get out of the way.
+</Update>
 
 <Update
   label="2026-06-14"
-  description="The review that sees everything, and the billing that runs itself"
+  description="The review that sees everything"
   tags={["New feature"]}
   rss={{
-    title: "The review that sees everything, and the billing that runs itself",
-    description: "Broader PR review coverage, infrastructure-as-code scanning, clearer findings, business-logic evidence, and self-service billing."
+    title: "The review that sees everything",
+    description: "The PR review engine went from “good coverage” to “nothing gets past it.” It now checks for things most teams only catch after something goes wrong: static security, secrets, dependency and license compliance, CI/CD misconfigurations, auth and permissions, database migrations, frontend health, code hygiene."
   }}
 >
-  ## The review that sees everything, and the billing that runs itself
+  ## The review that sees everything
 
-  PR reviews now cover more security, dependency, license, CI/CD, authentication, database, frontend, and code-quality risks while producing fewer low-value findings.
+  The PR review engine went from “good coverage” to “nothing gets past it.” It now checks for things most teams only catch after something goes wrong: static security, secrets, dependency and license compliance, CI/CD misconfigurations, auth and permissions, database migrations, frontend health, code hygiene.
 
-  - Added dependency-impact and cross-file consumer analysis.
-  - Added typosquatting detection and richer review telemetry.
-  - Added Terraform, CloudFormation, and Kubernetes scanning through three independent engines.
-  - Added finding detail views, progressive loading, frontend-health findings, and AI fix suggestions.
-  - Added evidence views for violated business-logic invariants.
-  - Added plan management, hosted checkout, UPI and B2B invoicing, invoice history, and usage visibility.
+  ### PR review: broader, sharper, quieter
+
+  - **Dependency impact analysis**: Reviews understand what a dependency change actually touches downstream.
+  - **Typosquatting detection**: Packages that look like popular libraries but aren't get flagged before they land.
+  - **Cross-file consumer checks**: Changing an API? autter checks who's calling it before approving the change.
+  - **False positive reduction**: Fewer findings that waste your time. The ones that remain are the ones that matter.
+
+  ### Infrastructure-as-code scanning
+
+  IaC scanning is live. Terraform plans, CloudFormation templates, and Kubernetes manifests are now checked for misconfigurations before they ship. Three engines run independently, so coverage gaps from any single scanner get caught by the others. If you have ever deployed a security group that was wider than you intended, this is for that.
+
+  > A review engine earns trust by catching real problems and staying quiet about everything else.
+</Update>
+
+<Update
+  label="2026-06-14"
+  description="Scan results that explain themselves"
+  tags={["Improvement"]}
+  rss={{
+    title: "Scan results that explain themselves",
+    description: "Scan results are no longer a list you have to interpret. They are a surface you can act from: every finding explains itself, and the ones that don't can be handed straight to autter for a fix."
+  }}
+>
+  ## Scan results that explain themselves
+
+  Scan results are no longer a list you have to interpret. They are a surface you can act from: every finding explains itself, and the ones that don't can be handed straight to autter for a fix.
+
+  - **Finding detail modals**: Every finding opens into a full explanation, not a one-line summary.
+  - **AI fix suggestions**: Ask autter for a recommended fix directly from any finding.
+  - **Business logic invariant views**: The specific rule, the specific violation, and the specific evidence.
+  - **Content-shaped loading states**: Scan results load progressively instead of appearing all at once.
+</Update>
+
+<Update
+  label="2026-06-14"
+  description="The billing that runs itself"
+  tags={["New feature"]}
+  rss={{
+    title: "The billing that runs itself",
+    description: "autter now has a full billing system with native subscription management. Teams can sign up, pick a plan, and start paying without a single manual step on our end."
+  }}
+>
+  ## The billing that runs itself
+
+  autter now has a full billing system with native subscription management. Teams can sign up, pick a plan, and start paying without a single manual step on our end.
+
+  - **Plan tiers and subscriptions**: Pick a plan, upgrade or downgrade, and usage adjusts automatically.
+  - **Hosted checkout**: Pay without leaving autter, with UPI and B2B invoicing included.
+  - **Invoice generation and backfill**: Current and historical invoices available on demand.
+  - **Usage visibility**: Your current usage is always visible in the sidebar and billing settings.
+
+  > A billing system earns trust by disappearing entirely. Billing should be something you set up once and never think about unless you want to.
 </Update>
 
 <Update
@@ -34,41 +1154,143 @@ Follow the features and improvements shipped across Autter. The newest release a
   tags={["New feature"]}
   rss={{
     title: "The gate gets teeth",
-    description: "A dedicated PR review engine, fifteen automated checks, richer webhooks, Slack routing, and a redesigned review interface."
+    description: "The merge gate shipped weeks ago. This week it became the kind of gate you actually trust: a full PR review engine and fifteen categories of automated checks. The previous version could block a merge. This one explains why it blocked it."
   }}
 >
   ## The gate gets teeth
 
-  Autter's merge gate now runs a dedicated review pipeline with structured chapters, inline findings, PR summaries, and visible gate decisions.
+  The merge gate shipped weeks ago. This week it became the kind of gate you actually trust: a full PR review engine and fifteen categories of automated checks. The previous version could block a merge. This one explains why it blocked it.
 
-  - Added fifteen review categories spanning security, dependencies, API contracts, infrastructure, privacy, architecture, policy, and AI-generated code quality.
-  - Added durable chapter, activity, issue-link, blast-impact, and policy-violation records.
-  - Improved GitHub delivery logging, recursive-writeback protection, and first-delivery schema setup.
-  - Added per-event Slack notification routing.
-  - Added a Monaco diff viewer, keyboard shortcuts, activity feeds, and chronological review conversations.
-  - Added Markdown comments, mentions, GIF support, and authentication reliability fixes.
+  ### PR review engine
+
+  - **Chapter generation**: PRs are broken into reviewable chapters, not treated as a single diff.
+  - **Inline comments**: Review findings appear exactly where the code changed.
+  - **Summary utilities**: Every PR gets a structured overview before a reviewer opens a file.
+  - **Gate panels and overview UI**: Merge-blocking status is visible, not buried in a check run.
+  - **Local and Fargate runners**: Review runs wherever your infrastructure already lives.
+
+  ### Fifteen review checks
+
+  Static security. CI/CD security. API contract validation. Dependency and license compliance. Typosquatting detection. Secret scanning. Infrastructure-as-code misconfiguration. Race condition analysis. Logging hygiene. Privacy surface detection. Rate limiting coverage. Architectural conformance. Policy engine evaluation. AI slop detection. Each check writes to its own findings surface, and policy violations get deterministic hashes so repeated findings are tracked, not duplicated.
+
+  > A gate that checks fifteen things and tells you which one failed is not a gate. It is a review team that never takes a day off.
+</Update>
+
+<Update
+  label="2026-06-07"
+  description="A review surface built for humans"
+  tags={["Improvement"]}
+  rss={{
+    title: "A review surface built for humans",
+    description: "All that machinery is only useful if the humans doing the reviewing can read it. The PR review UI got the treatment: scannable activity, a proper diff engine, and comments that feel like conversation."
+  }}
+>
+  ## A review surface built for humans
+
+  All that machinery is only useful if the humans doing the reviewing can read it. The PR review UI got the treatment: scannable activity, a proper diff engine, and comments that feel like conversation.
+
+  ### PR review UI
+
+  - **Monaco-based diff viewer**: Diffs render with the same engine your editor uses.
+  - **Conversation timeline**: Comments, suggestions, and gate decisions in chronological order.
+  - **Keyboard shortcuts**: Navigate reviews without reaching for a mouse.
+  - **Activity feed styling**: Review events are scannable instead of a raw log.
+
+  ### Comments, mentions, and GIFs
+
+  Inline comments now support full Markdown. Mentions are wired in. The GIF picker is live. This is the kind of feature that makes review conversations feel like conversations instead of form submissions.
+</Update>
+
+<Update
+  label="2026-06-07"
+  description="Richer webhooks and Slack routing"
+  tags={["Improvement"]}
+  rss={{
+    title: "Richer webhooks and Slack routing",
+    description: "Webhook ingestion got sharper, and PR review and scan events now route to Slack with per-event webhook support. Teams configure which events fire, where they land, and whether a gate decision triggers a notification or stays silent."
+  }}
+>
+  ## Richer webhooks and Slack routing
+
+  Webhook ingestion got sharper, and PR review and scan events now route to Slack with per-event webhook support. Teams configure which events fire, where they land, and whether a gate decision triggers a notification or stays silent.
+
+  - **Delivery logging**: PR events are logged with enough detail to debug routing.
+  - **Writeback detection**: autter's own comments no longer trigger recursive review processing.
+  - **Gate-skip tracking**: See what bypassed enforcement and when.
+  - **Automatic schema bootstrapping**: New repos need no manual setup before gates start working.
 </Update>
 
 <Update
   label="2026-05-31"
-  description="The merge gate, public reports, and the knowledge graph"
+  description="The merge gate goes live"
   tags={["New feature"]}
   rss={{
-    title: "The merge gate, public reports, and the knowledge graph",
-    description: "Merge-blocking reviews, GitHub-native webhook ingestion, public scan reports, deeper supply-chain analysis, and a repository knowledge graph."
+    title: "The merge gate goes live",
+    description: "The merge gate is no longer a concept. This week autter shipped merge-blocking PR review gates, a full review pipeline with diff parsing and summary generation, and the webhook infrastructure to drive it all natively through GitHub."
   }}
 >
-  ## The merge gate, public reports, and the knowledge graph
+  ## The merge gate goes live
 
-  The PR review pipeline can now parse diffs, generate structured summaries, run review tasks, and block a merge when required checks fail.
+  The merge gate is no longer a concept. This week autter shipped merge-blocking PR review gates, a full review pipeline with diff parsing and summary generation, and the webhook infrastructure to drive it all natively through GitHub.
 
-  - Added durable PR revision tracking and local or Fargate runners.
-  - Rebuilt GitHub webhook handling around native PR, review, comment, and issue events.
-  - Expanded secret scanning with TruffleHog history scans, provider context, and verification status.
-  - Expanded Semgrep coverage across major security classes.
-  - Added public share links, branded scan pages, and downloadable PDF reports.
-  - Added deterministic dependency risk, lockfile-aware resolution, exploit-chain tracking, and infinite-loop detection.
-  - Added issue refresh, payment execution traces, Graphify-based knowledge graphs, chat improvements, and architecture-diagram controls.
+  ### PR review pipeline
+
+  - **Diff parsing and summaries**: Every PR gets a structured breakdown before review agents run.
+  - **Merge-blocking review gates**: Review output is evaluated before a pull request is allowed to merge.
+  - **Durable PR tracking**: Revisions, metadata, and migration safeguards for org databases.
+  - **GitHub-native webhooks**: PR, review, and comment events route through rebuilt handlers.
+
+  ### Secret scanning, rebuilt on TruffleHog
+
+  Detection runs across full git history, not just the current state. The previous version found secrets. This one tells you which ones are live, which ones rotated, and where in history they first appeared. Semgrep rule coverage also expanded across auth bypass, injection, cryptographic misuse, SSRF, XSS, and more.
+
+  > A comment on a PR is advice. A blocked merge is enforcement. This week autter started enforcing.
+</Update>
+
+<Update
+  label="2026-05-31"
+  description="Public reports you can hand to anyone"
+  tags={["New feature"]}
+  rss={{
+    title: "Public reports you can hand to anyone",
+    description: "Scan results can now leave the building. Share a scan with a public link, export a branded PDF, and let the report guide readers toward next steps instead of ending with a findings list."
+  }}
+>
+  ## Public reports you can hand to anyone
+
+  Scan results can now leave the building. Share a scan with a public link, export a branded PDF, and let the report guide readers toward next steps instead of ending with a findings list.
+
+  ### Scan sharing and reports
+
+  - **Public share tokens**: Generate a link anyone can view without an autter account.
+  - **Branded report pages**: Shared reports look like they came from your security team, not a raw tool.
+  - **PDF export**: Structured sections with branded cover and closing pages.
+
+  ### Supply chain and dependency risk
+
+  - **Deterministic risk scoring**: Severity and risk factors are reproducible, not model-dependent.
+  - **Lockfile-aware resolution**: autter resolves what you actually installed, not what your manifest says.
+  - **Exploit chain tracking**: Critical CVEs with no published fix get chain cards, detail views, and narratives.
+</Update>
+
+<Update
+  label="2026-05-31"
+  description="The first knowledge graph"
+  tags={["New feature"]}
+  rss={{
+    title: "The first knowledge graph",
+    description: "The first version of a knowledge graph that maps how your codebase actually connects. Graphify-backed indexing is live: graph tables, indexer orchestration, and deployment wiring all shipped, and repository dependency views now include connectivity data from the graph."
+  }}
+>
+  ## The first knowledge graph
+
+  The first version of a knowledge graph that maps how your codebase actually connects. Graphify-backed indexing is live: graph tables, indexer orchestration, and deployment wiring all shipped, and repository dependency views now include connectivity data from the graph.
+
+  ### Also in this release
+
+  - The codebase-scan chat experience is now powered by AI SDK.
+  - Documentation generation uses task-specific model routing: each writer gets the model best suited to its job.
+  - Fullscreen viewing and copy support across architecture-map surfaces.
 </Update>
 
 <Update
@@ -77,129 +1299,291 @@ Follow the features and improvements shipped across Autter. The newest release a
   tags={["New feature"]}
   rss={{
     title: "The full scan surface",
-    description: "A complete scan surface spanning secrets, SAST, containers, SBOMs, supply chains, APIs, policy, AI slop, databases, and business logic."
+    description: "Everything we have been building the scan engine toward shipped this week. Secret scanning, SAST, container scanning, SBOM, supply chain analysis, API surface analysis, policy compliance, AI slop detection, database findings, code quality, and business logic analysis all landed with findings, enrichment, Captain Patch suggestions, and issue linkage."
   }}
 >
   ## The full scan surface
 
-  The scan engine now brings its major security, compliance, quality, and business-logic checks into one findings workflow.
+  Everything we have been building the scan engine toward shipped this week. Secret scanning, SAST, container scanning, SBOM, supply chain analysis, API surface analysis, policy compliance, AI slop detection, database findings, code quality, and business logic analysis all landed with findings, enrichment, Captain Patch suggestions, and issue linkage.
 
-  - Added per-agent pipeline and performance tracking, runtime preflight checks, `strace` tracking, and PostgreSQL support.
-  - Added organization-scoped CycloneDX SBOM storage and file-risk history.
-  - Added AI-generated scan summaries and persistent action items.
-  - Added bidirectional Linear, Jira, and GitHub issue synchronization with logs and backfill.
-  - Added persisted Captain Patch suggestions and accept or decline workflows.
-  - Added CodeQL as a fourth SAST engine, Trivy filesystem scanning, dependency and license enrichment, and Socket.dev supply-chain analysis.
-  - Added exploit probability, CVSS, OSV context, exploit chains, API-surface analysis, policy validation, and AI-slop detection.
+  ### Scan infrastructure
+
+  - **Agent pipeline tables**: Every agent's output is tracked, counted, and attributed.
+  - **Runtime preflight checks**: Agents verify the environment before executing, not midway through.
+  - **strace runtime tracking**: Runtime behavior is observed and stored alongside static findings.
+
+  ### The scanners
+
+  - Secret scanning with live validation, allowlists, rotation mapping, and direct issue creation.
+  - CodeQL is live as a fourth scanning engine; SAST findings include enrichment and suggestions.
+  - Trivy container scanning, unified dependency audits, and richer license findings.
+  - AI slop detection: hallucinated imports, placeholder logic, and low-confidence outputs.
+  - Per-organization SBOM artifacts with CycloneDX support and file risk history through commits.
+
+  > A merge gate is only as strong as what it checks. This week we finished building the checklist.
+</Update>
+
+<Update
+  label="2026-05-23"
+  description="Issue sync: Linear, Jira, and GitHub"
+  tags={["New feature"]}
+  rss={{
+    title: "Issue sync: Linear, Jira, and GitHub",
+    description: "Findings are only useful if they end up where your team plans work. Issues now flow both ways between autter and your tracker, with logs, backfill, and persistent action items."
+  }}
+>
+  ## Issue sync: Linear, Jira, and GitHub
+
+  Findings are only useful if they end up where your team plans work. Issues now flow both ways between autter and your tracker, with logs, backfill, and persistent action items.
+
+  - **Bidirectional sync**: Issues created in autter stay in sync with your issue tracker.
+  - **External issue creation**: Push a finding to your tracker directly from autter.
+  - **Sync logs**: Every sync event is recorded and auditable.
+  - **Backfill support**: Historical findings can be synced, not just new ones.
+</Update>
+
+<Update
+  label="2026-05-23"
+  description="Exploit enrichment and chain tracing"
+  tags={["New feature"]}
+  rss={{
+    title: "Exploit enrichment and chain tracing",
+    description: "A CVE number tells you almost nothing. Findings are now enriched with exploit probability, standardized severity, external intelligence, and, where paths connect, full exploit chains."
+  }}
+>
+  ## Exploit enrichment and chain tracing
+
+  A CVE number tells you almost nothing. Findings are now enriched with exploit probability, standardized severity, external intelligence, and, where paths connect, full exploit chains.
+
+  - **EPSS + CVSS scoring**: Exploit probability and standardized severity attached to each CVE.
+  - **OSV and Exa enrichment**: Vulnerability databases and external intelligence feed into findings.
+  - **Complexity scoring**: Findings are ranked by how hard they are to exploit.
+  - **Exploit chain tracing**: Connected vulnerability paths are tracked as chains, not isolated findings.
 </Update>
 
 <Update
   label="2026-05-17"
-  description="The docs engine, the architecture view, and the auditor agents"
-  tags={["New feature"]}
+  description="The docs engine, upgraded"
+  tags={["Improvement"]}
   rss={{
-    title: "The docs engine, the architecture view, and the auditor agents",
-    description: "A rebuilt documentation pipeline, indexed wiki search, architecture visualization, team management, and the first domain-specific auditor."
+    title: "The docs engine, upgraded",
+    description: "The documentation engine got faster and more complete: the kind of upgrade that makes generated docs something you actually trust instead of something you politely ignore."
   }}
 >
-  ## The docs engine, the architecture view, and the auditor agents
+  ## The docs engine, upgraded
 
-  Generated repository documentation now has a more observable pipeline and a stronger browsing experience.
+  The documentation engine got faster and more complete: the kind of upgrade that makes generated docs something you actually trust instead of something you politely ignore.
 
-  - Added manual documentation generation, job status tracking, clearer failures, and modular processing.
-  - Improved ingestion concurrency, import parsing, Dockerfile extraction, metadata updates, and organization connection pooling.
-  - Added indexed wiki search, improved Markdown navigation, zoom controls, and page-generation prompts.
-  - Added architecture visualization beside generated documentation.
-  - Added custom teams and member assignments.
-  - Added repository-scoped issues and file-content search results.
-  - Added a Payment Gateway Auditor with dedicated findings and execution-path context.
-  - Improved agent execution with batch writes, parallel processing, lockfile parsing, team context, and risk scoring.
+  ### Documentation engine
+
+  - **Manual generation trigger**: Teams can regenerate docs on demand, not just on scan.
+  - **Job status tracking**: Generation progress is visible, not a black box.
+  - **Type-safe modular internals**: A pipeline we can extend without breaking things.
+
+  ### Wiki and architecture
+
+  - Wiki search powered by proper full-text indexing, with better navigation, zoom, and typography.
+  - Architecture visualization inside generated documentation.
+  - File content surfaced directly in search results.
+
+  > A wiki you trust beats documentation you maintain. This week we made it trustworthy.
+</Update>
+
+<Update
+  label="2026-05-17"
+  description="The first auditor agent"
+  tags={["New feature"]}
+  rss={{
+    title: "The first auditor agent",
+    description: "autter shipped its first domain-specific agent: a Payment Gateway Auditor that targets the risk surface specific to payment flows. Under the hood, agent execution got meaningfully faster and smarter about context."
+  }}
+>
+  ## The first auditor agent
+
+  autter shipped its first domain-specific agent: a Payment Gateway Auditor that targets the risk surface specific to payment flows. Under the hood, agent execution got meaningfully faster and smarter about context.
+
+  ### Agent execution improvements
+
+  - **Batch inserts + parallelism**: Findings write in bulk and agents run concurrently without contention.
+  - **Team context**: Agents know which team owns a scope before they score it.
+  - **Calibrated risk scoring**: Scoring is tuned against actual severity signals.
+
+  ### Also in this release
+
+  - Custom teams and member assignment, managed directly from settings.
+  - A dedicated repository issues tab.
 </Update>
 
 <Update
   label="2026-05-10"
-  description="Custom agents, guided config, and the documentation engine"
+  description="Custom agents and guided config"
   tags={["New feature"]}
   rss={{
-    title: "Custom agents, guided config, and the documentation engine",
-    description: "Richer custom agents, guided configuration, prebuilt-agent overrides, and the first repository documentation-generation pipeline."
+    title: "Custom agents and guided config",
+    description: "Custom agents are no longer a flat list. They have categories, trigger configuration, and richer API support. Configuring one is now a step-by-step flow with streaming updates and visible progress, and teams can take a prebuilt agent, adjust its schema and behavior, and edit it through the same UI."
   }}
 >
-  ## Custom agents, guided config, and the documentation engine
+  ## Custom agents and guided config
 
-  Teams can now organize custom agents by category and configure when they run.
+  Custom agents are no longer a flat list. They have categories, trigger configuration, and richer API support. Configuring one is now a step-by-step flow with streaming updates and visible progress, and teams can take a prebuilt agent, adjust its schema and behavior, and edit it through the same UI.
+</Update>
 
-  - Added trigger configuration and expanded APIs for custom agents.
-  - Added guided setup with streamed progress and surfaced configuration problems.
-  - Added editable overrides for prebuilt agents.
-  - Added repository graph construction, dependency edges, module clustering, and risk-aware documentation generation.
-  - Added wiki routes, documentation query APIs, Markdown rendering, sidebar navigation, and full-text search.
-  - Added optional mailing-list enrollment during onboarding.
+<Update
+  label="2026-05-10"
+  description="The documentation generation pipeline"
+  tags={["New feature"]}
+  rss={{
+    title: "The documentation generation pipeline",
+    description: "autter shipped its first documentation generation pipeline, turning indexed codebase knowledge into something readable. Wiki routes, documentation query APIs, markdown rendering, sidebar navigation, and full-text searchable generated docs are all in."
+  }}
+>
+  ## The documentation generation pipeline
+
+  autter shipped its first documentation generation pipeline, turning indexed codebase knowledge into something readable. Wiki routes, documentation query APIs, markdown rendering, sidebar navigation, and full-text searchable generated docs are all in.
+
+  - **Codebase graph construction**: autter maps the structure of your repo before generating any docs.
+  - **Dependency edge tracking**: Relationships between modules are first-class inputs to generation.
+  - **Module clustering**: Related code is grouped before documentation is written.
+  - **Risk flag integration**: High-risk areas surface in the docs, not just in findings.
+
+  > The agents know your codebase. The docs make it legible. This week connected both.
 </Update>
 
 <Update
   label="2026-05-04"
-  description="Repository overview, CVE watch, and smarter search"
+  description="CVE watch: scheduled monitoring"
   tags={["New feature"]}
   rss={{
-    title: "Repository overview, CVE watch, and smarter search",
-    description: "A consolidated repository workspace, scheduled vulnerability monitoring, deeper dependency intelligence, and faster organization search."
+    title: "CVE watch: scheduled monitoring",
+    description: "We started watching for vulnerabilities on a schedule instead of waiting for someone to ask. Recurring background checks run against your dependencies, and what they find is data, not log lines."
   }}
 >
-  ## Repository overview, CVE watch, and smarter search
+  ## CVE watch: scheduled monitoring
 
-  The repository workspace now brings activity, dependencies, APIs, health, and onboarding into one view.
+  We started watching for vulnerabilities on a schedule instead of waiting for someone to ask. Recurring background checks run against your dependencies, and what they find is data, not log lines.
 
-  - Improved repository health signals, empty states, and architectural-risk visibility.
-  - Added organization-wide search suggestions, finalized-query tracking, page awareness, and persistent query caching.
-  - Added scheduled CVE checks with concurrency control, graceful shutdown, and structured upgrade suggestions.
-  - Expanded registry, version, and vulnerability enrichment for dependencies.
-  - Connected endpoint indexing to test-coverage insights.
-  - Added AI response caching and broader LLM observability.
-  - Migrated model traffic to Vercel AI Gateway and added web analytics instrumentation.
+  - **Recurring background checks**: Your dependencies are checked on a schedule, not on request.
+  - **Concurrency controls**: Multiple repos can be scanned without stepping on each other.
+  - **Graceful shutdown handling**: Long-running checks no longer leave findings half-written.
+  - **First-class findings schema**: Vulnerabilities and upgrade suggestions are data, not log lines.
+</Update>
+
+<Update
+  label="2026-05-04"
+  description="Repository overview and smarter search"
+  tags={["Improvement"]}
+  rss={{
+    title: "Repository overview and smarter search",
+    description: "The repository workspace got a real face this week. Health views matured, and search got smarter in ways you can feel."
+  }}
+>
+  ## Repository overview and smarter search
+
+  The repository workspace got a real face this week. Health views matured, and search got smarter in ways you can feel.
+
+  - The repository page rebuilt around dedicated tabs: activity, dependencies, API data, health, onboarding.
+  - Org-wide search with suggestions, page-visit awareness, and an animated header trigger with rotating prompts.
+  - Deeper dependency intelligence with automatic registry and version enrichment.
+  - AI response caching, Vercel AI Gateway migration, and loading skeletons across the repo experience.
 </Update>
 
 <Update
   label="2026-04-27"
-  description="The wiki, the PR review, and the graph"
+  description="The repository wiki"
   tags={["New feature"]}
   rss={{
-    title: "The wiki, the PR review, and the graph",
-    description: "A repository wiki, rebuilt PR review experience, expanded code intelligence, architectural graphs, and notification controls."
+    title: "The repository wiki",
+    description: "Searchable repository discovery, structured documentation pages, table-of-contents navigation, breadcrumbs, keyboard shortcuts, and an AI-assisted “ask” flow for exploring codebase knowledge directly."
   }}
 >
-  ## The wiki, the PR review, and the graph
+  ## The repository wiki
 
-  Repository knowledge is now browsable through generated wiki pages, search, navigation, and an AI-assisted question flow.
+  Searchable repository discovery, structured documentation pages, table-of-contents navigation, breadcrumbs, keyboard shortcuts, and an AI-assisted “ask” flow for exploring codebase knowledge directly.
 
-  - Rebuilt PR review with dedicated review, check, and commit tabs; inline conversations; file navigation; and unified or split diffs.
-  - Expanded indexing for repository context, scopes, hotspots, files, dependencies, change impact, and health metrics.
-  - Added reverse-dependency, call-graph, and scope-dependency analysis.
-  - Expanded third-party dependency classification and documentation resolution.
-  - Added multi-framework endpoint indexing and API test-coverage analysis.
-  - Added event notifications, weekly digest controls, and Slack or webhook test flows.
-  - Improved tracing around dependency and supply-chain agents.
+  ### Also in this release
+
+  - Richer treatment for third-party packages: classification, docs resolution, usage insights.
+  - Endpoint indexing across multiple frameworks, connected to test coverage.
+</Update>
+
+<Update
+  label="2026-04-27"
+  description="Pull request review, rebuilt"
+  tags={["Improvement"]}
+  rss={{
+    title: "Pull request review, rebuilt",
+    description: "The PR review experience got rebuilt from the ground up: dedicated tabs for AI review, checks, and commits. Inline comments. File tree navigation. Unified and split diff viewing."
+  }}
+>
+  ## Pull request review, rebuilt
+
+  The PR review experience got rebuilt from the ground up: dedicated tabs for AI review, checks, and commits. Inline comments. File tree navigation. Unified and split diff viewing.
+
+  ### Also in this release
+
+  - Configurable event-based notifications, weekly digests, and Slack/webhook test flows.
+  - Shipped agentic-sales, a small open-source AI sales toolkit, as a side project.
+</Update>
+
+<Update
+  label="2026-04-27"
+  description="The graph: architectural insights"
+  tags={["New feature"]}
+  rss={{
+    title: "The graph: architectural insights",
+    description: "A substantial expansion of the indexing engine. This is the week autter started reasoning about your codebase the way a senior engineer does: end-to-end indexing across scope detection, file hotspots, dependency resolution, and scope health metrics."
+  }}
+>
+  ## The graph: architectural insights
+
+  A substantial expansion of the indexing engine. This is the week autter started reasoning about your codebase the way a senior engineer does: end-to-end indexing across scope detection, file hotspots, dependency resolution, and scope health metrics.
+
+  - **Reverse dependency analysis**: autter knows what depends on what, in both directions.
+  - **Call graph analysis**: Function-level relationships are tracked across the codebase.
+  - **Scope dependency graphs**: Coupling and layering between scopes are visible, not implied.
+  - **AI-augmented health and risk**: Structural issues, hotspots, and tech-debt signals surface per scope.
+
+  > A scanner finds problems. A graph explains them. This week was about the graph.
 </Update>
 
 <Update
   label="2026-04-20"
-  description="Indexing, onboarding, and a lot of plumbing"
+  description="The indexing pipeline levels up"
   tags={["Improvement"]}
   rss={{
-    title: "Indexing, onboarding, and a lot of plumbing",
-    description: "Guided onboarding, stronger provisioning and observability, and a deeper repository indexing pipeline."
+    title: "The indexing pipeline levels up",
+    description: "Not every week produces a headline feature. This one produced the thing that makes headline features work reliably: a significantly smarter indexer."
   }}
 >
-  ## Indexing, onboarding, and a lot of plumbing
+  ## The indexing pipeline levels up
 
-  Organization setup now collects more useful context and guides users through the initial codebase scan.
+  Not every week produces a headline feature. This one produced the thing that makes headline features work reliably: a significantly smarter indexer.
 
-  - Improved organization creation, login transitions, and dashboard motion.
-  - Added webhook testing with clearer notification errors.
-  - Hardened organization database provisioning and deployment retries.
-  - Expanded backend health checks, logging, Slack integration, and AI-pipeline instrumentation.
-  - Improved repository-context detection, scope profiling, file coverage, dependency resolution, graph insights, and per-scope health metrics.
-  - Refined analytics, wiki interactions, navigation, and sidebar styling.
+  - **Repository context detection**: autter identifies what kind of codebase it is looking at before scanning.
+  - **Scope profiling**: The indexer understands which parts of the repo relate to which others.
+  - **Full dependency resolution**: The whole graph gets traced, not just top-level packages.
+  - **Scope health metrics**: A health signal per scope, not just per file.
+
+  > The indexer is what makes autter's findings trustworthy instead of just plentiful. This week it got meaningfully better.
+</Update>
+
+<Update
+  label="2026-04-20"
+  description="Onboarding and a lot of plumbing"
+  tags={["Improvement"]}
+  rss={{
+    title: "Onboarding and a lot of plumbing",
+    description: "The first-run experience for new organizations is more guided now, and infrastructure that was held together with assumptions is now held together with actual logic."
+  }}
+>
+  ## Onboarding and a lot of plumbing
+
+  The first-run experience for new organizations is more guided now, and infrastructure that was held together with assumptions is now held together with actual logic.
+
+  - Guided onboarding: autter asks about your setup upfront and walks you through the first scan.
+  - Webhook testing directly from organization settings.
+  - More resilient database provisioning with better retry logic.
+  - Stronger backend logging, health check visibility, and AI pipeline instrumentation.
 </Update>
 
 <Update
@@ -208,18 +1592,24 @@ Follow the features and improvements shipped across Autter. The newest release a
   tags={["Improvement"]}
   rss={{
     title: "Onboarding that gets out of the way",
-    description: "A more guided first-run flow with cleaner transitions, stronger provisioning, dynamic migrations, and improved observability."
+    description: "Getting set up with autter should not feel like configuring a server. This week we focused on making the first few minutes feel less like work."
   }}
 >
   ## Onboarding that gets out of the way
 
-  The first-run experience now provides more context at each organization-setup step.
+  Getting set up with autter should not feel like configuring a server. This week we focused on making the first few minutes feel less like work.
 
-  - Added guided organization setup.
-  - Improved loading motion and dashboard or login transitions.
-  - Hardened secrets management, host configuration, and deployment setup.
-  - Added dynamic database migrations during organization provisioning.
-  - Improved route logging, health checks, and Slack integration.
+  ### What changed
+
+  - Guided organization setup: each step comes with actual context, not just a progress bar and a prayer.
+  - Cleaner motion and transitions across the dashboard and login experience.
+  - Meaningful hardening for secrets management, host configuration, and deployment setup.
+  - Dynamic database migrations: provisioning handles schema changes gracefully during setup.
+  - Better observability: improved route logging, health checks, and Slack integration.
+
+  ### Why it matters
+
+  First impressions compound. If setup is confusing, people assume the product is confusing. The goal is for setup to feel so unremarkable that you forget it happened. We are getting there.
 </Update>
 
 <Update
@@ -228,18 +1618,28 @@ Follow the features and improvements shipped across Autter. The newest release a
   tags={["New feature"]}
   rss={{
     title: "Self-service scan initiation",
-    description: "Start branch-aware repository scans from onboarding or the dashboard and receive completion notifications."
+    description: "The codebase scan is now something you can start yourself."
   }}
 >
   ## Self-service scan initiation
 
-  You can now start a full repository scan without a support handoff.
+  The codebase scan is now something you can start yourself.
 
-  - Start scans from onboarding or the dashboard.
-  - Select the branch you want Autter to analyze.
-  - Receive completion notifications through email or Slack.
-  - Audit dependency and vulnerability results over time.
-  - Review security, dependency, license, AI-code quality, and blast-radius findings in one report.
+  ### What you can do now
+
+  - Start a scan from the dashboard or onboarding flow. No manual handoff required.
+  - Get notified when it is done, via email and Slack.
+  - See full dependency coverage: every package tracked, cross-referenced, and auditable over time.
+  - Branch-aware scanning: scans run against the right branch, not whatever was last pushed.
+
+  ### What gets scanned
+
+  - **Security vulnerabilities**: Known CVEs, exposed secrets, injection patterns.
+  - **Dependencies**: Every package, version, and license in your repo.
+  - **AI-generated code quality**: Hallucinated imports, placeholder logic, low-signal patterns.
+  - **Blast radius**: Which parts of the codebase a change touches and how far it reaches.
+
+  > Seven out of ten users in our concierge cohort said they would pay for this. That is why we shipped it.
 </Update>
 
 <Update
@@ -248,14 +1648,17 @@ Follow the features and improvements shipped across Autter. The newest release a
   tags={["Improvement"]}
   rss={{
     title: "Streaming progress and auto-open setup",
-    description: "Organization setup now streams progress and opens from the correct dashboard context."
+    description: "Small week. Useful change."
   }}
 >
   ## Streaming progress and auto-open setup
 
-  Organization creation now shows each setup stage as it happens instead of leaving you on a static loading screen.
+  Small week. Useful change.
 
-  The setup dialog also opens automatically from the relevant dashboard flow, reducing the steps required to finish organization configuration.
+  - Streaming progress during setup: watch organization creation happen step by step instead of waiting on a static loading state and hoping it finishes.
+  - The organization creation dialog now opens from the right place in the dashboard flow automatically.
+
+  Not every changelog is dramatic. Sometimes you just fix the thing that was quietly annoying everyone.
 </Update>
 
 <Update
@@ -264,38 +1667,67 @@ Follow the features and improvements shipped across Autter. The newest release a
   tags={["New feature"]}
   rss={{
     title: "The multi-agent scan engine",
-    description: "Specialized scan agents, GitHub PR automation, an analytics foundation, and expanded codebase intelligence."
+    description: "This is where the engine got built. We shipped the multi-agent scanning foundation: a set of specialized agents that each look at a different risk surface in your codebase. Each agent has one job. They run independently and their findings roll up into a single, prioritized report."
   }}
 >
   ## The multi-agent scan engine
 
-  Autter now runs specialized agents for distinct codebase risk surfaces and combines their findings into one prioritized report.
+  This is where the engine got built. We shipped the multi-agent scanning foundation: a set of specialized agents that each look at a different risk surface in your codebase. Each agent has one job. They run independently and their findings roll up into a single, prioritized report.
 
-  - Added checks for security, licenses, supply chains, infrastructure, containers, policy, business logic, and runtime behavior.
-  - Added GitHub PR comments, check runs, webhook handling, and review automation.
-  - Added the first analytics dashboard with date filtering and multiple result views.
-  - Expanded hotspot detection, dependency mapping, and legacy-code signals.
+  ### What the scan engine covers
+
+  - Security vulnerabilities in your code and dependencies.
+  - Open source licenses across every package you are using.
+  - Supply chain risk from third-party dependencies.
+  - Configuration problems in infrastructure definitions.
+  - Container security across your Docker setup.
+  - Policy compliance against your org's own rules.
+  - Business logic issues that static analysis typically misses.
+  - Runtime behavior signals that show how code behaves under real conditions.
+
+  > A comment on a PR is advice. A blocked merge is enforcement. Everything we built this week is in service of the second one.
+</Update>
+
+<Update
+  label="2026-03-29"
+  description="GitHub PR automation and the first dashboard"
+  tags={["New feature"]}
+  rss={{
+    title: "GitHub PR automation and the first dashboard",
+    description: "autter can now comment on pull requests, post check runs, and flag issues directly in GitHub without you leaving your workflow, and the first version of the analytics dashboard is live alongside it."
+  }}
+>
+  ## GitHub PR automation and the first dashboard
+
+  autter can now comment on pull requests, post check runs, and flag issues directly in GitHub without you leaving your workflow, and the first version of the analytics dashboard is live alongside it.
+
+  - GitHub PR automation: comments, check runs, and flagged issues without leaving your workflow.
+  - The first analytics dashboard, with date-range filters and multiple tabs.
+  - Expanded codebase intelligence: hotspot detection, dependency mapping, legacy code signals.
 </Update>
 
 <Update
   label="2026-03-22"
-  description="Week one: We built the product"
+  description="Week one: we built the product"
   tags={["New feature"]}
   rss={{
-    title: "Week one: We built the product",
-    description: "Authentication, organizations, GitHub integration, codebase intelligence, and the first complete dashboard foundation."
+    title: "Week one: we built the product",
+    description: "Week one. We built the product. Not a prototype. Not a proof of concept. The actual product, with the foundations required to sign up a real user, connect a real repository, and enforce a real merge gate."
   }}
 >
-  ## Week one: We built the product
+  ## Week one: we built the product
 
-  The first product release established the core account, repository, and review foundations.
+  Week one. We built the product. Not a prototype. Not a proof of concept. The actual product, with the foundations required to sign up a real user, connect a real repository, and enforce a real merge gate.
 
-  - Added email one-time-code login, passkeys, trusted devices, and welcome flows.
-  - Added organization creation, branding, team management, account configuration, and product settings.
-  - Added GitHub App installation, pull request views, and repository insights.
-  - Added architecture graphs, repository context, hotspots, and codebase-learning signals.
-  - Added responsive dashboard navigation, search, loading states, notifications, and the Autter visual system.
-  - Introduced Captain Patch.
+  ### What shipped
+
+  - **Authentication**: Email login with one-time codes and passkeys. Trusted devices. Welcome flows.
+  - **Organization management**: Teams, billing, source control, review preferences, custom agents, AI config.
+  - **GitHub integration**: App installation, pull request views, and the first repository insights.
+  - **Codebase intelligence**: Architecture graphs, hotspot metrics, and learning signals over time.
+  - **Dashboard and navigation**: Loaders, toasts, responsive layouts, sidebars, search, and the branding system.
+
+  Captain Patch is officially on duty.
 </Update>
 
 <Card title="Read the source changelog" icon="arrow-up-right-from-square" href="https://www.autter.dev/changelog">
