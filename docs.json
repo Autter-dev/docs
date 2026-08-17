@@ -7,7 +7,7 @@
     "light": "https://www.autter.dev/wordmark-light.png",
     "dark": "https://www.autter.dev/wordmark-dark.png"
   },
-  "favicon": "/images/autter-favicon.svg",
+  "favicon": "/favicon/favicon-256x256.png",
   "colors": {
     "primary": "#007A6C",
     "light": "#2EFFD1",
@@ -21,6 +21,35 @@
     "body": {
       "family": "Quattrocento Sans",
       "weight": 400
+    }
+  },
+  "thumbnails": {
+    "appearance": "dark",
+    "background": "/images/thumbnail-background.jpg",
+    "fonts": {
+      "family": "Quattrocento"
+    }
+  },
+  "seo": {
+    "metatags": {
+      "og:site_name": "Autter",
+      "og:locale": "en_US",
+      "twitter:card": "summary_large_image",
+      "twitter:site": "@autter_patch",
+      "twitter:creator": "@autter_patch",
+      "author": "Autter",
+      "robots": "index, follow",
+      "keywords": "Autter, Autter docs, Autter CLI, AI teammate, AI code review, AI testing, automated code review, code review agent, release governance, security review, pull request review, AI authorship, line-level attribution, CI/CD, developer tools"
+    },
+    "organization": {
+      "id": "https://autter.dev/#organization",
+      "name": "Autter",
+      "url": "https://autter.dev/",
+      "logo": "https://autter.dev/favicon/favicon-256x256.png",
+      "sameAs": [
+        "https://x.com/autter_patch",
+        "https://github.com/Autter-dev"
+      ]
     }
   },
   "navbar": {
