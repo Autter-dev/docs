@@ -70,6 +70,12 @@
       "x": "https://x.com/autter_patch"
     }
   },
+  "integrations": {
+    "posthog": {
+      "apiKey": "phc_aWveMd1bPhuEYtFnCS1G2IHgln3iGQqjfIdkfnuolxI",
+      "sessionRecording": false
+    }
+  },
   "redirects": [
     {
       "source": "/cli/how-git-ai-works",
