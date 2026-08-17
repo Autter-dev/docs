@@ -11,7 +11,7 @@ Autter works with Windsurf by capturing the agent's edits as checkpoints and wri
 - Automatic authorship tracking for Windsurf edits
 - `autter blame` for file-level review
 - `autter stats` for commit and range summaries
-- `autter debug` when you need setup diagnostics
+- `autter doctor` when you need setup validation
 
 ## Set up Windsurf
 
@@ -37,7 +37,7 @@ Autter works with Windsurf by capturing the agent's edits as checkpoints and wri
 ## Verify the flow
 
 ```bash
-autter debug
+autter doctor
 autter stats HEAD
 autter blame src/service.ts
 ```
