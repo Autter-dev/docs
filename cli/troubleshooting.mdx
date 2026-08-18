@@ -4,10 +4,28 @@ description: "Diagnose missing attribution, background-service issues, login fai
 icon: "wrench"
 ---
 
-Start with Autter's built-in diagnostics:
+Start with Autter's built-in setup validation:
 
 ```bash
-autter debug
+autter doctor
+```
+
+## Validate the setup with `autter doctor`
+
+`autter doctor` checks the installation end-to-end and prints a fix line for every failed check. It verifies:
+
+- The Git version and the Autter configuration file
+- The repository filters that decide whether the current repository is tracked
+- The background service and its Git event capture
+- A real checkpoint round-trip, from checkpoint through commit to line-level attribution
+- Integration status for the coding agents detected on the machine
+- Login state, plus platform reachability in connected mode
+
+The command exits `0` when no check fails and `1` otherwise, so you can use it in scripts. Add `--json` for a machine-readable report.
+
+If every check passes but something still looks wrong, gather more context:
+
+```bash
 autter bg status
 autter whoami
 autter config
@@ -101,7 +119,7 @@ autter config set telemetry_oss off
 
 ## Get support diagnostics
 
-Run `autter debug` and review the output before sharing it. Remove repository paths, identities, tokens, and other sensitive values.
+Run `autter doctor` first and apply the fixes it prints. When you need a full report to share, run `autter debug` and review the output before sharing it. Remove repository paths, identities, tokens, and other sensitive values.
 
 <Card title="Open a GitHub issue" icon="github" href="https://github.com/Autter-dev/autter-cli/issues">
   Report reproducible open source CLI problems.
