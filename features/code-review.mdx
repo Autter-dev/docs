@@ -30,18 +30,19 @@ Autter is designed to find issues that can survive a surface-level review:
 - dependency and scanner findings relevant to the diff
 - behavior that appears correct in isolation but fails in the wider codebase
 
-## How context changes the review
+## What Autter reads during a review
 
-A generic rule might flag every direct database call. A codebase-aware review can distinguish between an approved repository layer and a controller that bypasses it.
+"Codebase-aware" has a specific meaning. A review reasons over three layers of context:
 
-Autter can ground feedback in:
+1. **The diff.** Autter fetches the pull request's compare diff from your source control provider. Every review starts from the changed lines.
+2. **The repository index.** When you connect a repository, Autter indexes it: dependency and call graphs, per-file and per-symbol summaries, hotspots, and architecture and convention notes. During a review, Autter walks the index outward from the changed files — direct callers and callees, same-module neighbors, and heavily depended-on paths the change can affect — and fetches those specific files on demand through the provider API. The standard review does not clone your repository.
+3. **Connected knowledge.** Natural-language team rules, accepted [learnings](/features/calibration), linked issues, and reference documents attached to the repository, such as product or design docs and URLs. Attached documents contribute bounded summaries that are fenced off from code and findings: they inform the review, they cannot instruct it.
 
-- related files and dependencies
-- established repository patterns
-- natural-language team rules
-- prior review comments and team knowledge
-- linked issues and documentation
-- current linter and scanner results
+Deeper stages get more access. When findings need verification, a fix is generated, or build and test checks run, Autter checks out the pull request head at its exact commit into an isolated, single-use **review sandbox**. There it can search the full tree and run your build and tests. The sandbox is destroyed when the job ends.
+
+A review never reads other repositories in your organization — context is scoped to the repository under review — and never reads documents you have not connected.
+
+This context is what separates codebase-aware review from generic rules. A generic rule might flag every direct database call; because Autter sees the repository index, it can distinguish an approved repository layer from a controller that bypasses it.
 
 ## Use team rules
 
@@ -67,7 +68,7 @@ Keep rules specific and testable. See [Review rules](/configuration/rules) and [
     Push changes and review the latest Autter result alongside human feedback.
   </Step>
   <Step title="Improve noisy rules">
-    Refine a rule or pipeline check when it repeatedly flags valid code.
+    Refine a rule or pipeline check when it repeatedly flags valid code. Autter also [demotes low-precision checks automatically](/features/calibration).
   </Step>
 </Steps>
 

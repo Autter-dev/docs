@@ -10,6 +10,10 @@ Autter Runtime tracks **runtime errors and usage** from your frontend and backen
 - your server keeps real OpenTelemetry
 - Autter Runtime's **OTLP ingester** receives both and writes them to ClickHouse in a compact, per-repository data model
 
+<Note>
+  In these docs, **Autter Runtime** always means this product: the open source telemetry SDKs and ingest pipeline that watch your app in production. The isolated environment where the Autter platform builds and tests your pull requests is a different thing — the docs call it the **review sandbox**, described in [code review](/features/code-review#what-autter-reads-during-a-review).
+</Note>
+
 ```mermaid
 flowchart TD
     A["@autter/runtime-browser (tiny tracker)"] --> B["Same-origin relay (@autter/runtime-node)"]

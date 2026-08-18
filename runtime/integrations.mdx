@@ -47,6 +47,8 @@ React render errors: wrap with `<AutterErrorBoundary>` (from `@autter/runtime-ne
 npm install @autter/runtime-node
 ```
 
+Create `instrument.cjs` in your service's directory, next to its entry point:
+
 ```ts
 // instrument.cjs — load first: node --require ./instrument.cjs server.js
 const { initAutterServer } = require("@autter/runtime-node");
