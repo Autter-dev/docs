@@ -30,14 +30,14 @@ This closes the loop between "Autter found a problem" and "the agent fixed it," 
 
 ## How it works
 
-The MCP server is part of the Autter platform. A client connects with an HTTP request, authenticated with an Autter [personal access token](/cli/connect-platform), and calls tools scoped to your organization.
+The MCP server is part of the Autter platform. Clients connect over Streamable HTTP to `https://api.autter.dev/mcp` and authenticate in one of two ways:
+
+- **OAuth (recommended):** the client discovers authorization metadata from the `401` response, registers via dynamic client registration, opens a browser consent screen, and receives a scoped access token.
+- **Personal access token:** you create a token in **Org Settings → Access Tokens** and send it as `Authorization: Bearer autter_pat_…`.
 
 <Steps>
-  <Step title="Create an access token">
-    Create a personal access token in **Org Settings → Access Tokens**. Restrict it to MCP scopes if you only want agent access, not CLI login.
-  </Step>
-  <Step title="Point your MCP client at Autter">
-    Configure your client with the Autter MCP endpoint and the token as a bearer credential. See [Connect your agent](/guides/mcp-setup) for exact client configuration.
+  <Step title="Connect via OAuth or a token">
+    For interactive clients (Cursor, Grok, Claude Code), add the server URL without credentials and click **Authenticate**. For CI or scripts, create a [personal access token](/guides/mcp-setup#personal-access-token-ci-scripts-manual-setup).
   </Step>
   <Step title="Call a tool">
     Every tool operates on the token's organization. Most tools accept a `repo` argument as either the full `owner/repo` name or the short repository name.
