@@ -1,59 +1,109 @@
 ---
 title: "Platform quickstart"
-description: "Connect a repository and receive your first Autter pull request review."
+description: "Create an Autter organization, try a demo repository or connect your own, and get your first review."
 ---
 
-Use this guide to connect the Autter platform and verify that reviews appear in your source control provider.
+Start with a demo repository on GitHub or connect your own GitHub repository or GitLab project. Both paths begin with an Autter account and organization.
 
 ## Before you begin
 
 You need:
 
-- an Autter account
-- access to a GitHub repository or GitLab project
-- permission to install or authorize the relevant integration
-- a pull request or merge request you can open for verification
+- a GitHub or Google account to sign up for Autter
+- for the demo: a GitHub account where you can create a repository and install the Autter GitHub App
+- for your own repository: access to a GitHub repository or GitLab project, with permission to install or authorize the integration
 
-<Info>
-  Plans and included review volumes can change. See [current pricing](https://www.autter.dev/pricing) before you roll Autter out across an organization.
-</Info>
+You do not need an existing repository to try the demo. The demo setup creates a copy of a project in your GitHub account.
 
-## Connect your first repository
+## Create your account and organization
 
 <Steps>
-  <Step title="Sign in to Autter">
-    Open the [Autter platform](https://app.autter.dev) and sign in.
+  <Step title="Sign up for Autter">
+    Open [app.autter.dev/login](https://app.autter.dev/login) and sign up using **GitHub** or **Google**. If you already have an account, sign in.
   </Step>
-  <Step title="Connect GitHub or GitLab">
-    Choose your source control provider and complete its authorization flow.
-
-    <Tabs>
-      <Tab title="GitHub">
-        Install the Autter GitHub App on the account or organization that owns the repository.
-      </Tab>
-      <Tab title="GitLab">
-        Authorize the Autter GitLab integration for the account, group, or project you want to use.
-      </Tab>
-    </Tabs>
+  <Step title="Create a trial organization">
+    Click **+ New Organization** or **Create Organization**. Follow the setup form to enter your organization's details, then click **Create Organization**.
   </Step>
-  <Step title="Grant repository access">
-    Select the repository or project Autter should review. Start with one active repository while you evaluate the feedback.
-  </Step>
-  <Step title="Open a pull request">
-    Open a pull request or merge request in the connected repository. Autter starts the review from the proposed diff and available repository context.
-  </Step>
-  <Step title="Confirm the review appears">
-    Look for an Autter review summary, inline findings, or an Autter check in the pull request interface.
+  <Step title="Choose how to start">
+    After you create the organization, Autter opens repository selection. Continue with [Try a demo repository](#try-a-demo-repository) or [Connect your own repository](#connect-your-own-repository) below.
   </Step>
 </Steps>
 
-<Frame caption="Placeholder: replace with an approved repository connection screenshot.">
-  <img src="/images/repository-connect.png" alt="Connecting a GitHub or GitLab repository to Autter" />
-</Frame>
+If you already have an Autter organization, open it and continue with repository selection.
 
-{/* TODO: Add approved screenshots for the current GitHub and GitLab authorization screens. */}
+## Try a demo repository
 
-## Evaluate the first review
+<Steps>
+  <Step title="Start the demo setup">
+    On the repository selection screen, click **I don’t have a repo yet - set me up**.
+  </Step>
+  <Step title="Connect your GitHub account">
+    Click **Connect GitHub** and complete the account connection. You need this connection for the demo even if you signed up with Google.
+  </Step>
+  <Step title="Pick a demo project">
+    Return to the Autter dashboard and select a project. The demo choices include **Next.js SaaS**, **Node API**, **Python Worker**, **AI Agent**, and **Infra & Config**.
+  </Step>
+  <Step title="Create your copy on GitHub">
+    Follow the GitHub form to create a copy of the selected project. Choose your GitHub owner and a repository name, then finish creating the repository.
+  </Step>
+  <Step title="Install Autter on the demo repository">
+    Return to the Autter platform and click **Review access on GitHub**. On GitHub, choose **Only select repositories**, select your new demo repository, and approve the installation.
+  </Step>
+  <Step title="Add the demo repository to Autter">
+    Return to Autter and select the demo repository you created. Click **Add 1 repository** to connect it to your organization.
+  </Step>
+  <Step title="Open your workspace">
+    Open the connected repository in the Autter platform to explore the trial. Continue with [Get your first review](#get-your-first-review) when you are ready to try a pull request.
+  </Step>
+</Steps>
+
+<Note>
+  Connecting your GitHub account, granting the Autter GitHub App repository access, and adding the repository to Autter are separate steps. Complete all three to finish setup.
+</Note>
+
+## Connect your own repository
+
+Use the repository selection screen in your Autter organization to connect an existing repository. You can start here directly or connect your own repository after trying the demo.
+
+<Tabs>
+  <Tab title="GitHub">
+    <Steps>
+      <Step title="Connect GitHub">
+        Start the GitHub connection from Autter and complete the authorization flow for the account or organization that owns your repository.
+      </Step>
+      <Step title="Grant repository access">
+        Install the Autter GitHub App or update its access. Choose **Only select repositories** and include the repository you want to try.
+      </Step>
+      <Step title="Add the repository to Autter">
+        Return to Autter, select your repository, and click **Add 1 repository** when selecting a single repository.
+      </Step>
+    </Steps>
+
+    See [GitHub setup](/guides/github-setup) for connection checks and troubleshooting.
+  </Tab>
+  <Tab title="GitLab">
+    <Steps>
+      <Step title="Authorize GitLab">
+        Start the GitLab connection from Autter and complete the provider authorization flow.
+      </Step>
+      <Step title="Select your project">
+        Grant access to the project you want Autter to review and complete project selection in Autter.
+      </Step>
+    </Steps>
+
+    See [GitLab setup](/guides/gitlab-setup) for connection checks and troubleshooting.
+  </Tab>
+</Tabs>
+
+## Get your first review
+
+After connecting either a demo repository or your own repository:
+
+1. Open a pull request on the connected GitHub repository, or a merge request on the connected GitLab project.
+2. Check the Autter platform for the review status.
+3. Look for an Autter review summary, inline findings, or an Autter check in your source control provider.
+
+### Evaluate the feedback
 
 Check that the review gives the author enough context to act:
 
@@ -64,31 +114,24 @@ Check that the review gives the author enough context to act:
 
 If the feedback is too broad or too noisy, adjust the review behavior and add team rules. See [Configuration](/configuration/overview).
 
-## Add a team rule
+## Next steps
 
-Autter supports team standards written in natural language. Define a small, testable rule such as:
+After you try the first review, you can:
 
-> Payment handlers must verify the authenticated account owns the payment method before creating a charge.
+- [Add a custom rule](/guides/custom-rules) to apply your team's standards.
+- [Connect your own repository](#connect-your-own-repository) if you started with the demo.
+- [Install the Autter CLI](/cli/install) to add line-level AI authorship and coding-agent context. Review [Data and privacy](/cli/data-and-privacy) before choosing local-only mode or connected mode.
 
-Apply the rule to the relevant repositories, then test it with a pull request that contains a representative change. See [Custom rules](/guides/custom-rules) for a safe rollout process.
-
-## Add AI authorship context
-
-Install the Autter CLI when you also want line-level attribution for code written by coding agents.
-
-```bash
-curl -fsSL https://api.autter.dev/install.sh | bash
-autter status
-```
-
-The CLI can remain local-only or connect to your Autter organization. See [Install the CLI](/cli/install) and [Data and privacy](/cli/data-and-privacy).
+See [current pricing](https://www.autter.dev/pricing) for plan details before expanding your rollout.
 
 ## Troubleshoot the connection
 
-If no review appears:
+If a repository is missing from selection, confirm that the integration has access to it. For a demo repository, check that you finished creating your copy on GitHub and included that copy in the App's repository access.
+
+If no review appears after connecting a repository:
 
 1. Confirm the repository is included in the integration's access scope.
-2. Confirm the pull request targets the repository's normal review branch.
+2. Confirm you selected and added the repository in your Autter organization.
 3. Check the Autter platform for a connection or review status.
 4. Reopen or update the pull request after fixing access.
 
