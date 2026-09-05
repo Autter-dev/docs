@@ -11,13 +11,16 @@ Install the hosted integration for pull request reviews. Install the CLI for lin
   <Tab title="GitHub">
     <Steps>
       <Step title="Sign in to Autter">
-        Open the [Autter platform](https://app.autter.dev) and sign in.
+        Open the [Autter platform](https://app.autter.dev/login) and sign in. Create a trial organization or open an existing organization.
       </Step>
-      <Step title="Install the GitHub App">
-        Start the GitHub connection from Autter and choose the account or organization where you want to install the App.
+      <Step title="Choose how to start">
+        Open repository selection. Choose **I have repositories to connect** for your own repository, or **I don't have a repo yet — set me up** for a demo repository.
       </Step>
-      <Step title="Select repositories">
-        Grant access to the repositories Autter should review. GitHub lets you update this scope later.
+      <Step title="Connect GitHub and grant access">
+        Complete the GitHub connection. Install the Autter GitHub App or review its access, then include the repositories Autter should review.
+      </Step>
+      <Step title="Add repositories to Autter">
+        Return to Autter, select the repositories, and add them to your organization.
       </Step>
       <Step title="Verify with a pull request">
         Open or update a pull request in a connected repository, then look for Autter feedback and checks.
@@ -29,13 +32,13 @@ Install the hosted integration for pull request reviews. Install the CLI for lin
   <Tab title="GitLab">
     <Steps>
       <Step title="Sign in to Autter">
-        Open the [Autter platform](https://app.autter.dev) and sign in.
+        Open the [Autter platform](https://app.autter.dev/login) and sign in. Create a trial organization or open an existing organization.
       </Step>
       <Step title="Authorize GitLab">
         Start the GitLab connection from Autter and complete the provider authorization flow.
       </Step>
       <Step title="Select projects">
-        Grant access to the projects Autter should review.
+        Grant access to the projects Autter should review, then add them to your Autter organization.
       </Step>
       <Step title="Verify with a merge request">
         Open or update a merge request in a connected project, then look for Autter feedback and status information.
@@ -46,8 +49,8 @@ Install the hosted integration for pull request reviews. Install the CLI for lin
   </Tab>
 </Tabs>
 
-<Frame caption="Placeholder: replace with an approved integration setup screenshot.">
-  <img src="/images/placeholders/connect-repository.svg" alt="Placeholder showing the Autter source control integration setup" />
+<Frame caption="Choose an existing repository or let Autter set up a demo repository.">
+  <img src="/images/repository-connect.png" alt="Autter workspace setup asking whether to connect an existing repository or create a demo repository" />
 </Frame>
 
 {/* TODO: Confirm the current minimum GitHub and GitLab permission requirements before listing exact roles or scopes. */}

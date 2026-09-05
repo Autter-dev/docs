@@ -3,7 +3,7 @@ title: "GitHub setup"
 description: "Install the Autter GitHub App, select repositories, and verify a pull request review."
 ---
 
-Connect GitHub to receive Autter feedback in the pull request workflow.
+Connect one of your GitHub repositories to receive Autter feedback in the pull request workflow. If you want Autter to create a demo repository first, follow the [platform quickstart](/quickstart#try-a-demo-repository).
 
 ## Before you begin
 
@@ -15,36 +15,39 @@ You need an Autter account and permission to install a GitHub App on the target 
 
 <Steps>
   <Step title="Sign in to Autter">
-    Open the [Autter platform](https://app.autter.dev) and sign in.
+    Open the [Autter platform](https://app.autter.dev/login) and sign in. Create a trial organization or open an existing organization.
   </Step>
-  <Step title="Start the GitHub connection">
-    Choose the GitHub connection in Autter. GitHub opens the App installation flow.
+  <Step title="Choose your own repository">
+    Open repository selection and click **I have repositories to connect**.
   </Step>
-  <Step title="Choose an account or organization">
-    Select the owner of the repositories you want Autter to review.
+  <Step title="Connect GitHub">
+    Complete the GitHub authorization flow for the account or organization that owns your repository.
   </Step>
-  <Step title="Select repository access">
-    Grant access to the repositories you want to evaluate. Start with a limited repository set when possible.
+  <Step title="Grant repository access">
+    Install the Autter GitHub App or review its existing access. Choose **Only select repositories**, include the repository you want to try, and approve the installation.
+  </Step>
+  <Step title="Add the repository to Autter">
+    Return to Autter, select the repository, and click **Add 1 repository** when connecting a single repository.
   </Step>
   <Step title="Open or update a pull request">
     Use a connected repository and look for Autter feedback in the pull request.
   </Step>
 </Steps>
 
-<Frame caption="Placeholder: replace with approved GitHub App installation and repository selection screenshots.">
-  <img src="/images/placeholders/connect-repository.svg" alt="Placeholder showing the Autter GitHub App installation and repository access flow" />
+<Frame caption="Choose your own repository during workspace setup, or let Autter create a demo repository.">
+  <img src="/images/repository-connect.png" alt="Autter workspace setup with options to connect an existing repository or create a demo repository" />
 </Frame>
 
 ## Verify the connection
 
 Confirm that:
 
-- the repository appears in the Autter platform
+- the repository appears in the Autter platform after you add it to the organization
 - the GitHub App has access to that repository
 - a new or updated pull request starts an Autter review
 - the review output appears in the pull request workflow
 
-If no review appears, verify the App's repository access in GitHub and reconnect the repository in Autter if necessary.
+If the repository does not appear in Autter, verify the App's repository access in GitHub, then return to repository selection and add it. If no review appears, reconnect the repository in Autter if necessary.
 
 {/* TODO: Add the approved hosted-review status and troubleshooting locations from the production UI. */}
 
