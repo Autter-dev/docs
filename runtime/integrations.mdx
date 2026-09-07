@@ -118,7 +118,7 @@ OTEL_TRACES_SAMPLER=parentbased_traceidratio
 OTEL_TRACES_SAMPLER_ARG=0.01
 ```
 
-Errors surface as issues when spans carry `exception` events (every SDK's `record_exception` / `RecordError` does this) or `ERROR` status.
+Errors surface as issues when spans carry `exception` events (every SDK's `record_exception` / `RecordError` does this) or `ERROR` status. The ingester parses each language's native stack format (Go, Rust, Java, .NET, Python, JavaScript), so errors group by function and file, not by message alone — the same defect stays one issue and unrelated errors that share a message stay apart.
 
 **Warnings** (any language): add an `autter.severity` attribute to the exception event — `"fatal" | "error" | "warning" | "info"` (default `error`; the Node SDK's crash marker `autter.unhandled: true` implies `fatal`). Warnings share the errors table with a `severity` column, so they group and aggregate identically:
 

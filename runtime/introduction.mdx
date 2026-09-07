@@ -62,6 +62,8 @@ A runnable demo lives at [`examples/express-app`](https://github.com/Autter-dev/
 | Node (Express, Fastify, Koa, Nest) | `@autter/runtime-node` | server key |
 | Go, Rust, Python, Java, .NET, … | any OpenTelemetry SDK → OTLP/HTTP (protobuf or JSON) | server key |
 
+Errors group the same way for every stack: the ingester parses each language's native stack format, so the same defect stays one issue across re-deploys and unrelated errors that share a message stay separate. See [Architecture & data model](/runtime/architecture#fingerprinting) for how grouping works.
+
 See [Stack integrations](/runtime/integrations) for per-stack snippets, or [Using Autter Runtime without npm](/runtime/without-npm) if your service has no `@autter/*` package at all.
 
 ## Keys: frontend vs. backend

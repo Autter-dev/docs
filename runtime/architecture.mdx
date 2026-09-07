@@ -66,10 +66,12 @@ Retention philosophy: raw signal is short-lived; anything worth keeping long-ter
 `sha256(source + service + error_type + normalised_message + top_5_frames + normalised_route)`, truncated to 32 hex chars.
 
 - Message normalization: quoted strings → `<str>`, UUIDs → `<uuid>`, long hex → `<hex>`, numbers → `<n>`.
-- Frame normalization: query strings and line/column offsets stripped — minified bundle offsets shift every deploy; file + function name are stable.
+- Frame normalization is **language-aware**. Each supported runtime's native stack format is parsed and every frame reduced to a stable `function (file)` token — JavaScript/TypeScript, Python, Go, Rust, JVM (Java, Kotlin, Scala), and .NET. Volatile parts are stripped (line and column numbers, `+0x` offsets, pointer arguments, memory addresses), because they shift on every deploy while the function and file stay stable.
 - Route normalization: id-like path segments → `:id` (`/orders/812` → `/orders/:id`).
 
-The same algorithm runs in the Autter backend so browser-relay and OTLP occurrences group identically.
+Parsing the native format per language is what keeps unrelated defects apart: two errors from different functions or files never merge just because their messages match, and the same defect keeps one fingerprint across re-deploys. An unrecognized but still frame-shaped stack falls back to a templated signature rather than being discarded — discarding frames is what would collapse every same-message error into one issue. A stack with no frame-like lines contributes nothing, and grouping falls back to source + service + error type + message.
+
+The fingerprint is computed once at ingest, and the Autter backend groups on it — so browser-relay, JavaScript/Node OTLP, and native Go, Rust, Java, .NET, and Python occurrences all group identically.
 
 ## OTLP mapping (traces)
 

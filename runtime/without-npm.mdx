@@ -32,7 +32,7 @@ Install that language's OTel SDK and OTLP exporter from its own package manager 
 
 How the signals map:
 
-- **Errors** — a span with an `exception` event (`record_exception` / `RecordError` in every SDK) or `ERROR` status becomes an error occurrence, fingerprinted and grouped server-side.
+- **Errors** — a span with an `exception` event (`record_exception` / `RecordError` in every SDK) or `ERROR` status becomes an error occurrence, fingerprinted and grouped server-side. The ingester parses your language's native stack format (Go, Rust, Java, .NET, Python, JavaScript), so occurrences group by the actual function and file — two different defects never merge just because their messages match.
 - **Warnings/info** — add an `autter.severity` attribute (`"fatal" | "error" | "warning" | "info"`) to the exception event; the occurrence is stored with that severity instead of `error`.
 - **Usage** — HTTP-server spans and the standard `http.server.request.duration` histogram fold into per-minute request/error/latency rollups automatically.
 
