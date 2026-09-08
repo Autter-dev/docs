@@ -14,6 +14,17 @@ description: "Configuration reference for the Autter Runtime SDKs and the self-h
 
 Frontend equivalents are passed directly to `initAutterBrowser({...})` rather than read from `process.env` (bundlers don't expose server env vars to the browser by default) — for example `import.meta.env.VITE_GIT_SHA` for `release`.
 
+## Endpoint regression SDK options
+
+These are JavaScript options for `initAutterServer` and Next.js `registerAutter`, not additional environment variables.
+
+- `release`: set this to the deployed commit SHA. `GIT_SHA` is a convention that your build must supply.
+- `environment`: use the actual deployment environment and keep its name stable.
+- `retainTracesAboveMs`: a positive duration in milliseconds opts into bounded retention of slow successful server traces in the local process. Use `2000` as a starting example, not a universal threshold. Zero or omission leaves this retention off. Check export volume after enabling it.
+- `instrumentations`: add required database or dependency instrumentation to the existing initialization. Do not create a second SDK.
+
+Use Node/Next.js SDK 1.3.0 or later; prefer patch 1.3.1. Self-hosted ingesters require 1.3.1 or later. There is no dedicated `retainTracesAboveMs` environment variable. See [Endpoint regressions](/runtime/endpoint-regressions) for limits and external OTel requirements.
+
 ## Ingester configuration (self-hosted)
 
 | Variable | Required | Description |

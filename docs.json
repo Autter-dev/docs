@@ -167,6 +167,7 @@
             "group": "Guides",
             "pages": [
               "runtime/skills",
+              "runtime/endpoint-regressions",
               "runtime/integrations",
               "runtime/without-npm",
               "runtime/self-hosting"

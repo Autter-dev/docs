@@ -1,0 +1,100 @@
+---
+title: "Endpoint regressions"
+description: "Detect slower HTTP endpoints, compare traces, give feedback, and review draft fixes."
+---
+
+Use endpoint regression detection to find HTTP routes that become slower. Autter compares request-duration histograms, opens an incident, and compares normal and slow traces. When trace and source evidence support a code change, Autter can create a draft fix pull request.
+
+<Note>
+  Platform access does not change your application configuration. Your service must send compatible metrics. Slow successful trace retention is a separate, opt-in SDK setting. Autter does not automatically merge, deploy, or roll back endpoint fixes.
+</Note>
+
+## Prepare your service
+
+Use `@autter/runtime-node` or `@autter/runtime-next` version 1.3.0 or later. Prefer patch 1.3.1. Self-hosted installations require ingester 1.3.1 or later. Ingester 1.3.0 does not correctly accept numeric delta histograms.
+
+Update your existing SDK initialization. Do not start a second SDK or register duplicate providers.
+
+```ts
+initAutterServer({
+  apiKey: process.env.AUTTER_RUNTIME_KEY,
+  service: "payments-api",
+  environment: "production",
+  release: process.env.GIT_SHA,
+  retainTracesAboveMs: 2000,
+});
+```
+
+For Next.js, pass the same options to `registerAutter` in your existing server instrumentation file. See [Installation](/runtime/installation).
+
+- Set `release` to the commit SHA that is actually deployed. Configure your build to provide `GIT_SHA`.
+- Use the actual environment name. Keep service and environment names stable between releases.
+- Retain normal sampled traces as well as slow traces. The comparison needs both.
+- Add database or dependency instrumentation through the existing `instrumentations` option where needed. HTTP instrumentation alone does not measure all database calls or connection waits.
+
+### Slow trace retention
+
+The example opts into retention for server requests that take at least 2,000 ms. The default is off. Set a threshold that fits your service and check the change in export volume.
+
+Retention uses bounded memory and time limits. It retains finished spans from the local process, not an entire distributed trace. High load and long requests can produce incomplete traces. It does not change the existing error-retention setting.
+
+The platform cannot recover discarded traces or reconstruct old histogram buckets from count and sum totals. Collect new data after an upgrade. See [SDK options](/runtime/environment-variables#endpoint-regression-sdk-options).
+
+## Use another OpenTelemetry SDK
+
+Send explicit-bucket histograms with **delta** temporality. In OTLP, delta is `1` or `AGGREGATION_TEMPORALITY_DELTA`. Cumulative value `2` is not accepted for endpoint detection.
+
+- Use `http.server.request.duration` in seconds, or `http.server.duration` in milliseconds.
+- Include `http.request.method` or `http.method`, and a route template in `http.route`. Do not use a path that contains a user's identifier.
+- Include `service.name`, `service.version`, `service.instance.id`, and `deployment.environment.name` or `deployment.environment` as resource attributes. Use a unique instance ID for each service process.
+- Export at most two minutes apart. Include start and end timestamps, count, sum, explicit bounds, and bucket counts.
+- Choose histogram bounds that cover the request durations you need to detect. Overflow buckets can prevent a useful p95 estimate.
+
+Check the temporality and histogram settings for your installed language SDK. Exporter options and environment-variable support differ. Do not assume that trace export also provides compatible metrics. `retainTracesAboveMs` is a Node/Next.js option; other stacks need their own supported retention configuration.
+
+## How detection works
+
+Autter estimates p95 from request histograms, not from sampled or selectively retained traces. It compares the same repository, service, environment, HTTP method, and route.
+
+The current detector requires:
+
+- A 60-minute baseline, followed by two separate five-minute windows.
+- At least 100 requests in each window.
+- Both recent p95 estimates at least twice the baseline and at least 500 ms higher.
+- Comparable histogram layouts and consistent release data. Both recent windows must use the same release.
+
+Checks run every five minutes and allow two minutes for data to arrive. Missing data, low traffic, mixed releases, or unusable buckets can prevent an incident. A new setup therefore needs time to collect a baseline. Detection is not proof that a deployment caused the slowdown.
+
+## Compare traces
+
+Open the runtime incident and find **Endpoint regression**. Review the baseline and recent request counts and p95 estimates. Compare the normal and slow request traces and their child spans.
+
+A missing trace means no matching trace was retained for that window. Enable coverage for future requests; the platform cannot recreate a discarded trace. Unmeasured time does not identify a database or dependency as the cause.
+
+## Give user feedback
+
+Here, **user feedback** means your team's verdict on the incident diagnosis. It is not a survey sent to your application's users.
+
+- **Correct diagnosis**: the explanation matches your findings and further fix work can continue.
+- **Incorrect diagnosis**: the explanation is wrong. Stop new fix work for this incident.
+- **Expected behavior**: the slower behavior is intentional or acceptable. Stop new fix work for this incident.
+
+The latest team verdict controls further fix work. Feedback does not undo an existing pull request, deploy a change, or prove that performance has recovered.
+
+## Review a draft fix
+
+Automatic analysis needs normal and slow traces with child spans, relevant source files, and a specific code change supported by the evidence. If evidence is missing or confidence is low, Autter does not generate a fix. Review the incident status and activity feed.
+
+A generated fix is a **draft pull request**. Review the patch and its CI results. Your team must approve the merge and deployment. There is no automatic merge, deployment, or rollback in this pipeline.
+
+## Verify recovery
+
+A merged pull request alone does not resolve the regression. Verification needs a successful deployment of the exact merge SHA in the matching environment, fresh metrics for that release, and comparable request volume.
+
+Autter resolves the incident after two consecutive recovery windows. Missing deployment evidence or insufficient telemetry leaves recovery unverified. Team feedback is not a substitute for these checks.
+
+## Check your setup
+
+Inspect existing production traffic, exporter failures, release attributes, histogram format, and trace coverage. Do not create artificial production errors or traffic to force an incident. Use an isolated test environment for controlled checks.
+
+If no incident appears, first check the data requirements and request volume. A healthy ingester or an enabled feature alone does not prove successful detection.

@@ -7,8 +7,8 @@ Install the package that matches your stack. You can mix and match — for examp
 
 ```bash
 npm install @autter/runtime-browser   # frontend (React, Vue, any SPA, static sites)
-npm install @autter/runtime-node      # backend (Express, Fastify, Koa, Nest, plain Node)
-npm install @autter/runtime-next      # Next.js (both halves in one package)
+npm install @autter/runtime-node@^1.3.1
+npm install @autter/runtime-next@^1.3.1
 ```
 
 <Tabs>
@@ -46,7 +46,9 @@ npm install @autter/runtime-next      # Next.js (both halves in one package)
     initAutterServer({
       apiKey: process.env.AUTTER_RUNTIME_KEY,   // secret server key
       service: "payments-api",
+      environment: "production",
       release: process.env.GIT_SHA,
+      retainTracesAboveMs: 2000,
     });
     ```
 
@@ -54,12 +56,18 @@ npm install @autter/runtime-next      # Next.js (both halves in one package)
   </Tab>
   <Tab title="Next.js">
     ```bash
-    npm install @autter/runtime-next
+    npm install @autter/runtime-next@^1.3.1
     ```
 
     Three files give you server tracing, browser tracking, the relay, and the error boundary — `instrumentation.ts`, `app/api/autter-runtime/route.ts`, and a client component. See the [`@autter/runtime-next` package README](https://github.com/Autter-dev/autter-runtime/tree/main/packages/runtime-next) for the exact snippets.
   </Tab>
 </Tabs>
+
+## Enable endpoint regression telemetry
+
+Reuse existing SDK initialization and pass the options only once. Set `release` to the deployed commit SHA and use the actual deployment environment. The backend example opts into bounded slow-request retention; the SDK default is off. For Next.js, pass `retainTracesAboveMs: 2000` to the existing `registerAutter` call.
+
+The platform rollout does not change installed SDK settings. Self-hosted ingesters require 1.3.1 or later. See [Endpoint regressions](/runtime/endpoint-regressions) for request histogram requirements, trace comparison, team feedback, and draft fix review.
 
 ## Get a key
 
