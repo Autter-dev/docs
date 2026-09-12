@@ -51,9 +51,19 @@ Connected data supports:
 
 If browser authorization fails, Autter keeps the machine in local-only mode. Your local attribution continues working. Retry later with `autter onboard --connect` or use the PAT fallback.
 
+## Sign in again
+
+Use this when cloud sync reports an expired login, or after `autter logout`:
+
+```bash
+autter login
+```
+
+Autter opens a browser, shows a one-time device code, and waits until you approve the machine. You do not paste a token. Confirm the identity with `autter whoami`, then `autter doctor`.
+
 ## PAT fallback
 
-Use a personal access token only if `autter onboard` cannot complete the browser connection.
+Use a personal access token only if the browser flow cannot complete.
 
 <Steps>
   <Step title="Open the dashboard">
