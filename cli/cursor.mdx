@@ -13,7 +13,7 @@ Autter works with Cursor by recording checkpoints around the edits Cursor makes 
 - `autter blame` for line-level attribution in committed files
 - `autter stats` for commit and range summaries
 
-## Set up Cursor
+## Set up Cursor hooks
 
 <Steps>
   <Step title="Install Autter">
@@ -33,6 +33,28 @@ Autter works with Cursor by recording checkpoints around the edits Cursor makes 
     Ask Cursor to change a tracked file, then run `autter status` before you commit.
   </Step>
 </Steps>
+
+## Connect to the Autter platform
+
+Hooks work locally without an account. To sync with the Autter platform (or use Autter MCP in Cursor), sign in:
+
+```bash
+autter login
+```
+
+If the browser login does not start, or you see a vague server/connection error, paste an **access token** on that same step — do not wait for the server to recover:
+
+1. Open your org's **Settings → Access Tokens**
+2. Click **Create token**, copy it
+3. Run:
+
+```bash
+autter login --token <paste-your-token>
+```
+
+This is a CLI/MCP **access token**, not a Runtime ingest key (`AUTTER_RUNTIME_KEY`).
+
+See also [Connect the platform](/cli/connect-platform) and [MCP setup](/guides/mcp-setup).
 
 ## Verify the result
 
