@@ -22,8 +22,8 @@ Autter Runtime tracks runtime errors and usage from your frontend and backend wi
 
 **Two ways to send browser events:**
 
-- **Relay** (recommended when you have a backend) — the browser posts to a route on *your* server, which forwards to the ingester with your server key. No key in the browser, immune to ad-blockers, no CSP changes.
-- **Direct** (static sites / no backend) — the browser posts straight to the ingester with a publishable client key.
+- **Relay** (recommended, including static sites) — the browser posts to a same-origin route on *your* server, Worker, or edge function, which forwards to the ingester with your server key. No key in the browser, immune to ad-blockers, no CSP changes. See [Stack integrations](/runtime/integrations) for the serverless relay.
+- **Direct** (lossy fallback for pure-static only) — the browser posts straight to the ingester with a publishable client key. Ad-blockers silently drop these cross-origin requests.
 
 **What is never sent:** cookies, DOM content, form values, request/response bodies, headers, emails, full URLs with query strings.
 

@@ -29,7 +29,26 @@ With a backend (recommended — relay, no key in the bundle):
 initAutterBrowser({ endpoint: "/api/autter-runtime", service: "web-app" });
 ```
 
-Without a backend (publishable client key, origin-restricted):
+### Static / serverless: same-origin relay (no backend needed)
+
+Direct browser ingest (`https://otlp.autter.dev/v1/browser` with `autter_rtc_…`) is cross-origin and ad-blockers silently drop it. You avoid that loss on static sites by deploying the same-origin relay and keeping the tracker on `/api/autter-runtime`.
+
+{/* TODO: Confirm examples/runtime-relay exists on main — currently only examples/express-app is present. Verify wrangler deploy path and vercel-edge-route.ts filename before publishing. */}
+
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Autter-dev/autter-runtime/tree/main/examples/runtime-relay)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Autter-dev/autter-runtime/tree/main/examples/runtime-relay&project-name=autter-runtime-relay&repository-name=autter-runtime-relay)
+
+- **Cloudflare:** deploy `examples/runtime-relay` (`wrangler deploy`), then route `/api/autter-runtime*` to it.
+- **Vercel:** copy `examples/runtime-relay/vercel-edge-route.ts` to `app/api/autter-runtime/route.ts`.
+- **Init (all relay modes):**
+
+```ts
+initAutterBrowser({ endpoint: "/api/autter-runtime", service: "web-app" });
+```
+
+Relay contract: `POST`-only, 64KB cap, `Origin` forwarded, `Cookie` stripped, `202` on accept. Set the `AUTTER_RUNTIME_KEY` secret to forward with your server key.
+
+Without a relay (lossy fallback for pure-static only, publishable client key, origin-restricted):
 
 ```ts
 initAutterBrowser({
@@ -38,6 +57,10 @@ initAutterBrowser({
   service: "marketing-site",
 });
 ```
+
+<Warning>
+  Direct ingest is cross-origin. Ad-blockers silently drop these requests, so expect partial data. Use the same-origin relay above whenever you can deploy a Worker or edge route.
+</Warning>
 
 React render errors: wrap with `<AutterErrorBoundary>` (from `@autter/runtime-next`, works in any React app). Vue/Svelte/Angular: call `captureException(err)` from the framework's error hook (`app.config.errorHandler`, `handleError`, `ErrorHandler`).
 
