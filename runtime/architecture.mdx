@@ -20,6 +20,12 @@ server app ──OTLP/HTTP──────────────────
 
 The ingester is **stateless**: auth key → `{orgId, repositoryId}` resolution, normalization, fingerprinting, ClickHouse writes, optional forward. Anything stateful (issue lifecycle, incidents, correlation, symbolication) belongs to the consumer of the sink webhook (Autter cloud, or your own backend).
 
+## External provider sources
+
+[Repository connectors](/runtime/external-sources) use a separate platform collection path: provider API or webhook → stored normalized occurrence in the organization database → Runtime issue → RCA → eligible draft-fix queue. They do not pass through this repository's OTLP ingester or require its ClickHouse tables. The collector and analysis workers run independently of API replicas. Source identity includes repository ownership, service/environment and provider fingerprint.
+
+The new connector webhook acknowledges delivery after durable storage. This confirms ingestion, while RCA and PR generation remain asynchronous. SDK sink and legacy webhook paths have their own delivery contracts.
+
 ## Tenancy & key scopes
 
 Every ClickHouse row is keyed by `(org_id, repository_id)` and every query must filter on both. One repository is one unit of analysis; the ingest key carries the mapping, so a key is scoped to exactly one repo.

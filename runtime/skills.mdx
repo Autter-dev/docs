@@ -62,7 +62,11 @@ Use the setup skills to inspect existing SDK initialization, update compatible p
 
 Platform access does not change your deployed applications. Reuse their existing providers and deploy the required SDK configuration. Self-hosted ingesters require 1.3.1 or later. See [Endpoint regressions](/runtime/endpoint-regressions) for the complete setup, team feedback, and human review of draft fixes.
 
-## Getting an ingest key
+## Connect external logs
+
+Ask `autter-runtime-setup` to connect your existing Sentry, PostHog, Grafana/Loki, Datadog or webhook source for the selected repository. The agent uses repository Runtime settings and checks stored records, analysis state and the actual draft PR URL separately. Connector-only setup does not require an ingest key or application SDK install. Read [External log sources](/runtime/external-sources) for provider credentials and automation policy.
+
+## Getting an ingest key (application instrumentation)
 
 Create one on your Autter dashboard: **Settings → Access Tokens → Runtime
 ingest keys → Create key**. Pick the repository, then choose:

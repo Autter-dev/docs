@@ -3,7 +3,9 @@ title: "Stack integrations"
 description: "Per-stack setup snippets for Autter Runtime — React, Node, Next.js, Go, Rust, and any OpenTelemetry SDK."
 ---
 
-Autter Runtime is two credentials and three endpoints; everything else is per-stack sugar.
+For existing Sentry, PostHog, Grafana/Loki, Datadog or webhook logs, use [external log sources](/runtime/external-sources). Provider connections require no application SDK or Runtime ingest key.
+
+The application instrumentation path below uses Runtime credentials and OTLP/browser endpoints.
 
 | Credential | Where it lives | Can |
 | --- | --- | --- |

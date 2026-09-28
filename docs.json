@@ -169,6 +169,7 @@
               "runtime/skills",
               "runtime/endpoint-regressions",
               "runtime/integrations",
+              "runtime/external-sources",
               "runtime/without-npm",
               "runtime/self-hosting"
             ]
