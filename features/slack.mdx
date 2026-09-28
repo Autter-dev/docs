@@ -71,6 +71,12 @@ Write a normal request. You do not need a special syntax. These are the actions 
 
 Name the repository as `owner/repo` or the short repository name when more than one repository could match.
 
+When you ask about a pull request review, Capt. Patch replies in three messages:
+
+1. The pull request and its review status.
+2. The most important findings.
+3. **Raise a fix PR**, when those findings can be fixed. That queues one draft fix pull request. If the review has not started, the third message is **Run review** instead.
+
 ## Buttons
 
 Some replies include buttons. The button is the action. A chat message cannot open a pull request by itself.
@@ -85,6 +91,7 @@ Some replies include buttons. The button is the action. A chat message cannot op
 | **Show details** | Shows the candidate summary, status, and files. Validation has not been run |
 | **Cancel** | Cancels a candidate fix that has not opened a pull request yet |
 | **Run review** | Queues a review for the pull request on the alert |
+| **Raise a fix PR** | Queues one draft fix pull request for the review findings |
 | **Open PR** | Posts the pull request link in the thread |
 
 **Create pull request** requires GitHub write access on that repository, or an Autter organization role of owner or admin. Other actions require you to be a member of the Autter organization.
