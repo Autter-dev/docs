@@ -124,6 +124,7 @@
               "features/ai-chat",
               "features/custom-agents",
               "features/integrations",
+              "features/slack",
               "features/mcp"
             ]
           },

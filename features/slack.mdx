@@ -1,0 +1,115 @@
+---
+title: "Slack"
+description: "Ask Capt. Patch in Slack, and choose which Autter events post to a channel."
+---
+
+The Autter Slack app is **Capt. Patch**. You can ask it about reviews, incidents, and code, and you can have Autter post selected events into a channel.
+
+An organization owner or admin installs the app from **Settings** → **Notifications**. Choose the channel where alerts should post. For a private channel, invite Capt. Patch to that channel first.
+
+## Send an instruction
+
+Capt. Patch answers three kinds of messages:
+
+- An `@Capt. Patch` mention in a channel the app is in
+- A direct message to Capt. Patch
+- The `/autter` slash command, followed by the same kind of instruction
+
+The text after the mention or command is the instruction. A thread keeps the earlier messages, so a follow-up can say “this” when that thread is already about one incident or pull request.
+
+The first time you message the app, Capt. Patch asks you to link your Autter account. Membership in the Slack workspace does not grant access. After you link, Autter uses your organization role.
+
+<Note>
+  Capt. Patch ignores messages from other bots.
+</Note>
+
+## Instructions you can give
+
+Write a normal request. You do not need a special syntax. These are the actions the app can carry out.
+
+### See what needs attention
+
+| Instruction | What Capt. Patch does |
+| --- | --- |
+| What needs my attention? | Lists open production incidents and pull requests whose review failed |
+| List our repositories | Lists repositories connected to the organization |
+| What pull requests are open in `owner/repo`? | Lists open pull requests for that repository |
+| Show the review for `owner/repo` pull request 128 | Returns the Autter review findings for that pull request |
+| Show the diff for pull request 128 | Returns the stored file patches |
+| What did the checks say on pull request 128? | Returns Autter check results recorded for that pull request |
+| Show recent deployments for `owner/repo` | Returns recent deployment events for that repository |
+
+### Ask about code and scans
+
+| Instruction | What Capt. Patch does |
+| --- | --- |
+| Where is authorization enforced in `owner/repo`? | Answers from that repository’s generated docs and code |
+| Show `src/auth/session.ts` in `owner/repo` | Reads that file from the repository’s default branch |
+| List critical findings in `owner/repo` | Returns codebase scan findings. You can name a severity: critical, high, medium, or low |
+
+### Work an incident
+
+| Instruction | What Capt. Patch does |
+| --- | --- |
+| What incidents are open? | Lists open production incidents |
+| Summarize this incident | Returns the incident, including the summary and suspected cause |
+| What evidence do we have for this incident? | Returns incident evidence and the trace comparison |
+| Have we seen this before? | Lists earlier incidents on the same service |
+| Acknowledge this incident | Marks the incident acknowledged |
+| Investigate this incident | Summarizes the incident and queues the existing Autter investigation. The result stays in the thread |
+| Mute this incident | Suppresses on-call notifications for that incident for 60 minutes |
+| What fixes exist for this incident? | Lists stored candidate fixes and any pull request already opened from them |
+| Draft a fix for this incident | Stores a candidate fix. It does not open a pull request |
+
+### Work a pull request
+
+| Instruction | What Capt. Patch does |
+| --- | --- |
+| Review `owner/repo` pull request 128 | Queues the same Autter review the dashboard runs |
+| Run a deep review of pull request 128 | Queues that review in deep mode |
+| Draft a fix for pull request 128 | Stores a candidate fix for that pull request. It does not open a pull request |
+
+Name the repository as `owner/repo` or the short repository name when more than one repository could match.
+
+## Buttons
+
+Some replies include buttons. The button is the action. A chat message cannot open a pull request by itself.
+
+| Button | What it does |
+| --- | --- |
+| **Acknowledge** | Marks the incident acknowledged |
+| **Investigate** | Queues the investigation |
+| **Create fix** | Stores a candidate fix |
+| **Mute** | Suppresses on-call notifications for 60 minutes |
+| **Create pull request** | Opens a pull request from the stored candidate fix |
+| **Show details** | Shows the candidate summary, status, and files. Validation has not been run |
+| **Cancel** | Cancels a candidate fix that has not opened a pull request yet |
+| **Run review** | Queues a review for the pull request on the alert |
+| **Open PR** | Posts the pull request link in the thread |
+
+**Create pull request** requires GitHub write access on that repository, or an Autter organization role of owner or admin. Other actions require you to be a member of the Autter organization.
+
+<Warning>
+  A candidate fix is a stored draft. Capt. Patch will not say that tests passed or that a review passed unless a tool result says so.
+</Warning>
+
+## Events Autter can post
+
+In **Settings** → **Notifications**, an owner or admin turns the Slack column on or off for each event. Alerts go to the channel you selected. These are the events:
+
+| Event | Slack default |
+| --- | --- |
+| AI review posted | Off |
+| Dependency CVE detected | On |
+| Fix PR opened | Off |
+| Fix PR merged | Off |
+| Codebase scan completed | On |
+| New issues found in scan | On |
+| New member joined | Off |
+| Member removed | Off |
+| Secret or credential detected | On |
+| Weekly digest | On |
+
+Incident alerts can include **Acknowledge**, **Investigate**, **Create fix**, and **Mute**. A pull request alert can include **Run review**.
+
+Reply in the alert’s thread to keep the instruction attached to that incident or pull request.
