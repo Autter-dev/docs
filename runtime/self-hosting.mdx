@@ -3,7 +3,7 @@ title: "Self-hosting"
 description: "Run the Autter Runtime ingester yourself, or use Autter's hosted endpoint."
 ---
 
-The ingester is a small, stateless service: it receives OTLP traces/metrics and browser payloads, normalizes and fingerprints them, and writes ClickHouse. You can use Autter's hosted ingester, or run it yourself.
+The ingester is a small, stateless service: it receives OTLP traces/metrics/logs and browser payloads, normalizes them, and writes ClickHouse. Captured errors use fingerprinting; diagnostic logs stay separate. You can use Autter's hosted ingester, or run it yourself.
 
 ## Autter cloud
 
@@ -46,6 +46,25 @@ new OTLPTraceExporter({
 ```
 
 Query ClickHouse directly with `docker compose exec clickhouse clickhouse-client --password dev`.
+
+## Upgrade for operation logs
+
+Use ingester **1.4.0 or later**, which contains `/v1/logs` and migration
+`0011-runtime-logs`. A `latest` image tag alone does not establish that the
+feature is available. The ingester applies the additive migration at startup;
+confirm it completed and the `runtime_logs` table exists before enabling SDK
+log export. Back up your database and follow your existing upgrade process.
+
+Update the ingester first, install a published Node/Next.js SDK release with
+the logging APIs and redeploy applications, then update platform consumers.
+Existing server ingest keys work; client/browser keys cannot send OTLP logs.
+Empty `/v1/logs` preflight success checks authentication, not successful writes.
+Verify stored messages and summaries separately from traces and metrics.
+
+Self-hosting the ingester stores telemetry; the Autter platform's **Logs** view,
+operation evidence, analysis and fix worker require a matching platform
+deployment. Missing readers/storage are unavailable, not healthy empty data.
+Follow [Operation logging](/runtime/operation-logging) for setup and verification.
 
 ## Configuring keys
 

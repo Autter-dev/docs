@@ -9,15 +9,22 @@ The application instrumentation path below uses Runtime credentials and OTLP/bro
 
 | Credential | Where it lives | Can |
 | --- | --- | --- |
-| **Server key** `autter_rt_…` | backend env vars only | send OTLP traces/metrics + relay browser events |
+| **Server key** `autter_rt_…` | backend env vars only | send OTLP traces/metrics/logs + relay browser events |
 | **Client key** `autter_rtc_…` | frontend bundles (publishable) | send browser events only, origin-restricted |
 
 | Endpoint | Format |
 | --- | --- |
 | `POST /v1/traces`, `POST /v1/metrics` | OTLP/HTTP — protobuf or JSON, gzip ok |
+| `POST /v1/logs` | OTLP/HTTP logs — protobuf or JSON; requires a compatible ingester deployment |
 | `POST /v1/browser` | compact JSON (`@autter/runtime-browser` payload v1) |
 
 Any language with an OpenTelemetry SDK can send server telemetry — point its OTLP/HTTP exporter at the ingester and add the key as a header.
+
+Structured logs require a logs exporter and logger bridge in addition to
+tracing. Node/Next.js operation APIs require a release containing them;
+[check installed and deployed support](/runtime/operation-logging#check-your-installation).
+Ordinary logs remain diagnostics; exception and failed-outcome traces produce
+issues. Keep your existing logging and provider ownership.
 
 ## React / SPA / static sites
 
@@ -64,7 +71,7 @@ initAutterBrowser({
   Direct ingest is cross-origin. Ad-blockers silently drop these requests, so expect partial data. Use the same-origin relay above whenever you can deploy a Worker or edge route.
 </Warning>
 
-React render errors: wrap with `<AutterErrorBoundary>` (from `@autter/runtime-next`, works in any React app). Vue/Svelte/Angular: call `captureException(err)` from the framework's error hook (`app.config.errorHandler`, `handleError`, `ErrorHandler`).
+React render errors: wrap with `<AutterErrorBoundary>` (from `@autter/runtime-next/client`, works in any React app). Vue/Svelte/Angular: call `captureException(err)` from the framework's error hook (`app.config.errorHandler`, `handleError`, `ErrorHandler`).
 
 ## Node.js (Express, Fastify, Koa, NestJS)
 
@@ -90,6 +97,11 @@ app.post("/api/autter-runtime", createBrowserRelayHandler({ apiKey }));
 
 ESM-only apps need OpenTelemetry's loader hook — see the [package README](https://github.com/Autter-dev/autter-runtime/tree/main/packages/runtime-node).
 
+For customer checkout/jobs, follow [Operation logging](/runtime/operation-logging):
+reuse initialization, add logging options after capability checks, and use
+`withRuntimeOperation` for steps and explicit business outcomes. Await flushing
+before short-lived work ends, and inspect stored logs plus linked issue evidence.
+
 ## Next.js
 
 ```bash
@@ -97,6 +109,20 @@ npm install @autter/runtime-next
 ```
 
 Three files — `instrumentation.ts`, a relay route, and a client init + boundary. See the [package README](https://github.com/Autter-dev/autter-runtime/tree/main/packages/runtime-next).
+
+Server initialization, relay and operation logging use
+`@autter/runtime-next/server`; browser components use
+`@autter/runtime-next/client`. Logging operations require Node, not edge.
+See the [Next.js logging example](/runtime/operation-logging#nextjs).
+
+## OTLP logs in other backends
+
+Python, Go, Rust, Java, .NET and other backends can use their installed
+OTel logs SDK or a Collector logs pipeline with `/v1/logs`. Endpoint variables
+alone do not install a logger bridge. Include service/environment/release,
+active trace/span IDs and scrubbed context, and configure exporter buffering
+and lifecycle flushing. Node's limits and helper APIs do not apply to these
+stacks. See [OTLP logger setup and the operation attribute contract](/runtime/operation-logging#other-languages-and-existing-otlp-loggers).
 
 ## Go
 

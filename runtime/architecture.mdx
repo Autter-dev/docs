@@ -5,18 +5,27 @@ description: "How Autter Runtime normalizes, fingerprints, and stores telemetry,
 
 ## Signal flow
 
+```mermaid
+flowchart TD
+    Browser[Browser tracker] --> Relay[Customer same-origin relay]
+    Relay --> BrowserIngest["/v1/browser"]
+    Server[Server OpenTelemetry] --> Traces["/v1/traces"]
+    Server --> Metrics["/v1/metrics"]
+    Logger[Server diagnostic logger] --> Logs["/v1/logs"]
+    BrowserIngest --> Occurrences[Normalize and fingerprint occurrences]
+    Traces --> Occurrences
+    Traces --> Spans[ClickHouse spans]
+    Metrics --> Rollups[ClickHouse metric rollups]
+    Occurrences --> Stored[ClickHouse error occurrences]
+    Occurrences --> Sink[Optional sink for issue grouping]
+    Logs --> Scrub[Scrub and bound log context]
+    Scrub --> LogRows[ClickHouse runtime_logs]
+    LogRows --> Evidence[Platform operation evidence]
+    Spans --> Evidence
 ```
-browser app ──tiny JSON──▶ customer's same-origin relay ──▶ /v1/browser ─┐
-                                                                          ├─▶ normalise → fingerprint
-server app ──OTLP/HTTP────────────────────────────────────▶ /v1/traces ──┤
-                                                            /v1/metrics ─┘
-                                                                          │
-                                              ┌───────────────────────────┤
-                                              ▼                           ▼
-                                     ClickHouse (raw + rollups)   sink webhook (optional)
-                                                                  → issue grouping in
-                                                                    the consumer's Postgres
-```
+
+The `/v1/logs` path requires the operation-logging deployment. See
+[capability checks](/runtime/operation-logging#check-your-installation).
 
 The ingester is **stateless**: auth key → `{orgId, repositoryId}` resolution, normalization, fingerprinting, ClickHouse writes, optional forward. Anything stateful (issue lifecycle, incidents, correlation, symbolication) belongs to the consumer of the sink webhook (Autter cloud, or your own backend).
 
@@ -41,13 +50,14 @@ Two key scopes separate frontend and backend credentials:
 | --- | --- | --- | --- |
 | `runtime_error_occurrences` | MergeTree | `(org_id, repository_id, fingerprint, occurred_at)` | 14 d |
 | `runtime_spans` | MergeTree | `(org_id, repository_id, trace_id, started_at)` | 7 d |
+| `runtime_logs` | ReplacingMergeTree | `(org_id, repository_id, occurred_at, event_id)` | 14 d in the operation-logging schema |
 | `runtime_metrics_1m` | SummingMergeTree | `(org_id, repository_id, service, environment, release, route, bucket_at)` | 90 d |
 
 `runtime_metrics_1m` is pre-aggregated per minute; readers must `SUM(...) GROUP BY` because SummingMergeTree collapses rows at merge time, eventually. Percentiles come from sampled spans at query time — the rollup table stores only counts and duration sums.
 
 ### Occurrences are aggregation-ready at write time
 
-`runtime_error_occurrences` holds errors **and** warnings/info (`severity` column: `fatal | error | warning | info`) — one dataset, sliceable by severity, rather than separate pipelines. Alongside the raw fields, the ingester stores derived columns computed by the same normalizers the fingerprint hashes, so aggregations never re-parse stacks or routes in SQL:
+`runtime_error_occurrences` holds captured errors **and intentional issue-producing** warnings/info (`severity` column: `fatal | error | warning | info`). Ordinary diagnostic messages use the separate `runtime_logs` table. Alongside the raw occurrence fields, the ingester stores derived columns computed by the same normalizers the fingerprint hashes, so aggregations never re-parse stacks or routes in SQL:
 
 | Column | Derivation | Aggregation use |
 | --- | --- | --- |
@@ -95,6 +105,27 @@ Span-level:
 - `route` from `http.route`, falling back to `url.path` / `http.target` (query-stripped).
 - `status_code` from `http.response.status_code` / `http.status_code`.
 - Server spans aggregate into 1-minute usage rollups: `request_count`, `error_count` (status ≥ 500 or span error), `duration_sum_ms`.
+
+## OTLP mapping (logs)
+
+`POST /v1/logs` accepts authenticated server OTLP JSON/protobuf and stores
+diagnostic messages separately from issues. Resource attributes supply service,
+environment and release; tenant/repository identity comes from the validated
+ingest key. Record fields carry trace/span IDs, severity, body and timestamp.
+Bounded scrubbed attributes retain nested context and operation metadata.
+
+Completed summaries use `autter.event.type=operation` plus operation ID/name,
+outcome, elapsed duration and measured steps. See the [attribute contract](/runtime/operation-logging#other-languages-and-existing-otlp-loggers).
+An error-severity log or failed summary does not itself emit an error occurrence.
+Node's operation helper also reports thrown exceptions or a declared failed
+`autter.outcome` through tracing, which retains the existing grouping path.
+
+Platform evidence queries link captured occurrence trace/operation IDs to logs
+and spans, rather than nearby timestamps. They retrieve bounded occurrence
+samples and matching successful operations by name/service/environment/release.
+Truncated samples and unavailable sources remain explicit. Logs and traces can
+arrive separately, so a saved analysis snapshot may predate later evidence.
+See [logging verification](/runtime/operation-logging#verify-stored-logs-and-failure-evidence).
 
 ## Browser payload (v1)
 

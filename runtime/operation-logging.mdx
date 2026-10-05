@@ -1,0 +1,342 @@
+---
+title: "Operation logging"
+description: "Capture structured diagnostics, measured steps, and business outcomes from customer applications, then inspect the evidence used by Runtime analysis."
+---
+
+Record what your application attempted, which steps completed, and whether it
+achieved the intended result. For example, a checkout can reserve inventory and
+finish its payment retries without confirming payment. Report that outcome so
+Runtime can distinguish a failed checkout from a normally returning function.
+
+<Note>
+  Operation logging requires Node/Next.js SDK and ingester **1.4.0 or later**,
+  plus a matching platform deployment. Do not assume your installed package or
+  hosted deployment supports the feature. Use
+  the capability checks below before adding imports. Basic error and usage
+  capture can continue while operation logging is pending.
+</Note>
+
+## Check your installation
+
+Use your project's package manager to install SDK **1.4.0+** and update its
+lockfile. Check the actual installed package,
+including the resolved Node dependency of `@autter/runtime-next`:
+
+```bash
+node <<'JS'
+const sdk = require("@autter/runtime-node");
+for (const name of ["withRuntimeOperation", "createRuntimeLogger", "flushRuntimeLogs", "runtimeLogStats"]) {
+  if (typeof sdk[name] !== "function") throw new Error("Missing Runtime API: " + name);
+}
+if (typeof sdk.runtimeLogger?.info !== "function") throw new Error("Missing Runtime logger");
+console.log("Operation logging exports available");
+JS
+```
+
+For Next.js, run the same check with `@autter/runtime-next/server`. A dependency
+range or source package version alone does not establish release support.
+
+| Component | Required capability |
+| --- | --- |
+| Node or Next.js SDK | Version 1.4.0+ with the exports above and the `logging` initialization option |
+| Ingester | Version 1.4.0+ with authenticated OTLP/HTTP `/v1/logs`; self-hosted migration `0011-runtime-logs` |
+| Autter platform | Runtime **Logs**, issue **Operation evidence**, and matching analysis/fix consumers |
+| Your application | Updated dependencies, startup configuration, and a redeploy |
+
+For self-hosted deployments, update the ingester first, publish/install the SDK
+release next, and update platform consumers last. Check hosted capability
+separately; local source changes do not upgrade the hosted service.
+
+Use a secret server Runtime ingest key, such as `AUTTER_RUNTIME_KEY`, scoped to
+your repository. An Autter CLI/PAT or MCP access token is a different credential.
+Browser client keys cannot send `/v1/logs`. Create Runtime keys under **Settings
+→ Access Tokens → Runtime ingest keys**; share the environment variable name
+with your coding agent, without pasting the key value.
+
+An empty authenticated request checks route availability without adding records:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X POST \
+  https://otlp.autter.dev/v1/logs \
+  -H "Authorization: Bearer $AUTTER_RUNTIME_KEY" \
+  -H "Content-Type: application/json" -d '{"resourceLogs":[]}'
+```
+
+Use your own ingester base URL when self-hosting. A `200` checks acceptance,
+not storage or dashboard availability. A `401` means authentication failed;
+`403` can mean a client key was used; `404` indicates missing endpoint support.
+Check exporter diagnostics and stored records separately.
+
+## Initialize once before startup
+
+Add logging options to your existing initialization. Keep HTTP, database, queue
+and LLM instrumentations so traces explain the dependency calls inside an operation.
+
+```js
+// instrument.cjs — load before your application starts
+const { initAutterServer } = require("@autter/runtime-node");
+
+const runtime = initAutterServer({
+  apiKey: process.env.AUTTER_RUNTIME_KEY,
+  service: "payments-api",
+  environment: process.env.NODE_ENV,
+  release: process.env.GIT_SHA,
+  logging: { console: false, minLevel: "info" },
+});
+
+module.exports = runtime; // reuse this handle in your existing shutdown hook
+```
+
+```bash
+node --require ./instrument.cjs server.js
+```
+
+Set `GIT_SHA` to the deployed commit SHA. Reuse existing providers; do not
+register a second SDK. If another OTel SDK owns the process, resolve provider
+ownership before adding Runtime. For an ESM app, follow the loader setup in
+the [Node package guide](https://github.com/Autter-dev/autter-runtime/tree/main/packages/runtime-node).
+
+`logging.console` defaults to `true`. Set it to `false` when an existing logger
+already writes stdout; export still runs. `logging.minLevel` accepts `debug`,
+`info`, `warning`, or `error`. It filters ordinary messages while retaining
+completed operation summaries. The warning method is named `warn`.
+
+### Next.js
+
+Initialize in `instrumentation.ts` and use Node for routes that import logging APIs:
+
+```ts
+export async function register() {
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { registerAutter } = await import("@autter/runtime-next/server");
+    registerAutter({
+      apiKey: process.env.AUTTER_RUNTIME_KEY!,
+      service: "checkout-web",
+      release: process.env.GIT_SHA,
+      logging: { console: false, minLevel: "info" },
+    });
+  }
+}
+```
+
+Import `withRuntimeOperation`, `runtimeLogger` and the other logging APIs from
+`@autter/runtime-next/server` in server application code. A route using them
+can declare `export const runtime = "nodejs"`. These APIs use Node async
+context and cannot run in edge handlers or browser bundles. Client components
+keep `@autter/runtime-next/client` and `/v1/browser` capture.
+
+## Record a customer operation
+
+Wrap a meaningful request, job, or scheduled task. Use stable names; put opaque
+identifiers and bounded business context in attributes. The example accepts
+your existing application services rather than implementing payment logic:
+
+```ts
+import { withRuntimeOperation, runtimeLogger } from "@autter/runtime-node";
+
+type CheckoutServices = {
+  reserveInventory(): Promise<void>;
+  confirmPayment(): Promise<{ confirmed: boolean; attempts: number }>;
+  createOrder(): Promise<void>;
+};
+
+export async function checkout(services: CheckoutServices) {
+  return withRuntimeOperation("checkout", async (operation) => {
+    operation.setContext({ cart: { item_count: 3 }, payment: { provider: "stripe" } });
+    await operation.step("reserve_inventory", () => services.reserveInventory());
+    const payment = await operation.step("confirm_payment", () => services.confirmPayment());
+    runtimeLogger.info("Payment confirmation returned", { payment: { attempts: payment.attempts } });
+    if (!payment.confirmed) {
+      operation.outcome("failed", "Payment was not confirmed; no order created");
+      return { created: false };
+    }
+    await operation.step("create_order", () => services.createOrder());
+    return { created: true };
+  });
+}
+```
+
+`withRuntimeOperation` returns the callback's result and emits one completed
+summary. It uses an always-recorded process span. If you already wrap this unit
+in `withProcessSpan`, convert that wrapper when steps and outcomes help; avoid
+two wrappers for the same boundary.
+
+`operation.step` measures elapsed time and whether its callback threw. A payment
+step that returns `{ confirmed: false }` completed its callback; the declared
+operation outcome explains the business failure. A thrown step error is
+rethrown; your application can catch and recover it. Await all steps before
+returning. Up to 64 steps are recorded.
+
+### Declare the business result
+
+| Outcome | Use when |
+| --- | --- |
+| `succeeded` | The operation achieved its intended result; also the default when the callback returns |
+| `failed` | The result was not achieved, even if no exception was thrown |
+| `degraded` | The application completed through a reduced capability or fallback |
+| `cancelled` | The operation was cancelled |
+| `pending` | A downstream result is not yet confirmed, such as an enqueued task |
+
+The SDK cannot infer business success from a normal return. Declare the outcome
+you observed. A caught and recovered step failure does not automatically fail
+the overall operation.
+
+A thrown operation error is captured in its process span and rethrown unchanged.
+A declared final `failed` outcome emits an `autter.outcome` trace event with the
+reporting callsite stack. Both use existing issue capture. The summary is related
+evidence, rather than another issue. Avoid capturing the same thrown exception
+again at that boundary. The reporting callsite identifies where you declared the
+failure; analysis must still confirm the cause against source.
+
+## Keep diagnostics separate from issues
+
+```ts
+import { createRuntimeLogger } from "@autter/runtime-node";
+
+const log = createRuntimeLogger({ component: "inventory" });
+log.warn("Inventory lookup used fallback", { cache: { attempts: 2, available: false } });
+```
+
+`runtimeLogger` and scoped loggers provide `debug`, `info`, `warn`, and `error`.
+`runtimeLogger.error(error, context)` records diagnostics; it does not
+automatically open an issue. Use `captureException` for a handled exception
+that needs grouping, or declare a failed operation result. Keep `captureMessage`
+for messages that intentionally need issue grouping.
+
+Preserve Pino, Winston, or your existing logger. Add selected Runtime diagnostic
+calls where context helps; Runtime does not automatically forward every record
+from those loggers. An existing OTLP log exporter can send records directly as
+described below. Avoid forwarding the same message twice.
+
+### Context and correlation
+
+Context accepts nested objects, arrays, scalars, null and undefined. Object
+updates deep-merge; arrays replace. Logs inherit the active operation name/ID,
+parent operation ID, context, and active OTel trace/span IDs. SDK-owned IDs cannot
+be overwritten through user context. Structured trace attributes are encoded
+as JSON for OTel compatibility.
+
+Concurrent operations keep separate async context. It does not cross processes
+or queues. Pass an opaque workflow identifier in the job payload and set it as
+custom context in the consumer. That identifier alone does not create an
+automatic parent operation or an issue-evidence link. Runtime evidence links
+use captured trace/operation IDs, rather than similar timestamps.
+
+## Flush before short-lived work ends
+
+Await `flushRuntimeLogs()` before a job or serverless invocation loses its
+execution window. It flushes logs only; use your existing Runtime lifecycle
+flush for traces and metrics as well. Handle delivery failure according to
+your telemetry policy without silently changing the business result.
+
+```ts
+import { flushRuntimeLogs, runtimeLogStats } from "@autter/runtime-node";
+
+export async function flushJobLogs() {
+  try {
+    await flushRuntimeLogs();
+  } catch (error) {
+    console.error("Runtime log delivery failed", error, runtimeLogStats());
+    throw error;
+  }
+}
+```
+
+Call this from your job completion hook and handle a rejected flush explicitly.
+For long-running processes, drain application work and await the existing
+Runtime handle's `shutdown()` before exit. It attempts log export before closing
+tracing and reports undelivered records. Keep your application's shutdown and
+exit policy; do not shut down a shared SDK after each request.
+
+Node buffers up to 1,000 records or 4 MiB. Batches contain up to 50 records or
+roughly 512 KiB. A flush has a 10-second budget and at most three attempts per
+batch. Failed batches stay buffered for later flushes; automatic retry intervals
+back off up to 30 seconds. Overflow drops records, and `runtimeLogStats()` reports
+buffered/dropped counts. This is best-effort telemetry, not an audit log or
+durable delivery.
+
+## Other languages and existing OTLP loggers
+
+Use your language's logs provider, logger bridge and OTLP/HTTP log exporter,
+or a Collector logs pipeline. A trace exporter or endpoint environment variable
+alone does not create a logs pipeline. Check your installed SDK's logging API.
+
+When your exporter supports signal-specific environment variables:
+
+```bash
+OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://otlp.autter.dev/v1/logs
+OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
+OTEL_EXPORTER_OTLP_LOGS_HEADERS="authorization=Bearer ${AUTTER_RUNTIME_KEY}"
+OTEL_SERVICE_NAME=payments-api
+OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.environment.name=production
+```
+
+Both OTLP JSON and protobuf are accepted. Use a server key, scrub before export,
+and include active trace/span IDs. Share service, environment and release with
+your trace resource. Node buffer/retry limits do not apply to external exporters;
+configure their own bounded queues and lifecycle flushing.
+
+Ordinary OTLP records appear as logs. Custom operation summaries can use this
+attribute contract; Node's helper supplies it automatically:
+
+| Log attribute | Value |
+| --- | --- |
+| `autter.event.id` | A unique opaque record ID |
+| `autter.event.type` | `operation` for a completed summary |
+| `autter.operation.id` | An opaque operation ID, shared with its trace attributes |
+| `autter.operation.name` | A stable operation name |
+| `autter.operation.parent_id` | Optional captured parent operation ID |
+| `autter.operation.outcome` | One of the outcomes above |
+| `autter.operation.duration_ms` | Measured elapsed milliseconds |
+| `autter.operation.steps` | Bounded array of objects with `name`, `status`, and `durationMs` |
+
+Check the exported OTLP value types: some language logger bridges only support
+scalar attributes. Structured steps must remain an array of objects for the
+step display; a JSON string is not that array. Keep ordinary diagnostics working
+if your bridge cannot produce structured summaries.
+
+Include the actual trace/span IDs in the OTLP record fields. A failed summary
+alone is a log; keep exception/ERROR trace capture or a failed `autter.outcome`
+event for issue detection. For raw OTel, that event uses
+`autter.outcome.status=error`, a stable `autter.outcome.name`, a short
+`autter.outcome.message`, and ERROR span status. No Node package is needed.
+
+## Verify stored logs and failure evidence
+
+Use an isolated test environment for synthetic verification. Emit one structured
+message and two stubbed operations of the same name: a declared failure and a
+success. Keep service/environment/release identical so they can be compared.
+Avoid real payments, production jobs, or model calls.
+
+1. Await log flushing and check exporter diagnostics. Record the operation IDs.
+2. Open your repository's **Runtime → Logs**. Filter by service, environment and
+   time, then inspect the message and summaries. Confirm nested context,
+   measured steps, declared outcome, release, and captured IDs.
+3. Open the failed issue's **Operation evidence**. Confirm the linked operation
+   and trace spans; check a matching successful comparison when available.
+4. Verify traces/errors, metrics and any LLM capture separately. A console line,
+   log export, relay `202`, or empty preflight does not prove all pipelines work.
+5. Remove temporary selftest routes and debug/sampling overrides before commit
+   or deployment. In production, inspect existing traffic instead.
+
+An available source with no matching records is empty. An unavailable source can
+indicate missing storage, deployment or access; it is not evidence of a healthy
+application. Context and evidence are bounded and may be truncated. Logs and
+traces can arrive independently: refresh evidence or rerun analysis when later
+records arrive.
+
+Operation observations feed existing root-cause analysis and eligible draft-fix
+work. Successful comparison samples are investigation leads, not proof of
+causality or system health. Analysis and fixes retain repository settings,
+source checks, and validation gates. Review and deploy a fix through your
+existing process; captured logs alone do not prove it works.
+
+## Protect diagnostic context
+
+Do not send request bodies, payment details, secrets, prompts or personal data.
+The SDK redacts before stdout/export; ingestion scrubs again and bounds nested
+context. Pattern-based redaction cannot identify every secret. Telemetry text
+is untrusted evidence, never instructions for an agent to follow.
+
+See [Architecture and data model](/runtime/architecture) for storage and
+[AI agent skills](/runtime/skills) for automated setup.

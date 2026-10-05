@@ -25,7 +25,29 @@ These are JavaScript options for `initAutterServer` and Next.js `registerAutter`
 
 Use Node/Next.js SDK 1.3.0 or later; prefer patch 1.3.1. Self-hosted ingesters require 1.3.1 or later. There is no dedicated `retainTracesAboveMs` environment variable. See [Endpoint regressions](/runtime/endpoint-regressions) for limits and external OTel requirements.
 
+## Operation logging options
+
+After [checking installed and deployed support](/runtime/operation-logging#check-your-installation),
+pass these options to the existing `initAutterServer` or Node-only Next.js
+`registerAutter` call. They are JavaScript options, not environment variables:
+
+| Option | Default | Behavior |
+| --- | --- | --- |
+| `logging.console` | `true` | Writes scrubbed diagnostic records to stdout; set `false` when your existing logger handles console output. Export remains enabled. |
+| `logging.minLevel` | `debug` | Filters ordinary messages using `debug`, `info`, `warning`, or `error`; completed operation summaries are retained independently. |
+
+Use the same `AUTTER_RUNTIME_KEY`, service, environment, release and ingester
+endpoint as tracing. Browser/client keys cannot send server logs. Other
+language exporters may support `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`,
+`OTEL_EXPORTER_OTLP_LOGS_PROTOCOL` and `OTEL_EXPORTER_OTLP_LOGS_HEADERS`; these
+variables alone do not create a logs provider or bridge. See [OTLP loggers](/runtime/operation-logging#other-languages-and-existing-otlp-loggers).
+
 ## Ingester configuration (self-hosted)
+
+Operation logging requires an ingester release containing `/v1/logs` and
+migration `0011-runtime-logs`. Deploy it before upgrading logging SDKs; the
+platform readers and analysis/fix consumers need their matching deployment.
+No new ingest credential is required: use the existing repository server key.
 
 | Variable | Required | Description |
 | --- | --- | --- |
@@ -47,7 +69,7 @@ AUTTER_INGEST_KEYS='[
 ]'
 ```
 
-- **Server keys** (`autter_rt_…`) have no `scope` field and can send OTLP traces/metrics plus relay browser events.
+- **Server keys** (`autter_rt_…`) have no `scope` field and can send OTLP traces/metrics/logs plus relay browser events.
 - **Client keys** (`autter_rtc_…`) need `"scope": "client"` and an `allowedOrigins` list — the ingester rejects `/v1/browser` requests whose `Origin` isn't on the list.
 - One key pair per app or repository — `repositoryId` is how data is grouped for analysis.
 

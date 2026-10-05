@@ -1,9 +1,9 @@
 ---
 title: "Quickstart"
-description: "Go from zero to seeing error and usage data flowing through Autter Runtime."
+description: "Set up Runtime capture, check operation-logging support, and verify stored application evidence."
 ---
 
-Autter Runtime tracks runtime errors and usage from your frontend and backend with two small packages and one ingest endpoint. This guide takes you from zero to seeing data in ClickHouse.
+Autter Runtime captures errors and usage from your frontend and backend. Compatible server releases also capture structured logs and operation outcomes. This guide sets up capture and checks stored data; follow [Operation logging](/runtime/operation-logging) for the new logging APIs and required deployments.
 
 <Info>
   Prefer to have an AI coding agent set this up for you? See [AI agent skills](/runtime/skills) — `npx skills add Autter-dev/autter-skills --all`, then tell your agent *"install Autter Runtime in this project."*
@@ -17,15 +17,20 @@ Autter Runtime tracks runtime errors and usage from your frontend and backend wi
 | --- | --- | --- |
 | Looks like | `autter_rt_…` | `autter_rtc_…` |
 | Secrecy | **secret** — env vars only, never in a browser bundle | **publishable** — safe to ship in frontend JS |
-| Can send | OTLP traces + metrics, browser events | browser events only (`/v1/browser`) |
+| Can send | OTLP traces + metrics + logs, browser events | browser events only (`/v1/browser`) |
 | Extra protection | — | per-key origin allow-list, tighter rate limit |
 
 **Two ways to send browser events:**
 
-- **Relay** (recommended, including static sites) — the browser posts to a same-origin route on *your* server, Worker, or edge function, which forwards to the ingester with your server key. No key in the browser, immune to ad-blockers, no CSP changes. See [Stack integrations](/runtime/integrations) for the serverless relay.
+- **Relay** (recommended, including static sites) — the browser posts to a same-origin route on *your* server, Worker, or edge function, which forwards with your server key. Allow the relay in `connect-src` (usually `'self'`) and check the actual browser request. See [Stack integrations](/runtime/integrations) for the serverless relay.
 - **Direct** (lossy fallback for pure-static only) — the browser posts straight to the ingester with a publishable client key. Ad-blockers silently drop these cross-origin requests.
 
 **What is never sent:** cookies, DOM content, form values, request/response bodies, headers, emails, full URLs with query strings.
+
+Use a Runtime ingest key, not an Autter CLI/PAT or MCP token. Keep the key value
+in your environment; your coding agent only needs its variable name. Custom
+log context is application-authored: do not include sensitive data, even though
+the SDK and ingester redact it.
 
 <Steps>
   <Step title="Run the ingester">
@@ -41,7 +46,7 @@ Autter Runtime tracks runtime errors and usage from your frontend and backend wi
   </Step>
   <Step title="Instrument your backend">
     ```bash
-    npm install @autter/runtime-node@^1.3.1
+    npm install @autter/runtime-node@^1.4.0
     ```
 
     Create `instrument.cjs` — it must load **before** your app:
@@ -77,6 +82,23 @@ Autter Runtime tracks runtime errors and usage from your frontend and backend wi
       throw err;
     }
     ```
+  </Step>
+  <Step title="Add server operation diagnostics">
+    First [check installed SDK exports and ingestion support](/runtime/operation-logging#check-your-installation).
+    Node/Next.js SDK and ingester **1.4.0+** are required; installing a
+    package does not establish that the hosted ingester or platform is ready.
+
+    Once supported, add `logging` options to the existing initialization and
+    wrap meaningful checkout/job boundaries with `withRuntimeOperation`.
+    Record measured steps, bounded nested context, and explicit business
+    outcomes. Use `runtimeLogger.info/warn/error` for diagnostics, while
+    keeping exception or declared failed-outcome capture for issues.
+
+    [Follow the checkout example](/runtime/operation-logging#record-a-customer-operation).
+    A callback that returns normally defaults to success, so declare a failed
+    payment result explicitly. Preserve existing loggers and await flushing at
+    the end of short-lived jobs. If support is pending, continue basic capture
+    and report that gap.
   </Step>
   <Step title="Instrument your frontend">
     ```bash
@@ -125,6 +147,21 @@ Autter Runtime tracks runtime errors and usage from your frontend and backend wi
     ```
 
     With the local Compose setup: `docker compose exec clickhouse clickhouse-client --password dev`.
+
+    When operation logging is enabled, verify it separately:
+
+    ```sql
+    SELECT service, operation, outcome, message, trace_id, operation_id, attributes
+    FROM autter_runtime.runtime_logs
+    ORDER BY occurred_at DESC LIMIT 10;
+    ```
+
+    These queries are for your local development database. In the platform,
+    open the intended repository's **Runtime → Logs**, inspect the captured
+    IDs, and confirm the failed issue's **Operation evidence**. Logs and traces
+    may arrive separately; refresh or rerun analysis for later evidence. An
+    unavailable source differs from an available source with no matching rows.
+    See [logging verification](/runtime/operation-logging#verify-stored-logs-and-failure-evidence).
   </Step>
 </Steps>
 
@@ -134,6 +171,8 @@ Autter Runtime tracks runtime errors and usage from your frontend and backend wi
 - Client keys have `allowedOrigins` set to your exact app origins.
 - `release` is wired to your git SHA in **both** frontend and backend — it powers regression detection ("broke in release X").
 - Keep trace sampling at ~1% (`traceSampleRate`) — errors are always captured regardless.
+- Confirm the logging SDK release and ingester/platform deployment separately; redeploy the application after upgrading.
+- Declare business outcomes, preserve existing loggers, and check buffered/dropped records and flush failures. Logs are best-effort diagnostics.
 - Check export volume after enabling `retainTracesAboveMs`. The platform rollout does not enable this option in existing applications.
 - The relay route keeps its built-in per-IP rate limit, or your WAF covers it (`perIpRateLimit: false`).
 - Direct browser ingest: your CSP includes `connect-src https://your-ingester…`, and you accept that ad-blockers may drop some events (the relay avoids this).
