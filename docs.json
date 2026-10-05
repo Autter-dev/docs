@@ -168,6 +168,7 @@
             "group": "Guides",
             "pages": [
               "runtime/skills",
+              "runtime/operation-logging",
               "runtime/endpoint-regressions",
               "runtime/integrations",
               "runtime/external-sources",

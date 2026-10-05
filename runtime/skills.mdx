@@ -56,6 +56,34 @@ npx skills add Autter-dev/autter-skills --skill otel-python-style
 
 3. **The agent verifies telemetry arrives.** In production, it inspects existing traffic and exporter failures. Controlled test errors and requests belong only in a local or isolated test environment.
 
+4. **Logging setup checks capability first.** The agent checks installed
+   Node/Next.js exports, deployed `/v1/logs` ingestion, and platform evidence
+   support. It reports pending releases or deployments instead of adding
+   unsupported APIs. Other languages need a logs exporter and logger bridge;
+   browser/edge capture keeps its own APIs.
+5. **Customer operations get meaningful context.** Selected checkout/job paths
+   record nested context, measured steps and explicit business outcomes while
+   preserving existing loggers. The agent checks lifecycle flushing, stored
+   logs and trace-linked failure evidence separately, then records the supported
+   instrumentation convention in existing contributor instruction files.
+
+## Set up operation logging
+
+After installing the updated skills, ask your agent:
+
+> Update this project's Runtime setup for structured logs and operation evidence.
+> Check release and deployed support, preserve our existing logger, instrument
+> checkout and background jobs, and verify stored logs and linked failure evidence.
+
+The skills use `runtimeLogger` for diagnostics and explicit failed operation
+outcomes or exception capture for issues. A returned callback defaults to
+success; a payment rejection without a throw needs a declared outcome. The
+APIs require Node/Next.js SDK and ingester **1.4.0+**, followed by an application
+redeploy; updated skills alone do not provide that release.
+
+See [Operation logging](/runtime/operation-logging) for the APIs, Node/Next.js
+examples, OTLP logging in other languages, delivery limits, and verification.
+
 ## Set up endpoint regressions
 
 Use the setup skills to inspect existing SDK initialization, update compatible packages, and configure request histograms and release identity. Node/Next.js examples opt into slow successful trace retention. External OTel exporters need explicit-bucket delta histograms.
@@ -77,7 +105,9 @@ ingest keys → Create key**. Pick the repository, then choose:
   backend. Scoped to the exact origins you register it for.
 
 Your agent will ask for whichever key kind the service it's instrumenting
-needs.
+needs and the environment variable name. Do not paste the key value into chat.
+Runtime ingest keys are separate from CLI/PAT and MCP access tokens. Server
+keys send OTLP logs; browser client keys cannot use `/v1/logs`.
 
 ## Updating or removing
 
