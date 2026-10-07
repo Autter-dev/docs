@@ -50,10 +50,23 @@ Create an Autter organization, then try a demo repository on GitHub or connect y
 
 Use the CLI when you need explicit AI authorship and line-level attribution in Git history. It works in local-only mode without an account. Connected mode can send attribution and prompt history to your Autter organization.
 
-```bash
-curl -fsSL https://api.autter.dev/install.sh | bash
-autter status
-```
+<Tabs>
+  <Tab title="macOS, Linux, or WSL">
+    ```bash
+    curl -fsSL https://api.autter.dev/install.sh | bash
+    autter status
+    ```
+  </Tab>
+  <Tab title="Windows">
+    Run from Command Prompt or PowerShell, without administrator privileges:
+
+    ```powershell
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "iex (irm https://api.autter.dev/install.ps1)"
+    ```
+
+    Then open a new terminal so it picks up the updated `PATH`, and run `autter status`.
+  </Tab>
+</Tabs>
 
 <CardGroup cols={2}>
   <Card title="Install the CLI" icon="download" href="/cli/install">
