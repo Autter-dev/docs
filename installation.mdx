@@ -65,9 +65,11 @@ The Autter CLI supports macOS, Linux, Windows through WSL, and native Windows Po
     curl -fsSL https://api.autter.dev/install.sh | bash
     ```
   </Tab>
-  <Tab title="Windows PowerShell">
+  <Tab title="Windows">
+    Run from Command Prompt or PowerShell, without administrator privileges:
+
     ```powershell
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://api.autter.dev/install.ps1 | iex"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "iex (irm https://api.autter.dev/install.ps1)"
     ```
   </Tab>
   <Tab title="npm">
