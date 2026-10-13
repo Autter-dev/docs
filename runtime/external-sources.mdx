@@ -1,9 +1,9 @@
 ---
 title: "External log sources"
-description: "Connect repository logs from Sentry, PostHog, Grafana, Datadog or webhooks, then investigate errors and create eligible draft fixes."
+description: "Connect repository logs from Sentry, PostHog, Grafana, Datadog, Vercel, Cloudflare Workers or webhooks, then investigate errors and failed builds and create eligible draft fixes."
 ---
 
-The Autter platform can ingest repository-scoped logs from Sentry, PostHog, Grafana/Loki, Datadog and generic webhooks. Configure them under **Repository → Settings → Runtime → Data sources** when this feature is enabled on your deployment.
+The Autter platform can ingest repository-scoped logs from Sentry, PostHog, Grafana/Loki, Datadog, Vercel, Cloudflare Workers and generic webhooks. Configure them under **Repository → Settings → Runtime → Data sources** when this feature is enabled on your deployment.
 
 ## How it works
 
@@ -14,7 +14,7 @@ Repeated deliveries and overlapping poll/webhook records are deduplicated within
 ## Setup
 
 1. Select the connected repository and open Runtime settings. Owners/admins can configure sources.
-2. Choose a provider, enter its project/service and environments, and supply read credentials through the settings form. Sentry uses organization/project slugs; PostHog uses a project ID and personal read key; Grafana uses a Loki URL/query and optional Tempo credentials; Datadog uses an API key plus an application key with logs-read access.
+2. Choose a provider, enter its project/service and environments, and supply read credentials through the settings form. Sentry uses organization/project slugs; PostHog uses a project ID and personal read key; Grafana uses a Loki URL/query and optional Tempo credentials; Datadog uses an API key plus an application key with logs-read access. Vercel and Cloudflare are described in [Vercel](#vercel) and [Cloudflare Workers](#cloudflare-workers).
 3. Test access and inspect matching samples. Save the connection. Store the returned private webhook URL securely if using push delivery.
 4. Choose collection-only, investigation, or investigation plus draft fixes. Warning analysis is separately opt-in; high/critical is the default automatic-draft threshold. The repository's automatic-draft switch also applies.
 5. Inspect Runtime errors for stored messages, severity, stacks/trace context and RCA. Check the actual draft PR URL when a fix completes; a queued job is not a created PR.
@@ -22,6 +22,44 @@ Repeated deliveries and overlapping poll/webhook records are deduplicated within
 Polling is periodic, with a default 60-second interval plus provider delay. The new webhook route returns `202` after committing records and work. Analysis and fixes complete asynchronously. Backfilled historical records do not initiate automatic fixes. Missing stacks/source maps or insufficient code evidence produce a needs-evidence result.
 
 Recovery comes from a resolved webhook; monitor-state polling is not implemented. Project selection uses manually entered IDs/slugs. Datadog stores supplied trace context without a separate APM trace fetch; Grafana can fetch a linked Tempo trace. Disconnecting removes credentials and stops new collection while preserving retained evidence.
+
+## Vercel
+
+A Vercel connection collects errors and warnings from your project's Vercel Functions, and attaches build logs to failed deployments.
+
+1. Create an access token for the team that owns the project in Vercel → **Account Settings** → **Tokens**.
+2. In **Runtime settings** → **Data sources**, choose **Vercel**. Enter the team ID (leave it blank for a personal account), the project ID or name, and the token.
+3. Click **Test access**, then save.
+
+When you save, Autter adds a log drain to the project that delivers Function logs to your connection's private URL. Autter verifies each delivery's signature and keeps only errors and warnings for the selected environments. A `stderr` line counts as an error only when it looks like one, such as an exception or a stack trace. During analysis, Autter matches each error to the commit of the deployment that produced it.
+
+<Note>
+Log drains require a Vercel Pro or Enterprise plan. Vercel bills drain usage to your Vercel account. Rotating the connection's webhook secret re-points the drain, and disconnecting removes it.
+</Note>
+
+## Cloudflare Workers
+
+A Cloudflare connection collects exceptions, errors and warnings for one Worker, and attaches build logs to failed Workers Builds.
+
+1. Enable [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/) for the Worker.
+2. Create a **user** API token in the Cloudflare dashboard. Grant Workers Observability (Edit), Workers Builds (Read) and Workers Scripts (Read). The Workers Builds API rejects account-scoped tokens.
+3. In **Runtime settings** → **Data sources**, choose **Cloudflare**. Enter your account ID, the Worker name and the token.
+4. Click **Test access**, then save. The test confirms that Workers Logs is enabled for the Worker.
+
+Autter polls the Worker's logs on the connection's interval. Cloudflare keeps Workers Logs for a limited time, so the first import cannot reach further back than your plan's Workers Logs retention. When a log event carries a Worker version, Autter maps it to the commit of the Workers Build that produced it.
+
+{/* TODO: Confirm the exact Cloudflare dashboard permission labels for the user API token. */}
+
+## Build and deployment failures
+
+Failed production builds on Vercel and Cloudflare Workers Builds appear as CI/CD incidents in Runtime:
+
+- **Vercel:** Vercel's GitHub integration reports each deployment to GitHub. When a production deployment fails and the repository has a Vercel connection, the incident includes the deployment's build log.
+- **Workers Builds:** Cloudflare reports each build as a `Workers Builds: <worker>` check on the commit. A failed build on the default branch opens an incident. The next successful build resolves it. The incident includes the build log when the repository has a Cloudflare connection.
+
+Autter classifies a build log the same way it classifies a failed CI run: type errors, test failures, dependency problems, build errors and lint. It also recognizes platform configuration errors, such as an invalid `wrangler.toml` or `vercel.json`, platform size or time limits, and missing environment variables or secrets. A missing secret never produces a draft fix, because the fix belongs in the platform's project settings. Without a readable build log, the incident links to the platform's log and no draft fix is raised.
+
+Preview and pull request builds do not open incidents.
 
 ## Generic webhook record
 
@@ -58,6 +96,9 @@ Warnings remain visible even when warning analysis is disabled. Unknown severity
 - **Needs evidence:** supply source-mapped frames or usable stack traces and release identity. A trace ID alone is insufficient for a code fix.
 - **Fix deferred or skipped:** inspect the severity threshold, repository switch, connection mode, resolution state and organization budget.
 - **Disconnected source:** retained records and analysis remain visible, while collection stops.
+- **Vercel drain not created:** check that the team uses a Pro or Enterprise plan and that the token can access the team and project.
+- **Cloudflare test fails:** enable Workers Logs for the Worker and use a user API token, not an account API token.
+- **Build incident without a log:** connect the platform under **Runtime settings** → **Data sources** so Autter can read the build log.
 
 ## Migrate an existing organization connection
 
