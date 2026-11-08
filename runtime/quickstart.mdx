@@ -81,7 +81,32 @@ the SDK and ingester redact it.
 
     Reuse your existing SDK initialization if you already have one. The example opts into bounded, local slow-request trace retention. Set `GIT_SHA` to the deployed commit SHA. See [Endpoint regressions](/runtime/endpoint-regressions) for metric requirements and retention limits.
 
-    This records HTTP request metrics and captures crashes. For handled errors:
+    This records HTTP request metrics and captures crashes and unhandled
+    promise rejections. A rejection from a promise started during a request
+    keeps that request's route and request id.
+
+    On Express, add request ids and the error hook to your app:
+
+    ```js
+    const { autterRequests, autterErrorHandler } = require("@autter/runtime-node");
+
+    app.use(autterRequests());       // first: request ids and one summary per request
+    // ... your routes and routers ...
+    app.use(autterErrorHandler());   // after your routes, before your own error handlers
+    ```
+
+    With `@autter/runtime-node` 1.10.0 or later, the error behind every
+    Express 5xx is recorded with its type, message, stack, route and request
+    id even without `autterErrorHandler()`. That holds in every router,
+    including routers with their own error handler. The handler adds coded
+    errors that end in a 4xx, and it never reports an error twice, so one
+    `app.use(autterErrorHandler())` at app level is enough. On older versions
+    it is required: without it a thrown error shows up only as
+    `GET /route returned 500`, with no stack. Fastify and Koa need their
+    hooks (`autterFastifyErrors`, `autterKoa`); see
+    [Integrations](/runtime/integrations#nodejs-express-fastify-koa-nestjs).
+
+    For handled errors:
 
     ```js
     const { captureException } = require("@autter/runtime-node");
