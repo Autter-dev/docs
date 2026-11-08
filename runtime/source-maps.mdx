@@ -1,0 +1,190 @@
+---
+title: "Source maps"
+description: "Upload your build's source maps so minified browser and bundled server errors show original files, lines and function names, and group as one issue across deploys."
+---
+
+Production JavaScript is minified, so a browser error points at `/assets/index-4f3c.js:1:58213` with mangled names like `fe` and `pe`. Upload your build's source maps and Autter resolves every frame to the original file, line and function, with the lines of code around it, **before** it groups the error. The same defect then stays one issue across builds, releases, preview domains and minifiers.
+
+You need three things: an upload key, the plugin for your bundler, and a `verify` step before you deploy.
+
+<Note>
+  This page describes `@autter/runtime-cli` 1.4.0 and ingester 1.13.0. Earlier versions do not support Next.js 16, name functions a minifier inlined after their caller, and do not say which map is missing.
+</Note>
+
+## 1. Create an upload key
+
+In the Autter platform, open the repository's **Runtime** settings and create a key under **Source map upload key**. The key starts with `autter_rtu_`. It can upload and check source maps and nothing else, so a leaked CI secret cannot send or forge telemetry. You see it once.
+
+Store it as `AUTTER_RUNTIME_KEY` where your production build runs, never in client code:
+
+```bash
+gh secret set AUTTER_RUNTIME_KEY --repo <owner>/<repo>   # GitHub Actions: paste the key when asked
+vercel env add AUTTER_RUNTIME_KEY production             # Vercel
+```
+
+The server key your backend uses (`autter_rt_…`) also works. A browser client key (`autter_rtc_…`) is refused.
+
+## 2. Add the plugin
+
+The quickest way is to let the CLI wire it in. Run this once in your app's directory:
+
+```bash
+npx @autter/runtime-cli@latest sourcemaps setup
+```
+
+`setup` detects your build tool (Vite and the frameworks built on it, Next.js, webpack, Rollup, Create React App, Angular, Parcel, esbuild), your package manager and your CI. It adds the plugin, says where `AUTTER_RUNTIME_KEY` goes, and never writes a key. It is safe to re-run; `--dry-run` shows the plan without writing anything.
+
+To add it by hand, install the CLI and use the integration for your bundler:
+
+```bash
+npm install -D @autter/runtime-cli
+```
+
+<Tabs>
+  <Tab title="Vite">
+    ```ts vite.config.ts
+    import { defineConfig } from "vite";
+    import { autterSourceMaps } from "@autter/runtime-cli/vite";
+
+    export default defineConfig({
+      plugins: [autterSourceMaps()],
+    });
+    ```
+
+    Works with Vite 4 to 8, and with SvelteKit, Nuxt, Astro, Remix, React Router and other frameworks that build with Vite. Assets are uploaded under Vite's `base`.
+  </Tab>
+  <Tab title="webpack">
+    ```js webpack.config.js
+    const { AutterSourceMapsWebpackPlugin } = require("@autter/runtime-cli/webpack");
+
+    module.exports = {
+      mode: "production",
+      plugins: [new AutterSourceMapsWebpackPlugin()],
+    };
+    ```
+
+    webpack 5. Assets are uploaded under `output.publicPath`. Development builds are left alone.
+  </Tab>
+  <Tab title="Next.js">
+    ```js next.config.mjs
+    import { withAutterSourceMaps } from "@autter/runtime-cli/next";
+
+    export default withAutterSourceMaps({
+      reactStrictMode: true,
+    });
+    ```
+
+    Covers browser chunks and the server output (`.next/server`), with webpack or Turbopack, including Next.js 16 where Turbopack is the default. The wrapper lives in `@autter/runtime-cli`, so build-time code never becomes a runtime dependency of your app.
+  </Tab>
+  <Tab title="Rollup">
+    ```js rollup.config.js
+    import { autterSourceMaps } from "@autter/runtime-cli/rollup";
+
+    export default {
+      input: "src/main.js",
+      output: { dir: "dist", format: "es" },
+      plugins: [autterSourceMaps()],
+    };
+    ```
+  </Tab>
+  <Tab title="Any build (CLI)">
+    ```bash
+    npm run build
+    npx autter-runtime sourcemaps inject build
+    npx autter-runtime sourcemaps upload build --url-prefix / --delete-after-upload
+    ```
+
+    Use `--url-prefix` for the path the directory is served from (`/`, `/static/`, or a CDN URL). Run `inject` on the exact files you deploy, after any later minify or copy step.
+  </Tab>
+</Tabs>
+
+Each plugin turns on hidden source maps when you haven't configured maps, gives every bundle a debug id, uploads the maps when `AUTTER_RUNTIME_KEY` is set, and then deletes the maps it created, so they are never deployed. Without a key it changes nothing and prints one line saying so, so local builds and fork pull requests stay green.
+
+The release defaults to the commit being built (`GITHUB_SHA`, `VERCEL_GIT_COMMIT_SHA`, `CF_PAGES_COMMIT_SHA`, `GIT_SHA`, then `git rev-parse HEAD`). Debug ids match maps to the exact bundle that threw, even when the release your SDK reports differs.
+
+## 3. Verify before you deploy
+
+Run `verify` on the directory you deploy, with `AUTTER_RUNTIME_KEY` set so it also checks the ingester:
+
+```bash
+npx autter-runtime sourcemaps verify dist
+```
+
+It fails when a bundle has no debug id, when a `.map` file is left in the output (it would expose your source), or when a bundle's map is not on the ingester. It exits `1` with the reason per file; `--json` prints a machine-readable report.
+
+| Build | Directory to verify |
+| --- | --- |
+| Vite, SvelteKit, Astro, Rollup | `dist` |
+| webpack | your `output.path`, usually `dist` |
+| Create React App | `build` |
+| Next.js | `.next/static` (and `.next/server --server` for server code) |
+| tsup or esbuild server bundle | `dist --server` |
+
+## In CI
+
+A complete GitHub Actions job. Any CI follows the same three steps: build with the key, verify, deploy.
+
+```yaml .github/workflows/deploy.yml
+- run: npm ci
+- run: npm run build
+  env:
+    AUTTER_RUNTIME_KEY: ${{ secrets.AUTTER_RUNTIME_KEY }}
+- run: npx autter-runtime sourcemaps verify dist
+  env:
+    AUTTER_RUNTIME_KEY: ${{ secrets.AUTTER_RUNTIME_KEY }}
+- run: ./deploy.sh dist
+```
+
+Without a bundler plugin, the `upload-sourcemaps` action injects, uploads and verifies in one step:
+
+```yaml
+- run: npm run build
+- uses: Autter-dev/autter-runtime/.github/actions/upload-sourcemaps@main
+  with:
+    directory: dist
+    key: ${{ secrets.AUTTER_RUNTIME_KEY }}
+    delete-after-upload: "true"
+- run: ./deploy.sh dist
+```
+
+## How it works
+
+1. **Inject.** Every bundle that has a source map gets a debug id, derived from the bundle's bytes. The browser SDK (`@autter/runtime-browser` 1.6.0 or later) sends the debug ids of the bundles in each error's stack.
+2. **Upload.** Each map goes to the ingester with its debug id, the release, the path the bundle is served from, your own files' source (`sourcesContent`; dependencies' source is never sent), and the functions of the bundle and of your original files.
+3. **Symbolicate, then group.** When an error arrives, the ingester finds each frame's map by debug id (else by release and path), resolves the frame to its original file, line and function, and only then computes the issue's identity. The identity uses the error type and the in-app frames' functions and file names, never line numbers, chunk hashes or the release, so a new deploy does not open a new issue.
+
+**Inlined functions.** Minifiers inline small functions into their callers. Autter names a frame after the function the code was written in, read from your original source, so an inlined function still reads as itself. A source map cannot say which calls were inlined, so the inlined callers are missing from such a stack. That occurrence still joins the existing issue, matched by the error type and its innermost frame.
+
+## When a map is missing
+
+If a frame stays minified, the issue page marks it **minified** and says which bundle's map is missing, for which release and debug id, and why:
+
+| Reason | What happened | Fix |
+| --- | --- | --- |
+| No map uploaded | Nothing was uploaded for this bundle. | Build with the plugin and `AUTTER_RUNTIME_KEY` set, or upload with the CLI. `verify` before deploying catches this. |
+| No debug id and no release | The bundle was not injected and the SDK sent no `release`, so there was nothing to find its map by. | Use the plugin (or `sourcemaps inject`), or pass `release` to the SDK. |
+| Map does not cover the frame | A map was found, but the deployed file is not the one it was made for. | Inject and upload the exact files you deploy, after any later minify or copy step. |
+
+Repository Runtime settings also flag a repository whose browser frames are more than 30% unresolved over the last 7 days.
+
+## Server bundles
+
+Bundled Node and edge code (tsup, esbuild, webpack and Next.js server output, Vite SSR, Cloudflare Workers) works the same way. The plugins handle it automatically; with the CLI:
+
+```bash
+npx autter-runtime sourcemaps inject dist
+npx autter-runtime sourcemaps upload dist --url-prefix /dist/
+npx autter-runtime sourcemaps verify dist --server
+```
+
+The Node and edge SDKs send debug ids, so a map is found wherever the host runs the bundle from. Without a debug id, the event's `service.version` must equal the upload release.
+
+## Troubleshooting
+
+- **Frames stay minified.** Check that you deployed the files the plugin injected, that `@autter/runtime-browser` is 1.6.0 or later, and that `verify` passed for that build. The issue page says which bundle's map is missing.
+- **`next build` fails with "using Turbopack, with a `webpack` config and no `turbopack` config".** Upgrade `@autter/runtime-cli` to 1.4.0 or later.
+- **A frame is named after the function that called it.** The minifier inlined the function and the map was uploaded by a CLI before 1.4.0. Upload with the current `@autter/runtime-cli`.
+- **`403 upload_key_not_allowed`.** An upload key was used to send telemetry. Backends and relays need the server key.
+- **Subresource integrity.** Injection changes bundle bytes after the build, so recompute SRI hashes after injecting.
+
+For every option, the storage format and the full troubleshooting list, see [`docs/SOURCE-MAPS.md`](https://github.com/Autter-dev/autter-runtime/blob/main/docs/SOURCE-MAPS.md) in the Autter Runtime repository.
