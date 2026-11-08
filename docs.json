@@ -179,6 +179,8 @@
           {
             "group": "Reference",
             "pages": [
+              "runtime/compatibility",
+              "runtime/delivery",
               "runtime/environment-variables",
               "runtime/architecture"
             ]

@@ -47,14 +47,17 @@ the SDK and ingester redact it.
     ```bash
     export AUTTER_ENDPOINT=http://localhost:4318
     export AUTTER_RUNTIME_KEY=autter_rt_local_dev_only
-    npx @autter/runtime-node doctor --endpoint "$AUTTER_ENDPOINT"   # ends with "key  accepted"
+    npx @autter/runtime-node doctor    # versions, storage and the key; sends nothing
+    npx @autter/runtime-node verify    # sends a test event and reads it back
     ```
 
-    For real deployments, see [Self-hosting](/runtime/self-hosting) or use Autter's hosted ingester at `otlp.autter.dev`.
+    `verify` goes through key, network, ingester, storage, auth, ingest, stored, trace, release and logs, and stops at the first step that fails with what to do. Its test event never opens an issue. Run it first whenever events don't show up. See [Is my data arriving?](/runtime/delivery).
+
+    For real deployments, see [Self-hosting](/runtime/self-hosting) or use Autter's hosted ingester at `otlp.autter.dev`: set `AUTTER_ENDPOINT=https://otlp.autter.dev` and your repository's server key, then run the same two commands.
   </Step>
   <Step title="Instrument your backend">
     ```bash
-    npm install @autter/runtime-node@^1.4.0
+    npm install @autter/runtime-node
     ```
 
     Create `instrument.cjs` — it must load **before** your app:
@@ -90,11 +93,33 @@ the SDK and ingester redact it.
       throw err;
     }
     ```
+
+    A run that returns normally but did not do its job (a declined payment) is not an exception. Declare it so it becomes an issue:
+
+    ```js
+    const { reportOutcome } = require("@autter/runtime-node");
+
+    if (!payment.confirmed) reportOutcome("checkout", "payment was not confirmed");
+    ```
+
+    Test it without an ingester: `@autter/runtime-node/testing` keeps every record in memory.
+
+    ```js
+    const { captureRuntime, expectOperation } = require("@autter/runtime-node/testing");
+
+    const runtime = captureRuntime();
+    await request(app).post("/checkout").expect(402);
+    expectOperation(runtime, "POST /checkout").toHaveOutcome("degraded");
+    runtime.stop();
+    ```
+
+    Then check the real path: `npx @autter/runtime-node verify --service payments-api`. If your app has no key, or the ingester refuses it, the SDK prints one line saying so at startup or on the first refusal.
   </Step>
   <Step title="Add server operation diagnostics">
-    First [check installed SDK exports and ingestion support](/runtime/operation-logging#check-your-installation).
-    Node/Next.js SDK and ingester **1.4.0+** are required; installing a
-    package does not establish that the hosted ingester or platform is ready.
+    Node/Next.js SDK and ingester **1.4.0+** are required ([compatibility table](/runtime/compatibility)).
+    `npx @autter/runtime-node doctor` shows whether operation logging is active
+    for your installed SDK and ingester, and `verify` checks that a log record
+    is stored.
 
     Once supported, add `logging` options to the existing initialization and
     wrap meaningful checkout/job boundaries with `withRuntimeOperation`.
@@ -140,8 +165,8 @@ the SDK and ingester redact it.
 
     No backend? See the direct setup and full walkthrough in [Installation](/runtime/installation).
   </Step>
-  <Step title="Verify data is flowing">
-    In a local test environment, trigger a test error, then query ClickHouse. In production, inspect existing traffic instead; do not generate artificial errors or requests:
+  <Step title="See your own events">
+    `verify` proves the path; it is safe in production because its test event never opens an issue or counts as a request. To see your app's own events locally, trigger an error, wait a few seconds (server errors arrive within 2 s, request counts within 60 s; see [arrival times](/runtime/delivery#when-it-arrives)), then query ClickHouse. In production, inspect existing traffic instead:
 
     ```sql
     SELECT service, error_type, message, route, occurred_at
@@ -178,7 +203,8 @@ the SDK and ingester redact it.
 - Server keys only in backend env vars; client keys only where a relay is genuinely impossible.
 - Client keys have `allowedOrigins` set to your exact app origins.
 - `release` is wired to your git SHA in **both** frontend and backend — it powers regression detection ("broke in release X").
-- Keep trace sampling at ~1% (`traceSampleRate`) — errors are always captured regardless.
+- Keep trace sampling at ~1% (`traceSampleRate`) — errors are always captured regardless ([what is sampled](/runtime/delivery#what-is-sampled)).
+- `npx @autter/runtime-node verify` passes from where the app runs (CI or the deployed host), with the production endpoint and key.
 - Confirm the logging SDK release and ingester/platform deployment separately; redeploy the application after upgrading.
 - Declare business outcomes, preserve existing loggers, and check buffered/dropped records and flush failures. Logs are best-effort diagnostics.
 - Check export volume after enabling `retainTracesAboveMs`. The platform rollout does not enable this option in existing applications.

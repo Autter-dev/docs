@@ -43,8 +43,13 @@ Point your app at it and check the connection:
 ```bash
 export AUTTER_ENDPOINT=http://localhost:4318
 export AUTTER_RUNTIME_KEY=autter_rt_local_dev_only
-npx @autter/runtime-node doctor --endpoint "$AUTTER_ENDPOINT"   # ends with "key  accepted"
+npx @autter/runtime-node doctor    # versions, storage and the key; sends nothing
+npx @autter/runtime-node verify    # sends a test event and reads it back
 ```
+
+`verify` stops at the first step that fails (key, network, ingester, storage,
+auth, ingest, stored, trace, release, logs) and says what to do. Its test
+event never opens an issue. See [Is my data arriving?](/runtime/delivery).
 
 Or point any OpenTelemetry exporter at it:
 
@@ -64,7 +69,7 @@ docker compose exec clickhouse clickhouse-client --password dev --query \
 
 ## Upgrade for operation logs
 
-Use ingester **1.4.0 or later**, which contains `/v1/logs` and migration
+Use ingester **1.4.0+** ([compatibility table](/runtime/compatibility)), which contains `/v1/logs` and migration
 `0011-runtime-logs`. A `latest` image tag alone does not establish that the
 feature is available. The ingester applies the additive migration at startup;
 confirm it completed and the `runtime_logs` table exists before enabling SDK
