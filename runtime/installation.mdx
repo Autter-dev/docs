@@ -78,6 +78,10 @@ existing dependency range proves support. See [Operation logging](/runtime/opera
   </Tab>
 </Tabs>
 
+## Readable stack traces in production
+
+Minified browser bundles report positions like `/assets/index-4f3c.js:1:58213`. Upload your build's source maps with an upload key and the plugin for your bundler, and errors show original files, lines and function names, grouped as one issue across deploys. See [Source maps](/runtime/source-maps).
+
 ## Enable endpoint regression telemetry
 
 Reuse existing SDK initialization and pass the options only once. Set `release` to the deployed commit SHA and use the actual deployment environment. The backend example opts into bounded slow-request retention; the SDK default is off. For Next.js, pass `retainTracesAboveMs: 2000` to the existing `registerAutter` call.

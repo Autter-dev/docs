@@ -171,6 +171,7 @@
               "runtime/operation-logging",
               "runtime/endpoint-regressions",
               "runtime/integrations",
+              "runtime/source-maps",
               "runtime/external-sources",
               "runtime/without-npm",
               "runtime/self-hosting"
