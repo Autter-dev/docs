@@ -12,11 +12,12 @@ Run `autter help` for the command list installed on your machine.
 | --- | --- |
 | `autter status [--json]` | Show authorship for uncommitted changes |
 | `autter log [git log options]` | Add AI authorship statistics to commit history |
-| `autter blame <file> [git blame options]` | Show line-level AI attribution |
+| `autter blame <file> [git blame options]` | Show line-level AI attribution, ending (on a terminal) with a legend of the prompts behind AI lines |
+| `autter blame --why <file>:<line>` | Explain one line: agent, model, prompt reference, session, commit and transcript |
 | `autter diff <commit-or-range>` | Show a diff with AI authorship annotations |
 | `autter stats [commit-or-range] [--json]` | Summarize AI and human authorship |
 | `autter show <revision-or-range>` | Display formatted authorship logs |
-| `autter show-prompt <id>` | Read a prompt record available to the current storage backend |
+| `autter show-prompt <id>` | Print a prompt record as JSON. Takes the short reference from `blame`, a session ID, a unique prefix or the agent's session ID. See [AI blame](/cli/ai-blame#from-a-line-to-the-prompt-that-wrote-it) |
 
 ## Setup and account commands
 
