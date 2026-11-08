@@ -1,0 +1,113 @@
+---
+title: "Is my data arriving?"
+description: "Check delivery end to end with verify, and what is sampled, when data arrives, and what each refusal means."
+---
+
+## Check it in one command
+
+```bash
+npx @autter/runtime-node verify --service checkout --release "$GIT_SHA"
+```
+
+Python services: `python3 compat.py verify --service checkout` (copy
+[`compat.py`](https://github.com/Autter-dev/autter-runtime/blob/main/adapters/python/compat.py)
+next to your app; stdlib only).
+
+`verify` reads `AUTTER_ENDPOINT` and `AUTTER_RUNTIME_KEY`, sends one test span
+with an error and one log record through the real path, reads them back, and
+stops at the first step that fails, with what to do:
+
+| Step | Checks | When it fails |
+| --- | --- | --- |
+| `key` | A key is set and is a server key | No key, or a client (`autter_rtc_`) or upload (`autter_rtu_`) key |
+| `network` | DNS, TCP, TLS and an HTTP answer | Which of the four broke and the likely cause ([below](#behind-a-firewall-or-proxy)) |
+| `ingester` | The server is an Autter ingester; version skew with your SDKs | Wrong URL, for example one ending in `/v1/traces` |
+| `storage` | ClickHouse accepts writes | Storage unconfigured, down, refusing credentials, or missing tables |
+| `auth` | The key is accepted | The ingester's reason: `invalid ingest key`, `client keys cannot send OTLP`… |
+| `ingest` | `/v1/traces` accepts the test span | The status and reason |
+| `stored` | The span and error are in storage | Accepted but not written |
+| `trace` | The error is linked to its span | |
+| `release` | Your release is stored | A warning when none is set |
+| `logs` | `/v1/logs` stores a record | The ingester has no `/v1/logs` |
+
+The test event is stored under environment `verify` and never opens an
+issue, sends an alert or counts as a request. Exit codes: `0` delivered, `1`
+a step failed, `2` unreachable; `--json` for the full report.
+
+`doctor` is the quicker check that sends nothing: versions, active features,
+storage readiness and the key (`key: not checked` without one).
+
+## What is sampled
+
+Errors are never head-sampled. Healthy traffic is.
+
+| What | Sent | Knob |
+| --- | --- | --- |
+| Errors, crashes, failed outcomes, error spans | 100% | `sampleRate` (default 1, never drops crashes), `ignoreErrors` |
+| The full trace around an error | 100% | `retainTracesOnError` (default true) |
+| Healthy request traces | 1% | `traceSampleRate` (default `0.01`) |
+| Request and error counts, latency | 100%, as metrics | not sampled |
+| LLM calls | 100% | `llmTracing: false` |
+| Logs, operation and request summaries | 100% | `logging.minLevel` |
+| Browser errors | 100% | `sampleRate`, `ignoreErrors`, `denyUrls` (`@autter/runtime-browser/filters`) |
+| Python and other OTel SDKs | your sampler's ratio | errors survive only if your sampler keeps them |
+
+Suppression rules (set in Autter) and loop collapse act at the ingester; both
+are counted.
+
+## When it arrives
+
+From the call in your code to stored data, with a healthy ingester:
+
+| What | Typical delay |
+| --- | --- |
+| Browser error | under 1 s |
+| Browser events (clicks, timings) | up to 5 s |
+| Server error | 0–2 s |
+| Sampled server trace | 0–5 s |
+| Logs, operation and request summaries | about 2 s |
+| Request counts and latency (metrics) | up to 60 s |
+| Edge worker records | after the response finishes |
+| Issues and alerts in the dashboard | a few seconds after storage |
+
+A serverless function that is frozen after it answers should `await
+runtime.shutdown()` before it returns.
+
+## What the SDKs tell you
+
+`@autter/runtime-node` and the relay print one line, once per process:
+
+- **No key.** Without `apiKey` the SDK uses `AUTTER_RUNTIME_KEY`; with
+  neither, it says so at startup and sends nothing. The relay answers
+  `500 {"error": "relay has no ingest key"}`.
+- **The wrong kind of key** (client or upload key on the server).
+- **The first refusal**: the first 401, 403, 404 or 400, with the ingester's
+  reason, for example `refused the ingest key on /v1/traces (401: invalid
+  ingest key)`.
+- **Version mismatches**, one warning per feature ([compatibility](/runtime/compatibility)).
+
+## What the ingester tells you
+
+- `x-autter-ingest` on every accepted response says what was stored:
+  `spans=3 occurrences=1 metric_points=2 suppressed=0 collapsed=0 truncated_values=0 rejected=0`.
+  An empty `{"partialSuccess": {}}` means nothing was rejected.
+- `partialSuccess` names what was rejected and why when something was.
+- Refusals carry `{"error": "…"}`. Invalid browser events get `issues` with
+  the field path, from the ingester and from the relay.
+- `GET /v1/verify` (with your server key) returns this key's last accepted
+  and last refused request, and storage readiness.
+- `/healthz` says whether storage accepts writes and counts drops by reason.
+
+## Behind a firewall or proxy
+
+| Failed step | Usually |
+| --- | --- |
+| `dns` | A typo in the host, or a container or VPN without the right DNS |
+| `tcp`, timed out | An egress firewall dropping port 443, or an IPv6 address with no IPv6 route |
+| `tcp`, refused | Wrong port, or nothing running there |
+| `tls` | A proxy intercepting TLS: set `NODE_EXTRA_CA_CERTS` (Node) or `SSL_CERT_FILE` (Python) to its CA |
+| `http` | A proxy or load balancer holding the request |
+
+Node's HTTP client, which the OTLP exporter uses, ignores `HTTPS_PROXY`.
+Where outbound traffic must go through a proxy, allow the ingester's host
+directly or run an OpenTelemetry Collector inside the network.

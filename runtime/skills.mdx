@@ -78,7 +78,7 @@ After installing the updated skills, ask your agent:
 The skills use `runtimeLogger` for diagnostics and explicit failed operation
 outcomes or exception capture for issues. A returned callback defaults to
 success; a payment rejection without a throw needs a declared outcome. The
-APIs require Node/Next.js SDK and ingester **1.4.0+**, followed by an application
+APIs require Node/Next.js SDK and ingester **1.4.0+** ([compatibility table](/runtime/compatibility)), followed by an application
 redeploy; updated skills alone do not provide that release.
 
 See [Operation logging](/runtime/operation-logging) for the APIs, Node/Next.js
@@ -88,7 +88,7 @@ examples, OTLP logging in other languages, delivery limits, and verification.
 
 Use the setup skills to inspect existing SDK initialization, update compatible packages, and configure request histograms and release identity. Node/Next.js examples opt into slow successful trace retention. External OTel exporters need explicit-bucket delta histograms.
 
-Platform access does not change your deployed applications. Reuse their existing providers and deploy the required SDK configuration. Self-hosted ingesters require 1.3.1 or later. See [Endpoint regressions](/runtime/endpoint-regressions) for the complete setup, team feedback, and human review of draft fixes.
+Platform access does not change your deployed applications. Reuse their existing providers and deploy the required SDK configuration. Self-hosted ingesters need the versions in the [compatibility table](/runtime/compatibility). See [Endpoint regressions](/runtime/endpoint-regressions) for the complete setup, team feedback, and human review of draft fixes.
 
 ## Connect external logs
 
