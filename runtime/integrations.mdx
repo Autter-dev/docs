@@ -89,6 +89,28 @@ initAutterServer({
 });
 ```
 
+Request ids and error hooks:
+
+```js
+// Express: request ids first, the error hook after your routes
+app.use(autterRequests());
+app.use(autterErrorHandler());
+// Fastify
+app.register(autterFastifyErrors);
+// Koa: first
+app.use(autterKoa());
+```
+
+Each hook records a thrown error, with its stack, on the request span and
+leaves the response to the framework. Without one, a thrown error reaches
+Autter only as the 500 it caused (`GET /route returned 500`, no stack).
+Express is the exception from `@autter/runtime-node` 1.10.0: the SDK records
+the error behind every 5xx itself, in every router, including routers with
+their own error handler. `autterErrorHandler()` then only adds coded errors
+that end in a 4xx, and an error is never reported twice. Set
+`captureExpressErrors: false` in `initAutterServer` to turn the automatic
+capture off.
+
 Relay for your frontend:
 
 ```js
