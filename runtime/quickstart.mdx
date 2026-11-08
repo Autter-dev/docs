@@ -39,7 +39,15 @@ the SDK and ingester redact it.
     ```bash
     git clone https://github.com/Autter-dev/autter-runtime
     cd autter-runtime
-    docker compose up   # ClickHouse + ingester on :4318, key "dev-key"
+    docker compose up   # ClickHouse + ingester on http://localhost:4318
+    ```
+
+    There's no key step. The local Compose setup accepts the built-in key `autter_rt_local_dev_only`, but only from your own machine. A deployed ingester never accepts it. Point your app at it and check the connection:
+
+    ```bash
+    export AUTTER_ENDPOINT=http://localhost:4318
+    export AUTTER_RUNTIME_KEY=autter_rt_local_dev_only
+    npx @autter/runtime-node doctor --endpoint "$AUTTER_ENDPOINT"   # ends with "key  accepted"
     ```
 
     For real deployments, see [Self-hosting](/runtime/self-hosting) or use Autter's hosted ingester at `otlp.autter.dev`.

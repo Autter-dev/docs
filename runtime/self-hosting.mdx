@@ -33,19 +33,34 @@ For local development with a bundled ClickHouse:
 ```bash
 git clone https://github.com/Autter-dev/autter-runtime
 cd autter-runtime
-docker compose up   # local ClickHouse + ingester on :4318, key "dev-key"
+docker compose up   # local ClickHouse + ingester on http://localhost:4318
 ```
 
-Point your OpenTelemetry exporter at it:
+There's no key step. The local Compose setup accepts the built-in key `autter_rt_local_dev_only`, but only from your own machine or private network. A deployed ingester never accepts it, so use a real key from Autter, or set `AUTTER_INGEST_KEYS`, for anything you deploy.
+
+Point your app at it and check the connection:
+
+```bash
+export AUTTER_ENDPOINT=http://localhost:4318
+export AUTTER_RUNTIME_KEY=autter_rt_local_dev_only
+npx @autter/runtime-node doctor --endpoint "$AUTTER_ENDPOINT"   # ends with "key  accepted"
+```
+
+Or point any OpenTelemetry exporter at it:
 
 ```ts
 new OTLPTraceExporter({
   url: "http://localhost:4318/v1/traces",
-  headers: { authorization: "Bearer dev-key" },
+  headers: { authorization: `Bearer ${process.env.AUTTER_RUNTIME_KEY}` },
 });
 ```
 
-Query ClickHouse directly with `docker compose exec clickhouse clickhouse-client --password dev`.
+Then trigger an error in your app and check that it was stored:
+
+```bash
+docker compose exec clickhouse clickhouse-client --password dev --query \
+  "SELECT service, error_type, message FROM autter_runtime.runtime_error_occurrences ORDER BY occurred_at DESC LIMIT 5"
+```
 
 ## Upgrade for operation logs
 
