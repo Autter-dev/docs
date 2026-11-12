@@ -1,72 +1,183 @@
 ---
 title: "Install the CLI"
-description: "Install Autter, choose a storage mode, and verify AI authorship tracking."
+description: "Install Autter on macOS, Linux, Windows, WSL, or CI, set it up, and check it with autter doctor."
 icon: "download"
 ---
 
-Install Autter once on each developer machine. You do not need per-repository setup.
+Install Autter once on each machine, in the environment where your coding agents and `git` run. You do not need per-repository setup.
 
-## Requirements
+Installing only downloads the `autter` binary and adds it to your `PATH`. Agent hooks, global Git settings, and the [background service](/cli/background-service) are set up by `autter onboard`, which asks before it changes anything.
 
-- Git
-- A supported macOS, Linux, WSL, or Windows environment
-- At least one supported coding agent for automatic attribution
+## Which install to use
 
-## Install
+| Where you work | Use | Notes |
+| --- | --- | --- |
+| [macOS](#macos) or [Linux](#linux) | The shell installer | Needs `bash` and `curl` |
+| [Windows](#windows), with agents started from Windows (PowerShell, Command Prompt, VS Code, Cursor) | The PowerShell installer, or npm if you already have Node.js | Run it from a normal terminal, not **Run as administrator** |
+| [WSL](#wsl), with agents running inside WSL | The shell installer, run inside the WSL terminal | A Windows install does not cover WSL, and the reverse |
+| [CI](#ci) | `npm install -g @autter/cli@<version>`, or the shell installer with `AUTTER_RELEASE_TAG` | The background service never replaces the binary by itself in CI |
+| NixOS, nix-darwin, Home Manager | The [Nix guide](https://github.com/Autter-dev/autter-cli/blob/main/README-nix.md) | |
 
-<Tabs>
-  <Tab title="macOS, Linux, or WSL">
-    Run the installer:
+Every method installs the same binary into `~/.autter/bin` (`%USERPROFILE%\.autter\bin` on Windows).
 
-    ```bash
-    curl -fsSL https://api.autter.dev/install.sh | bash
-    ```
-  </Tab>
-  <Tab title="Windows">
-    Run PowerShell without administrator privileges:
-
-    ```powershell
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://api.autter.dev/install.ps1 | iex"
-    ```
-  </Tab>
-  <Tab title="npm">
-    Requires Node.js 18 or later:
-
-    ```bash
-    npm install -g @autter/cli
-    ```
-
-    The npm package is a thin bootstrapper: it downloads the same release binary into `~/.autter/bin` and verifies its checksum, so integrations and background-service updates work identically to the script installs. `npx @autter/cli onboard` bootstraps without a global install.
-  </Tab>
-</Tabs>
+<Note>
+  **When to use npm instead.** Use `npm install -g @autter/cli` if you're on Windows and already have Node.js 18 or later, or if the installer keeps failing to download on your network. See [Install with npm](#install-with-npm).
+</Note>
 
 <Warning>
-  Do not run Autter as root or with `sudo`. Elevated installation can create files your normal user cannot update.
+  Install and run Autter as your normal user, not with `sudo` or from an Administrator PowerShell. Elevated installs create files your own account cannot open, and the background service then fails with "Access is denied" or "lock held".
 </Warning>
 
-The installer places Autter in `~/.autter/bin`, adds it to your user `PATH`, configures supported coding agents and editors, and starts the background service.
+## Install from the Autter platform
 
-On macOS, Linux, and WSL, make `autter` available in the terminal you already have open (the installer prints this command at the end too):
+If you use the Autter platform, open **Settings → Install CLI** in the [Autter app](https://app.autter.dev/cli/install) and click **Generate install command**. It gives you the command for your operating system with a one-time sign-in token added. The token works once and expires after 15 minutes.
+
+When you run that command, the installer:
+
+1. Downloads the CLI and adds it to your `PATH`.
+2. Signs the machine in with the token. If the token has expired or was already used, it starts `autter login` instead, which opens your browser to confirm a short code.
+3. Runs `autter onboard` for you, so you don't need to run it again.
+
+Then [check the installation](#check-the-installation) with `autter doctor`.
+
+The commands below are the same installers without a token. Choose connected mode during `autter onboard` to sign in.
+
+## System requirements
+
+- Git 2.22 or later
+- macOS 11 (Big Sur) or later
+- Linux with glibc 2.35 or later (Ubuntu 22.04+, Debian 12+, Fedora 36+)
+- Windows 10 or later
+- Node.js 18 or later, for the npm install only
+- At least one [supported coding agent](/cli/overview) for automatic attribution
+
+## macOS
+
+Run:
 
 ```bash
+curl -fsSL https://api.autter.dev/install.sh | bash
+```
+
+Pipe the script to `bash`, not `sh`. In an interactive terminal the installer then starts `autter onboard`.
+
+The installer's `PATH` change reaches new terminals. To use `autter` in the terminal you already have open, run the command the installer prints at the end:
+
+```bash
+source "$HOME/.autter/env"   # fish: source "$HOME/.autter/env.fish"
+```
+
+Restart your IDE, not just its terminal tab, so IDE terminals and coding agents see the new `PATH`.
+
+To see what the installer would do without downloading, writing, or starting anything:
+
+```bash
+curl -fsSL https://api.autter.dev/install.sh | bash -s -- --dry-run
+```
+
+## Linux
+
+Run the same installer:
+
+```bash
+curl -fsSL https://api.autter.dev/install.sh | bash
+```
+
+Pipe it to `bash`, not `sh`: on Debian and Ubuntu, `sh` is a different shell, and the installer stops and asks you to re-run it with `bash`.
+
+Then load the `PATH` entry in your current terminal, as on macOS:
+
+```bash
+source "$HOME/.autter/env"   # fish: source "$HOME/.autter/env.fish"
+```
+
+Ubuntu 20.04 and other distributions older than glibc 2.35 are not supported natively. Use a newer distribution or run inside an `ubuntu:22.04` container.
+
+## Windows
+
+Run this from PowerShell, Command Prompt, or Git Bash, in a normal (not administrator) window:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "iex (irm https://api.autter.dev/install.ps1)"
+```
+
+Use the `api.autter.dev` URL exactly as shown. The installer puts `autter.exe` in `%USERPROFILE%\.autter\bin`, adds that folder to your user `PATH`, and starts `autter onboard`.
+
+The `PATH` change reaches terminals opened afterwards, not the window you ran the command from. Open a new terminal and restart your IDE before you run `autter`. The installer prints the full path to `autter.exe` at the end so you can run it straight away.
+
+If you are already in PowerShell, this runs the same installer in your current window, and `autter` works there immediately:
+
+```powershell
+irm https://api.autter.dev/install.ps1 | iex
+```
+
+To see what the installer would do without changing anything, set `AUTTER_INSTALL_DRY_RUN` first (`irm | iex` cannot pass arguments), and remove it afterwards:
+
+```powershell
+$env:AUTTER_INSTALL_DRY_RUN = '1'
+irm https://api.autter.dev/install.ps1 | iex
+Remove-Item Env:\AUTTER_INSTALL_DRY_RUN
+```
+
+<Note>
+  Git Bash is not WSL. The shell installer exits with instructions in Git Bash. Use the PowerShell command above, which also works from Git Bash.
+</Note>
+
+### Install with npm
+
+npm installs the same binary into `~/.autter/bin` and checks its checksum against the release. It works on every platform with Node.js 18 or later:
+
+```bash
+npm install -g @autter/cli
+autter onboard
+```
+
+- **Run `autter onboard` yourself.** npm hides install-script output, so the installer can't start onboarding for you. Until onboarding runs, nothing is captured.
+- **Blocked install scripts are fine.** With `--ignore-scripts` or pnpm, the binary downloads the first time you run `autter`.
+- **Upgrade with `autter upgrade`**, or `npm install -g @autter/cli@latest`. `npm update` alone does not upgrade the CLI.
+
+`npx @autter/cli onboard` sets up without a global install.
+
+## WSL
+
+Install inside WSL when your coding agents run inside WSL. Open the WSL terminal and run the shell installer there:
+
+```bash
+curl -fsSL https://api.autter.dev/install.sh | bash
 source "$HOME/.autter/env"
 ```
 
-For fish, use `source "$HOME/.autter/env.fish"`. New terminals pick up the `PATH` automatically. Restart your IDE — not just its terminal tab — so IDE terminals and coding agents see it too.
+Autter records the edits and commits made in the environment it is installed in. An agent started from Windows needs the [Windows install](#windows); an agent running inside WSL needs this one. If you use both, install in both and run `autter doctor` in each.
 
-Interactive macOS, Linux, and WSL installs start onboarding automatically. If the installer runs without an interactive terminal, complete onboarding later with `autter onboard`.
+## CI
 
-## Complete onboarding
+Pin a version so builds are reproducible. With npm:
 
-The installer asks whether you want local-only or connected mode.
+```bash
+npm install -g @autter/cli@3.7.0
+```
 
-<Frame caption="Replace this placeholder with the final onboarding terminal screenshot.">
-  <img src="/images/placeholders/cli-onboarding.svg" alt="Placeholder for the Autter CLI onboarding choices" />
-</Frame>
+Or with the shell installer:
+
+```bash
+curl -fsSL https://api.autter.dev/install.sh | AUTTER_RELEASE_TAG=v3.7.0 bash
+```
+
+CI has no terminal for onboarding prompts. Pass `--yes` to accept the setup steps up front:
+
+```bash
+autter onboard --local --yes
+```
+
+In CI the background service never upgrades the binary by itself. To connect a CI machine to the Autter platform, use a personal access token instead of the browser flow. See [Connect to the platform](/cli/connect-platform).
+
+## Choose a mode during onboarding
+
+`autter onboard` asks whether you want local-only or connected mode.
 
 <Tabs>
   <Tab title="Local-only">
-    Choose local-only mode to keep prompts on the machine and use Git notes for attribution.
+    Choose local-only mode to keep prompts on the machine and use Git notes for attribution. No account is needed.
 
     You can select it again later:
 
@@ -89,19 +200,35 @@ The installer asks whether you want local-only or connected mode.
   </Tab>
 </Tabs>
 
-## Verify the installation
+In a terminal, onboarding asks before it installs agent hooks, writes global Git `trace2` settings, or starts the background service. Without a terminal it leaves them off unless you pass `--yes`. Apply them later with `autter install --system`.
+
+## Check the installation
+
+Open a new terminal and run:
 
 ```bash
-autter --version
 autter doctor
-autter whoami
 ```
 
-- `autter --version` prints the installed version.
-- `autter doctor` validates the installation end-to-end, including a test checkpoint, and prints a fix for every failed check.
-- `autter whoami` shows whether the CLI is connected.
+`autter doctor` checks Git, the background service, a real checkpoint round-trip, your agent integrations, and, in connected mode, your sign-in and uploads. Setup is done when it exits `0` and its last lines are a `Summary:` line with only passed (and skipped) checks, followed by:
 
-## Verify an agent integration
+```text
+All checks passed -- autter is capturing and attributing correctly.
+```
+
+- In local-only mode the sign-in and upload checks show as `skipped`. That still counts as a pass.
+- If some checks only warn, it ends with `No failures. Review the warnings above if capture or sync seems off.`
+- A failed check prints a `fix:` line under it. Run that command, then `autter doctor` again.
+
+If it still fails, write a support report and send the file with your request:
+
+```bash
+autter doctor --report autter-report.txt
+```
+
+The report holds doctor's results, the background service's state and recent log, and your Git and OS versions, but no source code, file contents, or tokens. See [CLI troubleshooting](/cli/troubleshooting) for common failures.
+
+## Check an agent integration
 
 Start a fresh coding-agent session after installation. Ask the agent to edit a tracked file, then run:
 
@@ -120,6 +247,15 @@ autter stats HEAD
   If you installed a new coding agent after Autter, run `autter install-hooks` to refresh integrations.
 </Tip>
 
+## Where Autter is installed
+
+| | macOS, Linux, WSL | Windows |
+| --- | --- | --- |
+| Binary | `~/.autter/bin/autter` | `%USERPROFILE%\.autter\bin\autter.exe` |
+| `PATH` entry | `~/.autter/env` (and `env.fish`), loaded by one line in your shell file | `%USERPROFILE%\.autter\bin` on your user `PATH` |
+
+The location is fixed: agent hooks, `autter upgrade`, and the background service all use it. Do not move the binary. To run `autter` from somewhere else, add a symlink or add `~/.autter/bin` to that environment's `PATH`.
+
 ## Update Autter
 
 ```bash
@@ -128,10 +264,15 @@ autter upgrade
 
 Use `autter upgrade --force` to reinstall the latest release.
 
-This works for every install method, including npm: the npm package is only a bootstrapper, and `autter upgrade` (or the background service's automatic update) replaces the binary in `~/.autter/bin` directly. Running `npm update -g @autter/cli` is not required.
+This works for every install method, including npm: the npm package is only a bootstrapper, and `autter upgrade` (or the background service's automatic update) replaces the binary in `~/.autter/bin` directly.
 
-## Next step
+## Next steps
 
-<Card title="Connect to the platform" icon="cloud" href="/cli/connect-platform">
-  Learn what connection enables and how repository data is routed to your organization.
-</Card>
+<CardGroup cols={2}>
+  <Card title="Connect to the platform" icon="cloud" href="/cli/connect-platform">
+    Learn what connection enables and how repository data is routed to your organization.
+  </Card>
+  <Card title="The background service" icon="server" href="/cli/background-service">
+    See what runs in the background, what it listens to, and how to restart it.
+  </Card>
+</CardGroup>

@@ -57,29 +57,41 @@ Install the hosted integration for pull request reviews. Install the CLI for lin
 
 ## Install the Autter CLI
 
-The Autter CLI supports macOS, Linux, Windows through WSL, and native Windows PowerShell.
+The Autter CLI runs natively on macOS, Linux, and Windows, and inside WSL. Install it in the environment where your coding agents run.
 
 <Tabs>
-  <Tab title="macOS, Linux, and WSL">
+  <Tab title="macOS and Linux">
     ```bash
     curl -fsSL https://api.autter.dev/install.sh | bash
     ```
   </Tab>
-  <Tab title="Windows PowerShell">
+  <Tab title="Windows">
+    Run it from PowerShell, Command Prompt, or Git Bash, in a normal (not administrator) window:
+
     ```powershell
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://api.autter.dev/install.ps1 | iex"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "iex (irm https://api.autter.dev/install.ps1)"
+    ```
+  </Tab>
+  <Tab title="WSL">
+    Run the shell installer inside the WSL terminal when your agents run inside WSL:
+
+    ```bash
+    curl -fsSL https://api.autter.dev/install.sh | bash
     ```
   </Tab>
   <Tab title="npm">
     ```bash
     npm install -g @autter/cli
+    autter onboard
     ```
 
-    Requires Node.js 18 or later. Downloads the same release binary as the script installers.
+    Use npm instead if you're on Windows and already have Node.js 18 or later, or if the installer keeps failing to download on your network.
   </Tab>
 </Tabs>
 
-The installer asks whether you want local-only mode or connected mode. You can change this choice later with `autter onboard`.
+If you signed in to the Autter app, **Settings → Install CLI** generates the same command with a one-time sign-in token, so the installer also signs the machine in.
+
+The installers run `autter onboard`, which asks whether you want local-only mode or connected mode. You can change this choice later with `autter onboard`. Then run `autter doctor` to check that capture works.
 
 <CardGroup cols={2}>
   <Card title="CLI installation guide" icon="terminal" href="/cli/install">

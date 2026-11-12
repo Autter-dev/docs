@@ -44,9 +44,12 @@ Run `autter help` for the command list installed on your machine.
 | `autter config --add <key> <value>` | Add an array item or object entry |
 | `autter config unset <key>` | Remove a value and restore its default |
 | `autter doctor [--json]` | Validate the setup end-to-end; exits non-zero when a check fails |
+| `autter doctor --report <file>` | Also write a support report to a file, with no source code or tokens |
 | `autter debug` | Print the full support diagnostics report |
-| `autter bg status` | Check the background service |
+| `autter bg status` | Check the [background service](/cli/background-service) |
+| `autter bg start` | Start the background service |
 | `autter bg restart` | Restart the background service |
+| `autter bg shutdown` | Stop the background service |
 | `autter bg tail -f` | Follow background-service logs |
 | `autter upgrade` | Install the latest release |
 | `autter version` | Print the installed version |
