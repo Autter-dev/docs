@@ -76,7 +76,15 @@ autter bg restart
 autter bg tail -n 100
 ```
 
-Use `autter bg tail -f` to follow logs while reproducing the issue.
+Use `autter bg tail -f` to follow logs while reproducing the issue. See [Background service](/cli/background-service) for what the service listens to and the usual causes of each error.
+
+If the service still fails, write a support report and send the file with your request:
+
+```bash
+autter doctor --report autter-report.txt
+```
+
+The report contains no source code, file contents, or tokens.
 
 ## Onboarding does not connect
 

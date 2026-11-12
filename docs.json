@@ -221,6 +221,7 @@
               "cli/data-and-privacy",
               "cli/command-reference",
               "cli/performance-faqs",
+              "cli/background-service",
               "cli/troubleshooting"
             ]
           },
