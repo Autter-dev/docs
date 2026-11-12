@@ -50,10 +50,22 @@ Create an Autter organization, then try a demo repository on GitHub or connect y
 
 Use the CLI when you need explicit AI authorship and line-level attribution in Git history. It works in local-only mode without an account. Connected mode can send attribution and prompt history to your Autter organization.
 
-```bash
+<CodeGroup>
+```bash macOS, Linux, WSL
 curl -fsSL https://api.autter.dev/install.sh | bash
-autter status
 ```
+
+```powershell Windows
+powershell -NoProfile -ExecutionPolicy Bypass -Command "iex (irm https://api.autter.dev/install.ps1)"
+```
+
+```bash npm
+npm install -g @autter/cli
+autter onboard
+```
+</CodeGroup>
+
+Use npm instead if you're on Windows and already have Node.js 18 or later, or if the installer keeps failing to download on your network. Then check the setup with `autter doctor`.
 
 <CardGroup cols={2}>
   <Card title="Install the CLI" icon="download" href="/cli/install">
