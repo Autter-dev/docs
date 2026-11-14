@@ -11,6 +11,7 @@ description: "Configuration reference for the Autter Runtime SDKs and the self-h
 | `AUTTER_ENDPOINT` | `@autter/runtime-node` | Base URL of your ingester. Defaults to Autter's hosted endpoint (`https://otlp.autter.dev`) if unset. |
 | `GIT_SHA` | any | Convention used in the docs and examples for the `release` field — wire it to your build's git commit so regressions can be traced to a release. |
 | `NODE_ENV` | `@autter/runtime-node` | Commonly passed through as `environment`. |
+| `AUTTER_COUNT_REQUESTS` | Python `autter_tracing.py` | `true` makes `init_tracing()` count every HTTP request, so error rates are right at any sampling rate; `false` turns counting off. Copies from Autter Runtime 1.18.0 or earlier count only when it is `true`; later copies count unless it is `false`. See [Python request counts](/runtime/integrations#request-counts). |
 
 Frontend equivalents are passed directly to `initAutterBrowser({...})` rather than read from `process.env` (bundlers don't expose server env vars to the browser by default) — for example `import.meta.env.VITE_GIT_SHA` for `release`.
 
