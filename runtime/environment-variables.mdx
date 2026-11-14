@@ -42,6 +42,54 @@ language exporters may support `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`,
 `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL` and `OTEL_EXPORTER_OTLP_LOGS_HEADERS`; these
 variables alone do not create a logs provider or bridge. See [OTLP loggers](/runtime/operation-logging#other-languages-and-existing-otlp-loggers).
 
+## Identifying attributes and client IPs
+
+{/* TODO: name the Runtime release (runtime-node, otlp-ingester, Python adapter versions) that ships this once it is published. */}
+
+OpenTelemetry adds attributes that identify a person or a machine to server spans and to the resource. The Runtime SDKs and the ingester drop them by default, from span, event and link attributes, log records and resources:
+
+| What | Keys |
+| --- | --- |
+| The client's address and port, and the server's own IP | `net.peer.ip`, `net.peer.port`, `net.sock.peer.addr`, `net.sock.peer.port`, `http.client_ip`, `client.address`, `client.port`, `network.peer.address`, `network.peer.port`, `net.host.ip`, `net.sock.host.addr`, `network.local.address` |
+| The raw user-agent string | `http.user_agent`, `user_agent.original` |
+| The machine's id and addresses | `host.id`, `host.ip`, `host.mac` |
+| The command line and the user running it | `process.command_args`, `process.command`, `process.command_line`, `process.owner`, `process.executable.path` |
+
+The drop also applies when you turn off secret redaction (`redactAttributes: false` in Node, `redact=False` in Python). The ingester applies it on arrival, so data from plain OpenTelemetry SDKs and older Runtime SDKs is covered too. Spans stored before the upgrade keep these attributes until their retention period ends.
+
+These attributes are kept: `service.instance.id`, `host.name`, `process.pid`, `process.runtime.*`, `os.type`, `host.arch`, and the coarse browser, OS and device fields of request summaries. `host.name` is usually a container or pod name. On a laptop or a VM it is the machine's name, which can be a person's. Drop it with `dropAttributes`.
+
+| Setting | Node (`initAutterServer`, `registerAutter`) | Python (`init_tracing`) | Environment variable (SDKs and ingester) |
+| --- | --- | --- | --- |
+| Keep identifying attributes | `keepIdentifyingAttributes: true` or a list of keys | `keep_identifying_attributes=True` or a list | `AUTTER_KEEP_IDENTIFYING_ATTRIBUTES=true` or a comma-separated list |
+| Drop more keys | `dropAttributes: ["host.name"]` | `drop_attributes=["host.name"]` | `AUTTER_DROP_ATTRIBUTES=host.name` |
+| Hash the client IP | `hashClientIp: { salt }` or `true` | `hash_client_ip=True, client_ip_salt=...` | `AUTTER_HASH_CLIENT_IP=true` |
+| Salt for the client IP hash | `hashClientIp: { salt }` | `client_ip_salt=...` | `AUTTER_CLIENT_IP_SALT` |
+
+<Warning>
+The SDK and the ingester each drop what they were not told to keep. To store an identifying attribute, set the keep option in your SDK **and** `AUTTER_KEEP_IDENTIFYING_ATTRIBUTES` on a self-hosted ingester. If only one side keeps it, it is not stored.
+</Warning>
+
+### Hashed client IP
+
+To count distinct clients without storing their addresses, turn on client IP hashing with a secret salt. Hashing is off by default. When it is on, the raw address is still dropped, and one attribute, `client.address_hash`, carries an HMAC-SHA256 of the address under your salt (32 hex characters).
+
+- **Which address:** the first valid one of `client.address`, then `http.client_ip` (both come from `X-Forwarded-For` or `Forwarded` behind a proxy), then the socket peer on server spans. Behind a proxy that does not forward the client address, the socket peer is the proxy.
+- **Normalised first:** ports, brackets and zone ids are removed, IPv6 is lower-cased and compressed, and `::ffff:203.0.113.9` is read as `203.0.113.9`.
+- **Same hash everywhere:** the Node SDK, the Python adapter and the ingester produce the same hash from the same salt and address. Use one salt for every service of a project.
+- **No salt, no hash:** the salt must be at least 16 characters. Without one, nothing is hashed and a warning is printed. There is no unsalted fallback, because every IPv4 address can be hashed in minutes.
+- **Ingester:** a self-hosted ingester with `AUTTER_HASH_CLIENT_IP=true` and `AUTTER_CLIENT_IP_SALT` hashes spans and log records that arrive without a hash. A hash sent by an SDK is stored unchanged. The ingester uses one salt for every project it serves, so prefer hashing in each project's SDK with its own salt.
+
+Generate a salt and keep it with your other secrets:
+
+```bash
+openssl rand -hex 32
+```
+
+<Warning>
+A hashed IP address is still pseudonymous personal data under some readings of privacy law, such as the GDPR. Anyone who holds the salt can check whether a known address produced a hash. Treat the salt as a secret, and rotate it to unlink old hashes.
+</Warning>
+
 ## Ingester configuration (self-hosted)
 
 Operation logging requires an ingester release containing `/v1/logs` and
@@ -56,6 +104,10 @@ No new ingest credential is required: use the existing repository server key.
 | `AUTTER_INGEST_KEYS` | yes, unless using `AUTTER_KEY_VALIDATOR_URL` | JSON array mapping ingest keys to `{orgId, repositoryId}`. See format below. |
 | `AUTTER_KEY_VALIDATOR_URL` | alternative to `AUTTER_INGEST_KEYS` | URL of your own key-validation service, for dynamic key management instead of a static env-var list. |
 | `AUTTER_SINK_URL` | no | Optional webhook. Each ingest batch is POSTed here as normalized occurrences — see [Architecture](/runtime/architecture#sink-webhook-v1). Delivery is best-effort, fire-and-forget. |
+| `AUTTER_KEEP_IDENTIFYING_ATTRIBUTES` | no | Keep identifying attributes the ingester drops by default: `true`, or a comma-separated list of keys. See [Identifying attributes and client IPs](#identifying-attributes-and-client-ips). |
+| `AUTTER_DROP_ATTRIBUTES` | no | Comma-separated attribute keys to drop on arrival as well, such as `host.name`. |
+| `AUTTER_HASH_CLIENT_IP` | no | `true` adds `client.address_hash` to spans and log records that arrive without one. Needs `AUTTER_CLIENT_IP_SALT`. |
+| `AUTTER_CLIENT_IP_SALT` | with `AUTTER_HASH_CLIENT_IP` | Secret salt for the client IP hash, at least 16 characters. Never logged. |
 
 ### `AUTTER_INGEST_KEYS`
 

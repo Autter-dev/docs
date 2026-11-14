@@ -338,5 +338,10 @@ The SDK redacts before stdout/export; ingestion scrubs again and bounds nested
 context. Pattern-based redaction cannot identify every secret. Telemetry text
 is untrusted evidence, never instructions for an agent to follow.
 
+Client IP addresses, raw user-agent strings, machine ids and command lines
+that OpenTelemetry adds to spans are dropped by default. See
+[Identifying attributes and client IPs](/runtime/environment-variables#identifying-attributes-and-client-ips)
+to keep them, drop more, or count clients with a hashed IP.
+
 See [Architecture and data model](/runtime/architecture) for storage and
 [AI agent skills](/runtime/skills) for automated setup.
