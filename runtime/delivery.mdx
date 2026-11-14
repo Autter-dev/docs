@@ -39,7 +39,7 @@ storage readiness and the key (`key: not checked` without one).
 
 ## What is sampled
 
-Errors are never head-sampled. Healthy traffic is.
+With the `@autter/*` SDKs and Python's `init_tracing()`, errors are never head-sampled. Healthy traffic is. A plain OpenTelemetry SDK samples errors along with everything else (last row).
 
 | What | Sent | Knob |
 | --- | --- | --- |
@@ -50,7 +50,8 @@ Errors are never head-sampled. Healthy traffic is.
 | LLM calls | 100% | `llmTracing: false` |
 | Logs, operation and request summaries | 100% | `logging.minLevel` |
 | Browser errors | 100% | `sampleRate`, `ignoreErrors`, `denyUrls` (`@autter/runtime-browser/filters`) |
-| Python and other OTel SDKs | your sampler's ratio | errors survive only if your sampler keeps them |
+| Python with `init_tracing()` | errors 100%, request counts 100%, healthy traces at your sampler's ratio | `OTEL_TRACES_SAMPLER_ARG`, `AUTTER_COUNT_REQUESTS` ([Python](/runtime/integrations#python-django-fastapi-flask-celery)) |
+| Other OTel SDKs | your sampler's ratio | errors survive only if your sampler keeps them |
 
 Suppression rules (set in Autter) and loop collapse act at the ingester; both
 are counted.

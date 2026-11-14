@@ -56,89 +56,131 @@ the SDK and ingester redact it.
     For real deployments, see [Self-hosting](/runtime/self-hosting) or use Autter's hosted ingester at `otlp.autter.dev`: set `AUTTER_ENDPOINT=https://otlp.autter.dev` and your repository's server key, then run the same two commands.
   </Step>
   <Step title="Instrument your backend">
-    ```bash
-    npm install @autter/runtime-node
-    ```
+    <Tabs>
+      <Tab title="Node.js">
+      ```bash
+      npm install @autter/runtime-node
+      ```
 
-    Create `instrument.cjs` — it must load **before** your app:
+      Create `instrument.cjs` — it must load **before** your app:
 
-    ```js
-    const { initAutterServer } = require("@autter/runtime-node");
+      ```js
+      const { initAutterServer } = require("@autter/runtime-node");
 
-    initAutterServer({
-      apiKey: process.env.AUTTER_RUNTIME_KEY,   // server key
-      endpoint: process.env.AUTTER_ENDPOINT,     // your ingester URL
-      service: "payments-api",
-      environment: process.env.NODE_ENV,
-      release: process.env.GIT_SHA,              // enables "broke in release X"
-      retainTracesAboveMs: 2000,
-    });
-    ```
+      initAutterServer({
+        apiKey: process.env.AUTTER_RUNTIME_KEY,   // server key
+        endpoint: process.env.AUTTER_ENDPOINT,     // your ingester URL
+        service: "payments-api",
+        environment: process.env.NODE_ENV,
+        release: process.env.GIT_SHA,              // enables "broke in release X"
+        retainTracesAboveMs: 2000,
+      });
+      ```
 
-    ```bash
-    node --require ./instrument.cjs server.js
-    ```
+      ```bash
+      node --require ./instrument.cjs server.js
+      ```
 
-    Reuse your existing SDK initialization if you already have one. The example opts into bounded, local slow-request trace retention. Set `GIT_SHA` to the deployed commit SHA. See [Endpoint regressions](/runtime/endpoint-regressions) for metric requirements and retention limits.
+      Reuse your existing SDK initialization if you already have one. The example opts into bounded, local slow-request trace retention. Set `GIT_SHA` to the deployed commit SHA. See [Endpoint regressions](/runtime/endpoint-regressions) for metric requirements and retention limits.
 
-    This records HTTP request metrics and captures crashes and unhandled
-    promise rejections. A rejection from a promise started during a request
-    keeps that request's route and request id.
+      This records HTTP request metrics and captures crashes and unhandled
+      promise rejections. A rejection from a promise started during a request
+      keeps that request's route and request id.
 
-    On Express, add request ids and the error hook to your app:
+      On Express, add request ids and the error hook to your app:
 
-    ```js
-    const { autterRequests, autterErrorHandler } = require("@autter/runtime-node");
+      ```js
+      const { autterRequests, autterErrorHandler } = require("@autter/runtime-node");
 
-    app.use(autterRequests());       // first: request ids and one summary per request
-    // ... your routes and routers ...
-    app.use(autterErrorHandler());   // after your routes, before your own error handlers
-    ```
+      app.use(autterRequests());       // first: request ids and one summary per request
+      // ... your routes and routers ...
+      app.use(autterErrorHandler());   // after your routes, before your own error handlers
+      ```
 
-    With `@autter/runtime-node` 1.10.0 or later, the error behind every
-    Express 5xx is recorded with its type, message, stack, route and request
-    id even without `autterErrorHandler()`. That holds in every router,
-    including routers with their own error handler. The handler adds coded
-    errors that end in a 4xx, and it never reports an error twice, so one
-    `app.use(autterErrorHandler())` at app level is enough. On older versions
-    it is required: without it a thrown error shows up only as
-    `GET /route returned 500`, with no stack. Fastify and Koa need their
-    hooks (`autterFastifyErrors`, `autterKoa`); see
-    [Integrations](/runtime/integrations#nodejs-express-fastify-koa-nestjs).
+      With `@autter/runtime-node` 1.10.0 or later, the error behind every
+      Express 5xx is recorded with its type, message, stack, route and request
+      id even without `autterErrorHandler()`. That holds in every router,
+      including routers with their own error handler. The handler adds coded
+      errors that end in a 4xx, and it never reports an error twice, so one
+      `app.use(autterErrorHandler())` at app level is enough. On older versions
+      it is required: without it a thrown error shows up only as
+      `GET /route returned 500`, with no stack. Fastify and Koa need their
+      hooks (`autterFastifyErrors`, `autterKoa`); see
+      [Integrations](/runtime/integrations#nodejs-express-fastify-koa-nestjs).
 
-    For handled errors:
+      For handled errors:
 
-    ```js
-    const { captureException } = require("@autter/runtime-node");
+      ```js
+      const { captureException } = require("@autter/runtime-node");
 
-    try {
-      await chargeCard(order);
-    } catch (err) {
-      captureException(err, { "order.id": order.id });
-      throw err;
-    }
-    ```
+      try {
+        await chargeCard(order);
+      } catch (err) {
+        captureException(err, { "order.id": order.id });
+        throw err;
+      }
+      ```
 
-    A run that returns normally but did not do its job (a declined payment) is not an exception. Declare it so it becomes an issue:
+      A run that returns normally but did not do its job (a declined payment) is not an exception. Declare it so it becomes an issue:
 
-    ```js
-    const { reportOutcome } = require("@autter/runtime-node");
+      ```js
+      const { reportOutcome } = require("@autter/runtime-node");
 
-    if (!payment.confirmed) reportOutcome("checkout", "payment was not confirmed");
-    ```
+      if (!payment.confirmed) reportOutcome("checkout", "payment was not confirmed");
+      ```
 
-    Test it without an ingester: `@autter/runtime-node/testing` keeps every record in memory.
+      Test it without an ingester: `@autter/runtime-node/testing` keeps every record in memory.
 
-    ```js
-    const { captureRuntime, expectOperation } = require("@autter/runtime-node/testing");
+      ```js
+      const { captureRuntime, expectOperation } = require("@autter/runtime-node/testing");
 
-    const runtime = captureRuntime();
-    await request(app).post("/checkout").expect(402);
-    expectOperation(runtime, "POST /checkout").toHaveOutcome("degraded");
-    runtime.stop();
-    ```
+      const runtime = captureRuntime();
+      await request(app).post("/checkout").expect(402);
+      expectOperation(runtime, "POST /checkout").toHaveOutcome("degraded");
+      runtime.stop();
+      ```
 
-    Then check the real path: `npx @autter/runtime-node verify --service payments-api`. If your app has no key, or the ingester refuses it, the SDK prints one line saying so at startup or on the first refusal.
+      Then check the real path: `npx @autter/runtime-node verify --service payments-api`. If your app has no key, or the ingester refuses it, the SDK prints one line saying so at startup or on the first refusal.
+      </Tab>
+      <Tab title="Python">
+        For Django, FastAPI, Flask and Celery. There is no Autter package for Python: install OpenTelemetry and copy two files from the Autter Runtime repository next to your code.
+
+        ```bash
+        pip install opentelemetry-sdk opentelemetry-exporter-otlp-proto-http \
+          opentelemetry-instrumentation-django   # or -fastapi, -flask, -celery
+        curl -fsSO https://raw.githubusercontent.com/Autter-dev/autter-runtime/main/adapters/python/autter_tracing.py
+        curl -fsSO https://raw.githubusercontent.com/Autter-dev/autter-runtime/main/adapters/python/redact.py
+        ```
+
+        Configure it with environment variables:
+
+        ```bash
+        OTEL_EXPORTER_OTLP_ENDPOINT=$AUTTER_ENDPOINT                    # your ingester URL
+        OTEL_EXPORTER_OTLP_HEADERS=x-autter-key=${AUTTER_RUNTIME_KEY}   # server key
+        OTEL_SERVICE_NAME=payments-api
+        OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.environment=production
+        OTEL_TRACES_SAMPLER=parentbased_traceidratio
+        OTEL_TRACES_SAMPLER_ARG=0.01
+        AUTTER_COUNT_REQUESTS=true
+        ```
+
+        Call `init_tracing()` once per process, at startup, before your framework's instrumentation. For Flask:
+
+        ```python
+        from autter_tracing import init_tracing
+        from flask import Flask
+        from opentelemetry.instrumentation.flask import FlaskInstrumentor
+
+        init_tracing()
+        app = Flask(__name__)
+        FlaskInstrumentor().instrument_app(app)
+        ```
+
+        `init_tracing()` sends every error at 1% sampling and counts every request, so error rates are right. Configuring the OpenTelemetry SDK yourself with the same sampler does neither: an error on a trace the sampler drops is never sent. Where to call it for Django, FastAPI and Celery, prefork servers and handled exceptions: [Python integration](/runtime/integrations#python-django-fastapi-flask-celery).
+
+        Check the path with [`compat.py`](https://github.com/Autter-dev/autter-runtime/blob/main/adapters/python/compat.py) (stdlib only, copy it next to your app): `python3 compat.py verify --service payments-api`.
+      </Tab>
+    </Tabs>
   </Step>
   <Step title="Add server operation diagnostics">
     Node/Next.js SDK and ingester **1.4.0+** are required ([compatibility table](/runtime/compatibility)).
@@ -228,7 +270,7 @@ the SDK and ingester redact it.
 - Server keys only in backend env vars; client keys only where a relay is genuinely impossible.
 - Client keys have `allowedOrigins` set to your exact app origins.
 - `release` is wired to your git SHA in **both** frontend and backend — it powers regression detection ("broke in release X").
-- Keep trace sampling at ~1% (`traceSampleRate`) — errors are always captured regardless ([what is sampled](/runtime/delivery#what-is-sampled)).
+- Keep trace sampling at ~1% (`traceSampleRate`). The `@autter/*` SDKs and Python's `init_tracing()` capture every error regardless. With a plain OpenTelemetry SDK, an error on a trace the sampler drops is not sent ([what is sampled](/runtime/delivery#what-is-sampled)).
 - `npx @autter/runtime-node verify` passes from where the app runs (CI or the deployed host), with the production endpoint and key.
 - Confirm the logging SDK release and ingester/platform deployment separately; redeploy the application after upgrading.
 - Declare business outcomes, preserve existing loggers, and check buffered/dropped records and flush failures. Logs are best-effort diagnostics.
