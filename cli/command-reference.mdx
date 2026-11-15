@@ -17,6 +17,9 @@ Run `autter help` for the command list installed on your machine.
 | `autter diff <commit-or-range>` | Show a diff with AI authorship annotations |
 | `autter stats [commit-or-range] [--json]` | Summarize AI and human authorship |
 | `autter show <revision-or-range>` | Display formatted authorship logs |
+| `autter badge [--since <date>\|--all-time] [--write [path]]` | A README badge with the repository's AI-written share. See [`autter badge`](/cli/more-commands#autter-badge) |
+| `autter wrapped [--year <yyyy>] [--share]` | Your year of AI-assisted coding in this repository as a share card. See [`autter wrapped`](/cli/more-commands#autter-wrapped) |
+| `autter file-changes [--limit <n>]` | The files changed most often in this repository. See [`autter file-changes`](/cli/more-commands#autter-file-changes) |
 | `autter show-prompt <id>` | Print a prompt record as JSON. Takes the short reference from `blame`, a session ID, a unique prefix or the agent's session ID. See [AI blame](/cli/ai-blame#from-a-line-to-the-prompt-that-wrote-it) |
 
 ## Runtime investigation
@@ -28,6 +31,20 @@ These commands read Autter Runtime data for your organization. Sign in with `aut
 | `autter ask <question> [--repo <name>] [--thread <id>] [--mode system\|codebase\|reviews]` | Ask why something happened and what the impact is. Answers come from Runtime evidence and source code, and are saved in the same private thread history as Dashboard Ask |
 | `autter lineage <issue-id> [--repo <name>]` | Print the chain behind a Runtime issue: release, commit, suspect pull request, owner, suspect commits, who wrote each failing frame, and why the error was grouped. Available from Autter CLI 3.10.0. See [Investigate an issue](/runtime/investigate-issues#in-the-terminal) |
 | `autter lineage <file>:<line>` | The same as `autter blame --why <file>:<line>` |
+| `autter logs [--repo <name>] [--severity <level>] [--service <name>] [--environment <name>] [--since 1h\|7d] [--from <time>] [--to <time>] [--query <text>] [--field k=v] [--filter f:op:v] [--limit 1..200] [--json]` | Search captured Runtime errors, warnings and info events (default: last 24 hours). See [`autter logs`](/cli/more-commands#autter-logs) |
+| `autter threads [search <keywords>]` | List or search saved investigations from Dashboard Ask and `autter ask`. See [`autter threads`](/cli/more-commands#autter-threads) |
+| `autter threads show <id>` | Print one saved investigation |
+
+## Repository knowledge
+
+These commands read what the Autter platform knows about a repository. They need connected mode and `autter login`, except `autter mcp` and `autter dash`.
+
+| Command | Purpose |
+| --- | --- |
+| `autter context <task> [--path <file>]... [--budget 300..16000]` | What Autter knows that matters for a task, as Markdown for you or a coding agent. See [`autter context`](/cli/more-commands#autter-context) |
+| `autter memory search\|for\|show\|areas\|ledger\|skills` | Search and read the repository's shared memory, or install its memory skill. See [`autter memory`](/cli/more-commands#autter-memory) |
+| `autter mcp connect\|disconnect [--agent <name>] [--dry-run]` | Add Autter's MCP server to installed coding agents, or remove it. See [`autter mcp`](/cli/more-commands#autter-mcp) |
+| `autter dash [--repo <repo>] [--org <slug>] [--no-open]` | Open the Autter page for the current repository or organization (alias: `dashboard`). See [`autter dash`](/cli/more-commands#autter-dash) |
 
 ## Setup and account commands
 
@@ -41,8 +58,12 @@ These commands read Autter Runtime data for your organization. Sign in with `aut
 | `autter login --token <token>` | PAT fallback when the browser flow cannot complete |
 | `autter whoami` | Show authentication state and identity |
 | `autter logout` | Clear stored credentials |
-| `autter install-hooks` | Install or refresh coding-agent integrations |
-| `autter uninstall-hooks` | Remove Autter integrations from detected tools |
+| `autter install-hooks` (alias `install`) | Install or refresh coding-agent integrations |
+| `autter install-hooks --system` | Also write the global git trace2 config and start the background service. `autter onboard` does this after asking you |
+| `autter install-hooks --skills` | Also install agent skill files |
+| `autter install-hooks --dry-run` | Show what would change without changing anything |
+| `autter uninstall-hooks [--dry-run]` | Remove Autter hooks and the editor extensions it installed from detected tools. Leaves git trace2 config and the background service |
+| `autter uninstall [--dry-run]` | Remove hooks and editor extensions, clear the global git trace2 settings and stop the background service. Asks first at a terminal; pass `--yes` in scripts. It does not delete the binary or the PATH entry. See [Uninstall](/cli/install#uninstall) |
 
 ## Configuration and maintenance
 
@@ -61,6 +82,9 @@ These commands read Autter Runtime data for your organization. Sign in with `aut
 | `autter bg restart` | Restart the background service |
 | `autter bg shutdown` | Stop the background service |
 | `autter bg tail -f` | Follow background-service logs |
+| `autter sync status\|purge --force\|import --yes\|retry\|open` | Check upload health and manage the local upload queues. See [`autter sync`](/cli/more-commands#autter-sync) |
+| `autter telemetry status\|log\|on\|off` | Check or change anonymous telemetry (off until you opt in) and read the local audit log of what was sent. See [`autter telemetry`](/cli/more-commands#autter-telemetry) |
+| `autter verify [<rev\|range>] [--strict]` | Check that authorship notes belong to their commits; exits 5 on failure. See [`autter verify`](/cli/more-commands#autter-verify) |
 | `autter upgrade` | Install the latest release |
 | `autter version` | Print the installed version |
 
@@ -71,7 +95,18 @@ These commands read Autter Runtime data for your organization. Sign in with `aut
 | `autter fetch-notes [remote]` | Fetch authorship notes from a Git remote |
 | `autter notes migrate` | Upload existing Git notes to a configured HTTP notes backend |
 | `autter squash-authorship ...` | Generate attribution for squashed commits |
-| `autter ci ...` | Run SCM-specific CI helpers |
+| `autter ci ...` | Run SCM-specific CI helpers; see [CI](#ci) |
+
+## CI
+
+Squash and rebase merges on GitHub or GitLab create new commits. These helpers rewrite authorship notes onto them in CI so attribution survives the merge.
+
+| Command | Purpose |
+| --- | --- |
+| `autter ci github install` | Write `.github/workflows/autter.yaml` in the current repository |
+| `autter ci github run [--no-cleanup]` | Rewrite authorship notes for the pull request event inside GitHub Actions (the workflow runs this) |
+| `autter ci gitlab install` | Print a snippet to add to `.gitlab-ci.yml`. Writes no files |
+| `autter ci gitlab run [--no-cleanup]` | Rewrite authorship notes inside GitLab CI |
 
 ## Agent integration command
 

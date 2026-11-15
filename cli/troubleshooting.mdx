@@ -119,13 +119,14 @@ autter config prompt_storage
 autter whoami
 ```
 
-Return to local-only mode and disable open source error telemetry:
+Return to local-only mode:
 
 ```bash
 autter logout
 autter onboard --local --force
-autter config set telemetry_oss off
 ```
+
+Anonymous telemetry is separate from the mode and is off unless you opted in. Check it with `autter telemetry status`, and turn it off with `autter telemetry off`.
 
 ## Attribution is missing after a rename
 

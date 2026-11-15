@@ -1,0 +1,357 @@
+---
+title: "More CLI commands"
+description: "Query Runtime logs and saved threads, read repository memory, check upload health and telemetry, share attribution, and verify authorship notes."
+icon: "terminal"
+---
+
+This page covers Autter CLI commands that are not part of the daily attribution workflow. For the full list, see the [CLI command reference](/cli/command-reference) or run `autter help <command>`.
+
+Most commands accept `--json` for scripts and coding agents. Commands that call the Autter platform accept `--org <slug>` to use another organization you belong to.
+
+<Note>
+  Every command on this page runs without a coding agent installed, except `autter mcp connect`, which configures the coding agents it finds. `autter badge`, `autter wrapped`, `autter verify` and `autter file-changes` read attribution data that coding agent integrations recorded earlier, so their output is empty until that data exists.
+</Note>
+
+## Runtime logs and threads
+
+These commands read Autter Runtime data for your organization. Sign in with `autter login` first. They exit `2` on a usage error and `1` when the request fails, for example when you are not signed in.
+
+### `autter logs`
+
+Search captured Runtime errors, warnings and info events in a readable table.
+
+```bash
+autter logs [--repo <name>] [--severity <level>] [--service <name>] [--environment <name>]
+            [--since <duration>] [--from <ISO date>] [--to <ISO date>] [--query <text>]
+            [--field <field>=<value>] [--filter <field>:<operator>:<value>] [--limit <n>]
+            [--org <slug>] [--json]
+```
+
+| Flag | Description |
+| --- | --- |
+| `--repo <name>` | Only events from this repository |
+| `--severity <level>` | Only events at this severity {/* TODO: confirm the accepted severity values (error, warning, info?) */} |
+| `--service <name>` | Only events from this service |
+| `--environment <name>` | Only events from this environment |
+| `--since <duration>` | Relative window in minutes, hours or days, such as `30m`, `1h` or `7d`. Maximum `90d`. Default: the last 24 hours |
+| `--from`, `--to` | Absolute window as ISO dates |
+| `--query <text>` | Search event messages |
+| `--field <field>=<value>` | Match a field exactly. Use `attributes.<name>` for custom fields |
+| `--filter <field>:<operator>:<value>` | Compare a field. Operators: `eq`, `neq`, `contains`, `gt`, `gte`, `lt`, `lte`, `exists` (`exists` takes no value) |
+| `--limit <n>` | Events to return, from `1` to `200`. Default: `50` |
+| `--json` | Full events, including occurrence IDs, traces and custom fields |
+
+Repeat `--field` or `--filter` to combine filters with AND. The table shows timestamp (UTC), severity, service, environment and message, and shortens long cells.
+
+```bash
+autter logs --repo checkout --severity error --service api --since 1h
+autter logs --repo checkout --field attributes.http.request.method=POST --filter status_code:gte:500
+```
+
+### `autter threads`
+
+Search and read your saved debugging investigations from Dashboard Ask and `autter ask`.
+
+```bash
+autter threads [search <keywords>] [--repo <name>] [--offset <n>] [--org <slug>] [--json]
+autter threads show <id> [--org <slug>] [--json]
+```
+
+| Flag | Description |
+| --- | --- |
+| `search <keywords>` | Search questions and answers. Without keywords, lists your threads |
+| `show <id>` | Print one thread's messages |
+| `--repo <name>` | Only threads about this repository |
+| `--offset <n>` | Skip the first `n` threads. Each page lists 50 |
+
+Threads are private to your account in the selected organization. Resume one with `autter ask <question> --thread <id>`.
+
+```bash
+autter threads search "connection pool"
+autter threads show <thread-id>
+```
+
+See [Investigate an issue](/runtime/investigate-issues) for `autter ask` and `autter lineage`.
+
+## Repository knowledge
+
+`autter memory` and `autter context` read the repository's memory from the Autter platform. They need connected mode and `autter login`. They send nothing in local-only mode, or for a repository excluded from prompt sharing (`exclude_prompts_in_repositories`). The repository is your checkout's default remote unless you pass `--repo <remote|owner/repo>`.
+
+### `autter context`
+
+Get what Autter knows that matters for one task, ranked and cut to a token budget, as Markdown for a coding agent to read.
+
+```bash
+autter context <task> [--path <file>]... [--symbol <name>]... [--budget <tokens>]
+               [--include memory,wiki,code] [--since <cursor>]
+               [--repo <remote|owner/repo>] [--org <slug>] [--json]
+```
+
+| Flag | Description |
+| --- | --- |
+| `<task>` | What you are about to do, 3 to 2,000 characters |
+| `--path <file>` | A file the task is about. Repeat up to 20 times. Default: the files changed in your checkout |
+| `--symbol <name>` | A function, class or type the task is about. Repeat up to 20 times |
+| `--budget <tokens>` | Tokens of context to return, from `300` to `16000`. Default: the server's |
+| `--include <stores>` | Only these stores, comma-separated: `memory`, `wiki`, `code` |
+| `--since <cursor>` | The cursor a previous call printed. Leaves out items already returned and unchanged |
+| `--json` | The raw response |
+
+Each line names its source, title and path, the memory fact ID to cite (`rmf_...`) and where to read more. It returns the same answer as the `get_context` MCP tool, for coding agents that are not connected to the Autter MCP server.
+
+```bash
+autter context "add retry with backoff to the payment webhook" --path src/webhooks/payment.ts
+```
+
+### `autter memory`
+
+Search and read the repository's shared memory.
+
+```bash
+autter memory search <question> [--path <file|dir>]... [--kind <kind>]... [--limit <n>]
+autter memory for [<file>...]
+autter memory show [<page>]
+autter memory areas
+autter memory ledger
+autter memory skills install [--force] [--print]
+autter memory skills preview
+```
+
+Every subcommand also accepts `--repo <remote|owner/repo>`, `--org <slug>` and `--json`.
+
+| Subcommand | Description |
+| --- | --- |
+| `search <question>` | Rank memory pages, learnings, production lessons, team rules, past review and scan findings, the wiki and code by meaning |
+| `for [<file>...]` | Print the area pages covering these files, most specific first, then the matching what-works ledger lines. Default: the files changed in your checkout. Up to 20 files |
+| `show [<page>]` | Print the memory home page, its areas and pages, or one page |
+| `areas` | List the area pages and the part of the codebase each covers |
+| `ledger` | Print what worked, what didn't, and what the team waves off |
+| `skills install` | Write the repository's memory skill to `.agents/skills/autter-repo-memory/SKILL.md` and a Cursor rule, so teammates get it from Git once you commit them |
+| `skills preview` | Print the skill files and write nothing (same as `skills install --print`) |
+
+| Flag | Description |
+| --- | --- |
+| `--path <file\|dir>` | `search` only: keep results about these files, plus repository-wide knowledge |
+| `--kind <kind>` | `search` only: narrow the sources. Repeat or comma-separate: `repo_memory`, `learnings`, `lessons`, `rules`, `memory`, `repo_context`, `review_findings`, `scan_findings`, `docs`, `incidents`, `pr_summaries`, `tickets`, `code`, `symbols` |
+| `--limit <n>` | `search` only: results to return, from `1` to `30` |
+| `--force` | `skills install` only: also replace files Autter did not write. Without it, only files with `autter_generated: true` in their frontmatter are replaced |
+
+```bash
+autter memory search "why do we retry webhooks twice" --kind rules,lessons
+autter memory for src/webhooks/payment.ts
+```
+
+### `autter mcp`
+
+Add Autter's MCP server to the coding agents on your machine, or remove it.
+
+```bash
+autter mcp connect [--agent <name>]... [--dry-run] [--json]
+autter mcp disconnect [--agent <name>]... [--dry-run] [--json]
+```
+
+| Flag | Description |
+| --- | --- |
+| `--agent <name>` | Only this agent. Repeat or comma-separate: `claude`, `codex`, `cursor`, `vscode`, `gemini`, `opencode`. Default: all of them |
+| `--dry-run` | Show the commands and file changes without making them |
+
+`connect` adds the server as `autter` to each installed agent's user-level MCP configuration and replaces an existing `autter` entry. `disconnect` removes only the `autter` entry. Agents that are not installed are skipped, and each file is backed up next to itself (`<file>.autter-backup-<time>`) before it changes.
+
+Only the server URL is written. You don't need `autter login`: the server asks you to sign in with your Autter account (OAuth) the first time an agent uses it. The command exits `1` if any agent fails.
+
+```bash
+autter mcp connect --agent claude,cursor --dry-run
+```
+
+### `autter dash`
+
+Open the Autter page for where you are in your browser.
+
+```bash
+autter dash [--org <slug>] [--repo <owner/name|name>] [--no-open] [--json]
+```
+
+`autter dashboard` is an alias.
+
+| Flag | Description |
+| --- | --- |
+| `--org <slug>` | Look in this organization instead of your active one. Requires `autter login` |
+| `--repo <repo>` | Open this repository instead of the current one |
+| `--no-open` | Print the URL instead of opening a browser |
+| `--json` | Print `url`, `target` (`repo`, `org` or `home`), `organization`, `repository`, `repository_full_name`, `opened` and `fallback_reason` |
+
+Inside a repository connected to your organization, it opens that repository's page. Otherwise it opens the organization dashboard, and when you are signed out, the app's dashboard. One line on stderr says why it fell back.
+
+```bash
+autter dash --repo acme/api --no-open
+```
+
+## Sync and telemetry
+
+### `autter sync`
+
+Check whether authorship data is reaching the Autter platform, and manage the local upload queues.
+
+```bash
+autter sync status [--json]
+autter sync purge --force
+autter sync import --yes
+autter sync retry
+autter sync open
+```
+
+| Subcommand | Description |
+| --- | --- |
+| `status` | Show cloud sync state, whether the background service is running, pending uploads by type, and the fix for a blocked upload. `autter sync` with no subcommand does the same |
+| `purge --force` | Discard the local upload backlog without uploading it. Git notes already written to `refs/notes/ai` are not touched |
+| `import --yes` | Upload the held backlog: records queued before you connected this machine, or by an older Autter CLI. Without `--yes`, it only shows what is held |
+| `retry` | Queue usage-metrics events again that were set aside after the server failed on them every time |
+| `open` | Open the dashboard for the reported organization |
+
+`status` exits `0` when upload is off or no problem is found, and `1` when sign-in, the background service, an upload or a queue read needs attention. An empty queue does not confirm that every local change has uploaded.
+
+Held records never upload on their own. Run `autter sync purge --force` before `autter login` if you don't want historical sessions sent. `import` exits `1` in local-only mode, and `open` needs `autter login`.
+
+<Warning>
+  At a terminal, `autter sync purge` refuses to run without `--force`. In a script with no terminal, it purges without asking.
+</Warning>
+
+```bash
+autter sync status --json
+```
+
+See [Background service](/cli/background-service) and [Data and privacy](/cli/data-and-privacy).
+
+### `autter telemetry`
+
+Check or change anonymous telemetry, and read the local log of what was sent.
+
+```bash
+autter telemetry status
+autter telemetry log [-n <count> | --all]
+autter telemetry on
+autter telemetry off
+```
+
+| Subcommand | Description |
+| --- | --- |
+| `status` | Show whether telemetry is on, your random install ID and the audit log path. `autter telemetry` with no subcommand does the same |
+| `log` | Print the local audit log of data sent. Default: the last 50 entries. `-n <count>` shows more or fewer, `--all` shows everything |
+| `on`, `off` | Turn telemetry on or off. `enable` and `disable` also work |
+
+Telemetry is off until you opt in, during `autter onboard` or with `autter telemetry on`. When it is on, only anonymous data is sent: OS, CPU architecture, core count, Autter CLI version and a random install ID. The choice is stored as `telemetry_oss` in `~/.autter/config.json`, and the audit log is `~/.autter/internal/telemetry.log`. It works the same in connected mode and local-only mode, and needs no sign-in.
+
+```bash
+autter telemetry log -n 10
+```
+
+## Attribution extras
+
+### `autter badge`
+
+Print the share of the repository's added lines written by AI, with a README badge snippet that reads `AI-written | 72%`.
+
+```bash
+autter badge [--since <date|duration> | --all-time] [--ignore <pattern>] [--json] [--write [path]]
+```
+
+| Flag | Description |
+| --- | --- |
+| `--since <value>` | Count commits since a date (`2025-08-05`) or duration (`30 days ago`), anything `git log --since` accepts. Default: the last 90 days |
+| `--all-time` | Count every commit reachable from `HEAD` |
+| `--ignore <pattern>` | Also ignore files matching the pattern. Files matching `.autter-ignore` are always left out |
+| `--json` | Print the shields.io endpoint payload |
+| `--write [path]` | Also write that payload to a file shields.io can read once you commit it. Default: `.autter/badge.json` |
+
+The share counts non-merge commits on the current branch, up to 2,000. Commits without an authorship note add nothing to the share, and the output reports how many had one. The snippet is copied to your clipboard at a terminal.
+
+The command works in local-only mode and prints a static shields.io badge. When the repository is linked to Autter and you are signed in, the snippet uses a live badge served by Autter instead.
+
+```bash
+autter badge --since "30 days ago" --write
+```
+
+### `autter wrapped`
+
+Print your year of AI-assisted coding in this repository as a card made for screenshots.
+
+```bash
+autter wrapped [--year <yyyy>] [--author <email> | --all-authors] [--include-prompt-text]
+               [--json] [--no-color] [--share [--hide-repo] | --unshare <url|token>]
+```
+
+| Flag | Description |
+| --- | --- |
+| `--year <yyyy>` | Year to summarize. Default: the current year |
+| `--author <email>` | Commits by this author. Default: your Git `user.email` |
+| `--all-authors` | Every author in the repository |
+| `--include-prompt-text` | Include the first 120 characters of your longest prompt. Off by default |
+| `--json` | Print the summary as JSON |
+| `--no-color` | Plain text without ANSI colors |
+| `--share` | Publish the summary at `app.autter.dev/wrapped/<token>` with a share image, and print the link. Sharing again for the same year and repository updates the same page |
+| `--hide-repo` | With `--share`, leave the repository name off the page |
+| `--unshare <url\|token>` | Take a share page down |
+
+The card shows your AI share overall and by month, top agent and model, most-prompted file, longest prompt, longest streak and busiest weekday. Nothing leaves your machine unless you pass `--share`, which needs connected mode and `autter login`.
+
+```bash
+autter wrapped --year 2026 --share --hide-repo
+```
+
+### `autter file-changes`
+
+Show the files changed most often in this repository.
+
+```bash
+autter file-changes [--limit <n>] [--json]
+```
+
+| Flag | Description |
+| --- | --- |
+| `--limit <n>`, `-n <n>` | Number of files to show. Default: `20` |
+| `--json` | Print each file's path, change count, lines added and deleted, and last change time |
+
+Counts come from the edits Autter records as checkpoints, and are kept on your machine. {/* TODO: confirm whether checkpoints are recorded without a coding agent or editor integration installed. */} In connected mode, they also upload to your organization. The command needs no sign-in.
+
+```bash
+autter file-changes -n 10
+```
+
+## Integrity
+
+### `autter verify`
+
+Check that each commit's authorship note was written for that commit and has not changed since.
+
+```bash
+autter verify [<rev|range>] [--json] [--strict] [--no-record] [--require-record]
+```
+
+| Flag | Description |
+| --- | --- |
+| `<rev\|range>` | A commit or range such as `origin/main..HEAD`. Default: `HEAD` |
+| `--json` | One JSON document with counts and a result per commit |
+| `--strict` | Also list commits without a note, and fail notes that an older Autter CLI moved or wrote without a stamp. `AUTTER_STRICT=1` does the same |
+| `--no-record` | Don't compare notes with the server's record |
+| `--require-record` | Exit `5` when the server has no record of a note, or when the record could not be checked |
+
+`autter verify` exits `5` when any note fails, and `0` otherwise. Common statuses:
+
+| Status | Result |
+| --- | --- |
+| `verified` | Passes. Written for this commit and unchanged |
+| `legacy`, `missing` | Warning. Written before the integrity check, or no note. These pass, also with `--strict` for now |
+| `wrong_commit` | Fails. The note belongs to a different change |
+| `content_mismatch`, `range_out_of_bounds` | Fails. The note does not describe this commit's files |
+| `digest_mismatch`, `stamp_removed` | Fails. The note was changed after Autter wrote it |
+| `changed_after_recorded` | Fails. Connected mode only: the note differs from the first version the server recorded |
+
+{/* TODO: link to a full status table once the CLI's docs/scripting.md table is published in these docs. */}
+
+`autter verify` works in local-only mode, but then it is only an integrity check: someone who can rewrite a note can also rewrite its integrity record. In connected mode, with `autter login`, the server keeps every version of each note it receives, and `verify` compares each note with that record. When the record can't be read, `verify` passes or fails on the local check alone, unless you pass `--require-record`.
+
+```bash
+autter verify origin/main..HEAD --strict
+```
+
+Add this to CI next to `autter ci` to catch a note that does not belong to its commit.

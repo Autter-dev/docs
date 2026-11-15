@@ -96,6 +96,14 @@
     {
       "source": "/changelog/in-app-announcements",
       "destination": "/changelog/overview"
+    },
+    {
+      "source": "/cli/untracked",
+      "destination": "/cli/commit-stats"
+    },
+    {
+      "source": "/cli/add-your-agent",
+      "destination": "/guides/add-your-agent"
     }
   ],
   "navigation": {
@@ -176,6 +184,7 @@
               "runtime/source-maps",
               "runtime/external-sources",
               "runtime/without-npm",
+              "runtime/without-docker",
               "runtime/self-hosting"
             ]
           },
@@ -222,6 +231,7 @@
               "cli/configuration",
               "cli/data-and-privacy",
               "cli/command-reference",
+              "cli/more-commands",
               "cli/performance-faqs",
               "cli/background-service",
               "cli/troubleshooting"

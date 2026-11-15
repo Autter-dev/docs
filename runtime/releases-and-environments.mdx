@@ -70,7 +70,7 @@ Turning the release off does not stop the commit: `deployment.commit` is still s
 Other OpenTelemetry senders set both attributes themselves:
 
 ```bash
-OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.commit=${GIT_SHA},deployment.environment=production
+OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.commit=${GIT_SHA},deployment.environment.name=production
 ```
 
 ### Check what your service reports
@@ -101,15 +101,15 @@ A test suite that runs with telemetry on would otherwise report its errors as pr
 | --- | --- | --- |
 | `@autter/runtime-node`, and `@autter/runtime-next` on the server | Jest, Vitest or `node --test`, with no `environment` option and no `NODE_ENV` | Pass `environment`, or set `NODE_ENV` |
 | `autter_tracing.py` | pytest or Django's `manage.py test`, with no environment on the resource | `AUTTER_DETECT_TEST_ENV=false` or `init_tracing(detect_test_env=False)`, or set an environment on the resource |
-| Any other OpenTelemetry SDK | Not detected | Set `deployment.environment=test` in your test configuration |
+| Any other OpenTelemetry SDK | Not detected | Set `deployment.environment.name=test` in your test configuration |
 
 For a plain OpenTelemetry SDK, set it in the CI job that runs your tests:
 
 ```bash
-OTEL_RESOURCE_ATTRIBUTES=deployment.environment=test
+OTEL_RESOURCE_ATTRIBUTES=deployment.environment.name=test
 ```
 
-An environment you set always wins. In Python, an environment in `OTEL_RESOURCE_ATTRIBUTES` counts as set, so keep `deployment.environment=production` out of the environment your tests run in. The adapter logs one line when it reports `test`.
+An environment you set always wins. In Python, an environment in `OTEL_RESOURCE_ATTRIBUTES` counts as set, so keep `deployment.environment.name=production` (or the older `deployment.environment=production`) out of the environment your tests run in. The adapter logs one line when it reports `test`.
 
 <Warning>
 **This is a behaviour change.** Under a test runner, a Node service with no `environment` and no `NODE_ENV` used to report `production`. It now reports `test`.
@@ -126,7 +126,7 @@ Autter treats exactly two environment names as test environments: `test` and `te
 
 ### Autter never decides the environment from the request
 
-The environment is the resource's `deployment.environment.name` or `deployment.environment`, else `production`. Autter never changes it because of what a request says about itself: its user agent, its host or its client address.
+The environment is the resource's `deployment.environment.name` or `deployment.environment`, else `production`. `deployment.environment` is deprecated in OpenTelemetry; Autter reads both and prefers `deployment.environment.name`. Autter never changes it because of what a request says about itself: its user agent, its host or its client address.
 
 The caller controls those values. If a user agent could move an error into `test`, any caller could send that user agent and hide its errors from production views and alerts.
 

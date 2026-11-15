@@ -81,7 +81,7 @@ runtime.shutdown()` before it returns.
 - **No key.** Without `apiKey` the SDK uses `AUTTER_RUNTIME_KEY`; with
   neither, it says so at startup and sends nothing. The relay answers
   `500 {"error": "relay has no ingest key"}`.
-- **The wrong kind of key** (client or upload key on the server).
+- **The wrong kind of key** (client or upload key on the server). See [Keys and command-line tools](/runtime/introduction#keys-and-command-line-tools).
 - **The first refusal**: the first 401, 403, 404 or 400, with the ingester's
   reason, for example `refused the ingest key on /v1/traces (401: invalid
   ingest key)`.

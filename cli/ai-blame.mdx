@@ -14,9 +14,17 @@ autter blame src/services/review.ts
 
 The output follows `git blame` conventions and adds AI authorship where available. Standard `git blame` flags remain available.
 
-<Frame caption="Replace this placeholder with final terminal or editor attribution output.">
-  <img src="/images/placeholders/ai-blame.svg" alt="Placeholder for Autter AI blame showing human and Codex-authored lines" />
-</Frame>
+For a file where Codex wrote three lines, the output (piped, so without the prompt legend) looks like this:
+
+```text
+3e1a9c2 (Dana Kim <dana@example.com> 2026-11-12 14:03:26 +0000 1) export function reviewScore(findings: Finding[]): number {
+3e1a9c2 (codex                       2026-11-12 14:03:26 +0000 2)   if (findings.length === 0) return 100;
+3e1a9c2 (codex                       2026-11-12 14:03:26 +0000 3)   const weights = findings.map((f) => SEVERITY_WEIGHT[f.severity]);
+3e1a9c2 (codex                       2026-11-12 14:03:26 +0000 4)   return Math.max(0, 100 - sum(weights));
+3e1a9c2 (Dana Kim <dana@example.com> 2026-11-12 14:03:26 +0000 5) }
+```
+
+Lines a coding agent wrote show the agent in the author column; other lines show the Git author.
 
 ## Common examples
 

@@ -3,7 +3,7 @@ title: "Stack integrations"
 description: "Per-stack setup snippets for Autter Runtime — React, Node, Next.js, Python, Go, Rust, and any OpenTelemetry SDK."
 ---
 
-For existing Sentry, PostHog, Grafana/Loki, Datadog or webhook logs, use [external log sources](/runtime/external-sources). Provider connections require no application SDK or Runtime ingest key.
+For errors and logs you already send to Sentry, PostHog, Datadog, AWS, Google Cloud, Grafana/Loki, Vercel, Cloudflare Workers, Bugsnag, Rollbar, New Relic or a generic webhook, use [external log sources](/runtime/external-sources). Provider connections require no application SDK or Runtime ingest key.
 
 The application instrumentation path below uses Runtime credentials and OTLP/browser endpoints.
 
@@ -258,7 +258,7 @@ Configure it with environment variables only:
 OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp.autter.dev            # the exporter adds /v1/traces
 OTEL_EXPORTER_OTLP_HEADERS=x-autter-key=${AUTTER_RUNTIME_KEY}   # the server key
 OTEL_SERVICE_NAME=shop
-OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.environment=production
+OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.environment.name=production
 OTEL_TRACES_SAMPLER=parentbased_traceidratio
 OTEL_TRACES_SAMPLER_ARG=0.01   # 1% of healthy traces; init_tracing() still sends every error
 AUTTER_COUNT_REQUESTS=true     # count every request, so error rates are right at 1%
@@ -269,7 +269,7 @@ AUTTER_COUNT_REQUESTS=true     # count every request, so error rates are right a
 Copies of `autter_tracing.py` from Autter Runtime 1.20.0 fill in what the resource leaves out. A value you set always wins:
 
 - **Commit and release.** `deployment.commit` is the running commit from your hosting environment (`AUTTER_COMMIT`, `GITHUB_SHA`, `GIT_SHA`, `RENDER_GIT_COMMIT` and others, read from environment variables only). With no `service.version`, the release is `AUTTER_RELEASE`, else that commit, so on those platforms you can leave `service.version` out. `AUTTER_DETECT_RELEASE=false` or `init_tracing(detect_release=False)` turns the release default off. The commit is still sent.
-- **Test runs.** Under pytest or `manage.py test`, the adapter reports `deployment.environment=test` unless you set an environment yourself. Turn this off with `AUTTER_DETECT_TEST_ENV=false` or `init_tracing(detect_test_env=False)`. An environment in `OTEL_RESOURCE_ATTRIBUTES` counts as set, so keep `deployment.environment=production` out of the environment your tests run in.
+- **Test runs.** Under pytest or `manage.py test`, the adapter reports `deployment.environment=test` unless you set an environment yourself. Turn this off with `AUTTER_DETECT_TEST_ENV=false` or `init_tracing(detect_test_env=False)`. An environment in `OTEL_RESOURCE_ATTRIBUTES` counts as set, so keep `deployment.environment.name=production` (or the older `deployment.environment=production`) out of the environment your tests run in.
 
 See [Releases, commits and test runs](/runtime/releases-and-environments) for the full list of variables and what Autter does with the `test` environment. Request counts carry the same environment, commit and release as the spans.
 
@@ -333,7 +333,7 @@ Head sampling decides at a trace's first span, before anything has failed, and t
 
 ### Request counts
 
-`init_tracing()` counts every HTTP request once, sampled or not, in a delta `http.server.duration` histogram sent to `/v1/metrics`. It marks the request spans it counted so the ingester does not count them again. Without these counts, the ingester counts only the requests head sampling kept while every error arrives, so at 1% sampling a 2% error rate reads as about 200%.
+`init_tracing()` counts every HTTP request once, sampled or not, in a delta `http.server.duration` histogram sent to `/v1/metrics`. That is the older OpenTelemetry name, in milliseconds; the adapter uses it on purpose and the ingester accepts it, so you need not change anything. It marks the request spans it counted so the ingester does not count them again. Without these counts, the ingester counts only the requests head sampling kept while every error arrives, so at 1% sampling a 2% error rate reads as about 200%.
 
 Copies of `autter_tracing.py` from Autter Runtime 1.18.0 or earlier count only with `AUTTER_COUNT_REQUESTS=true` or `init_tracing(count_requests=True)`; later copies count by default. Set the variable, as in the block above, and either copy counts.
 
@@ -408,7 +408,8 @@ exp, _ := otlptracehttp.New(ctx,
         "authorization": "Bearer " + os.Getenv("AUTTER_RUNTIME_KEY"),
     }),
 )
-// resource: service.name, service.version (release), deployment.environment
+// resource: service.name, service.version (release), deployment.environment.name,
+//           service.instance.id (unique per process)
 // errors: span.RecordError(err); span.SetStatus(codes.Error, err.Error())
 ```
 
@@ -435,12 +436,12 @@ OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp.autter.dev
 OTEL_EXPORTER_OTLP_HEADERS="authorization=Bearer ${AUTTER_RUNTIME_KEY}"
 OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
 OTEL_SERVICE_NAME=payments-api
-OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.commit=${GIT_SHA},deployment.environment=production
+OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.commit=${GIT_SHA},deployment.environment.name=production,service.instance.id=${HOSTNAME}
 OTEL_TRACES_SAMPLER=parentbased_traceidratio
 OTEL_TRACES_SAMPLER_ARG=0.01
 ```
 
-`deployment.commit` (a 7 to 40 character hexadecimal SHA) lets Autter map each release to the commit it runs. In the job that runs your tests, set `deployment.environment=test` instead of `production`. See [Releases, commits and test runs](/runtime/releases-and-environments).
+`service.instance.id` must be unique per process (a host or pod name works for one process per host); Autter uses it to tell processes apart and needs it for memory and GC metrics. `@autter/runtime-node` sets it for you. `deployment.commit` (a 7 to 40 character hexadecimal SHA) lets Autter map each release to the commit it runs. In the job that runs your tests, set `deployment.environment.name=test` instead of `production`. See [Releases, commits and test runs](/runtime/releases-and-environments).
 
 <Warning>
   With a plain OpenTelemetry SDK, an error on a trace the sampler drops is not sent. At `0.01`, about 99 errors in 100 are lost. Sample at 100% (`OTEL_TRACES_SAMPLER=parentbased_always_on`), or sample in an OpenTelemetry Collector with the `tail_sampling` processor and an error policy. The `@autter/*` SDKs and Python's `init_tracing()` send every error at any rate.
@@ -463,7 +464,7 @@ Keep successful-trace sampling at ~1% (`traceSampleRate` in the `@autter/*` SDKs
 - **Python with `init_tracing()`:** errors are always sent, with the trace around them, and every request is counted ([Python](#python-django-fastapi-flask-celery)).
 - **A plain OpenTelemetry SDK:** a ratio sampler drops the errors of the traces it drops. Sample at 100%, or sample in an OpenTelemetry Collector with the `tail_sampling` processor (a `status_code = ERROR` policy plus a small `probabilistic` one) in front of the ingester.
 
-Request/usage metrics are derived server-side from spans and the `http.server.duration` histogram — no extra setup.
+Request/usage metrics are derived server-side from spans and the `http.server.request.duration` histogram (seconds) — no extra setup. The older `http.server.duration` (milliseconds) is still accepted.
 
 <Card title="No @autter/* package for your language?" icon="terminal" href="/runtime/without-npm">
   Send telemetry with just an OpenTelemetry SDK, a Collector, or a hand-rolled HTTP request.

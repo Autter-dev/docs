@@ -1,9 +1,33 @@
 ---
 title: "External log sources"
-description: "Connect repository logs from Sentry, PostHog, Grafana, Datadog or webhooks, then investigate errors and create eligible draft fixes."
+description: "Connect repository errors and logs from Sentry, PostHog, Datadog, AWS, Google Cloud, Grafana, Vercel, Cloudflare, Bugsnag, Rollbar, New Relic or a generic webhook, then investigate errors and failed builds and create eligible draft fixes."
 ---
 
-The Autter platform can ingest repository-scoped logs from Sentry, PostHog, Grafana/Loki, Datadog and generic webhooks. Configure them under **Repository → Settings → Runtime → Data sources** when this feature is enabled on your deployment.
+The Autter platform can ingest repository-scoped errors and logs from Sentry, PostHog, Datadog, AWS (CloudWatch Logs and X-Ray), Google Cloud (Error Reporting and Cloud Logging), Grafana/Loki, Vercel, Cloudflare Workers, Bugsnag, Rollbar, New Relic and a generic webhook. Configure them under **Repository → Settings → Runtime → Data sources** when this feature is enabled on your deployment.
+
+## Supported sources
+
+Each connection reads one provider project (or service, Worker or log group set) for one repository.
+
+| Source | What Autter collects | How it connects | What you need |
+| --- | --- | --- | --- |
+| Sentry | Errors with full stack traces and releases, plus issue alerts. | Polling, plus an optional Sentry integration webhook | Organization slug, project slug and an auth token with `event:read`. Add `event:write` so resolving in Autter resolves the Sentry issue. |
+| PostHog | Exception events from a project. | Polling, plus an optional webhook | Your PostHog region, then **Authorize PostHog** and choose the project. For a custom host, use a personal API key that can read the project, plus the project ID. |
+| Datadog | Error and warning logs, APM error spans and RUM errors from one connection, plus monitor webhooks. | Polling, plus optional monitor webhooks | Your Datadog site, an API key and an application key. The application key needs `logs_read_data`, plus `apm_read` for APM error spans and `rum_apps_read` for RUM errors. The log query is filled in from the repository. |
+| AWS | CloudWatch Logs errors with their stacks, plus X-Ray faults linked to their traces. X-Ray is off by default. | Polling | AWS account ID, region and log groups. An IAM role Autter assumes (recommended) or a long-term access key. See [AWS](#aws). |
+| Google Cloud | Error Reporting groups and their events, and Cloud Logging entries at `ERROR` and above. | Polling | Project ID and a service account JSON key with Error Reporting Viewer (`roles/errorreporting.viewer`) and Logs Viewer (`roles/logging.viewer`). Optionally, an Error Reporting service name and a Logging filter. |
+| Grafana | Loki warning and error logs, plus alert webhooks. Can fetch a linked Tempo trace. | Polling, plus optional alert webhooks | Loki URL, a token that can query Loki (and a username for basic auth) and a LogQL log selector. Optionally, a Tempo API URL and credentials. |
+| Vercel | Function errors and warnings, plus build logs for failed deployments. | Log drain that Autter adds to the project | Team ID (blank for a personal account), project ID or name, and an access token for the team. Log drains need a Pro or Enterprise plan. See [Vercel](#vercel). |
+| Cloudflare | Worker exceptions, errors and warnings, plus build logs for failed Workers Builds. | Polling (Workers Logs) | Account ID, Worker name and a user API token. Workers Logs must be on for the Worker. See [Cloudflare Workers](#cloudflare-workers). |
+| Bugsnag | Error events with stack traces. | Polling, plus an optional Bugsnag webhook | The 24-character project ID and a personal auth token of a user who can see the project. On-premise installs also need their Data Access API URL. |
+| Rollbar | Occurrences with stack traces. | Polling, plus an optional Rollbar webhook | The numeric project ID and a project access token with the `read` scope. |
+| New Relic | APM errors (`TransactionError`) and Browser JavaScript errors (`JavaScriptError`), queried with NRQL. | Polling | Region (US or EU), the numeric account ID, the APM or Browser application names, and a User key (starts with `NRAK-`). A license (ingest) key cannot query. |
+| Generic webhook | Errors and alerts that any service, such as CloudWatch alarms or PagerDuty, POSTs as JSON. | Webhook | Nothing from a provider. Save the connection and paste its private URL into the sending service. See [Generic webhook record](#generic-webhook-record). |
+
+{/* TODO: confirm exact permission name. PostHog personal API key: the OAuth flow requests project:read, query:read, session_recording:read, error_tracking:read and error_tracking:write; confirm a personal key needs the same scopes. */}
+{/* TODO: confirm exact permission name. Grafana: the adapter only needs "a token that can query Loki"; confirm the Grafana Cloud token scope. */}
+
+Vercel and the generic webhook are push-only. AWS, Google Cloud, Cloudflare and New Relic are polling-only. For the other sources, a webhook is optional: polling keeps running when you add one, and records that arrive both ways are stored once.
 
 ## How it works
 
@@ -14,7 +38,7 @@ Repeated deliveries and overlapping poll/webhook records are deduplicated within
 ## Setup
 
 1. Select the connected repository and open Runtime settings. Owners/admins can configure sources.
-2. Choose a provider, enter its project/service and environments, and supply read credentials through the settings form. Sentry uses organization/project slugs; PostHog uses a project ID and personal read key; Grafana uses a Loki URL/query and optional Tempo credentials; Datadog uses an API key plus an application key with logs-read access.
+2. Choose a provider, enter its project/service and environments, and supply read credentials through the settings form. [Supported sources](#supported-sources) lists what each provider needs. AWS, Vercel and Cloudflare have extra steps, described in their own sections below.
 3. Test access and inspect matching samples. Save the connection. Store the returned private webhook URL securely if using push delivery.
 4. Choose collection-only, investigation, or investigation plus draft fixes. Warning analysis is separately opt-in; high/critical is the default automatic-draft threshold. The repository's automatic-draft switch also applies.
 5. Inspect Runtime errors for stored messages, severity, stacks/trace context and RCA. Check the actual draft PR URL when a fix completes; a queued job is not a created PR.
@@ -22,6 +46,64 @@ Repeated deliveries and overlapping poll/webhook records are deduplicated within
 Polling is periodic, with a default 60-second interval plus provider delay. The new webhook route returns `202` after committing records and work. Analysis and fixes complete asynchronously. Backfilled historical records do not initiate automatic fixes. Missing stacks/source maps or insufficient code evidence produce a needs-evidence result.
 
 Recovery comes from a resolved webhook; monitor-state polling is not implemented. Project selection uses manually entered IDs/slugs. Datadog stores supplied trace context without a separate APM trace fetch; Grafana can fetch a linked Tempo trace. Disconnecting removes credentials and stops new collection while preserving retained evidence.
+
+## AWS
+
+An AWS connection reads CloudWatch Logs error lines from the log groups you list. It can also read X-Ray faults and errors.
+
+1. In **Runtime settings** → **Data sources**, choose **AWS**. Enter the account ID, the region and the log groups, one per line.
+2. Under **Authentication**, choose **Role Autter assumes**. Create an IAM role with the trust policy the form shows, then paste the role ARN. The trust policy names an external ID that is unique to the repository.
+3. Attach the permissions policy the form shows. It grants `logs:FilterLogEvents` and `logs:GetLogEvents` on the listed log groups. If you turn on X-Ray, it also grants `xray:GetTraceSummaries` and `xray:BatchGetTraces`.
+4. Click **Test access**, then save.
+
+If your Autter deployment is not set up to assume roles, the form says so. Use an access key instead: a long-term key (`AKIA…`) for an IAM user with only the same permissions policy. Temporary keys (`ASIA…`) expire and are rejected.
+
+## Vercel
+
+A Vercel connection collects errors and warnings from your project's Vercel Functions, and attaches build logs to failed deployments.
+
+1. Create an access token for the team that owns the project in Vercel → **Account Settings** → **Tokens**.
+2. In **Runtime settings** → **Data sources**, choose **Vercel**. Enter the team ID (leave it blank for a personal account), the project ID or name, and the token.
+3. Click **Test access**, then save.
+
+When you save, Autter adds a log drain to the project that delivers Function logs to your connection's private URL. Autter verifies each delivery's signature and keeps only errors and warnings for the selected environments. A `stderr` line counts as an error only when it looks like one, such as an exception or a stack trace. During analysis, Autter matches each error to the commit of the deployment that produced it.
+
+<Note>
+Log drains require a Vercel Pro or Enterprise plan. Vercel bills drain usage to your Vercel account. Rotating the connection's webhook secret re-points the drain, and disconnecting removes it.
+</Note>
+
+## Cloudflare Workers
+
+A Cloudflare connection collects exceptions, errors and warnings for one Worker, and attaches build logs to failed Workers Builds.
+
+1. Enable [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/) for the Worker. Set `observability.enabled = true` in its Wrangler config, then deploy.
+2. Create a **user** API token in the Cloudflare dashboard under **My Profile** → **API Tokens**. Grant Workers Observability: Edit, Workers Builds Configuration: Read and Workers Scripts: Read. The Workers Builds API rejects account-owned tokens.
+3. In **Runtime settings** → **Data sources**, choose **Cloudflare**. Enter your account ID, the Worker name and the token.
+4. Click **Test access**, then save. The test confirms that Workers Logs is enabled for the Worker and warns if head sampling drops some requests.
+
+Autter polls the Worker's logs on the connection's interval. Cloudflare keeps Workers Logs for a limited time, so the first import cannot reach further back than your plan's Workers Logs retention. When a log event carries a Worker version, Autter maps it to the commit of the Workers Build that produced it.
+
+{/* TODO: Confirm the exact Cloudflare dashboard permission labels for the user API token. */}
+
+## Bugsnag and Rollbar webhooks
+
+Bugsnag and Rollbar connections poll on the connection's interval. To receive errors within seconds instead, also add a webhook that points at the connection's private URL:
+
+- **Bugsnag:** open the project's **Integrations**, add a **Webhook** with the URL and turn on the exception notifications.
+- **Rollbar:** open **Project settings** → **Notifications**, add a **Webhook** with the URL and enable its occurrence rules.
+
+These webhooks are not signed, so treat the private URL as a secret.
+
+## Build and deployment failures
+
+Failed builds on Vercel and Cloudflare Workers Builds appear as CI/CD incidents in Runtime:
+
+- **Vercel:** Vercel's GitHub integration reports each deployment to GitHub. When a deployment outside a preview environment fails and the repository has a Vercel connection, the incident includes the deployment's build log.
+- **Workers Builds:** Cloudflare reports each build as a `Workers Builds: <worker>` check on the commit. A failed build on the default branch opens an incident. The next successful build resolves it. The incident includes the build log when the repository has a Cloudflare connection.
+
+Autter classifies a build log the same way it classifies a failed CI run: type errors, test failures, dependency problems, build errors and lint. It also recognizes platform configuration errors, such as an invalid `wrangler.toml` or `vercel.json`, platform size or time limits, and missing environment variables or secrets. A missing secret never produces a draft fix, because the fix belongs in the platform's project settings. A platform or network failure also raises no draft fix; redeploy instead. Without a readable build log, the incident links to the platform's log and no draft fix is raised.
+
+Preview and pull request builds do not open incidents.
 
 ## Generic webhook record
 
@@ -54,10 +136,16 @@ The **RCA and draft fixes** mode also requires the repository's automatic-fixes 
 Warnings remain visible even when warning analysis is disabled. Unknown severity does not become a high-priority issue automatically. An individual warning/error log does not necessarily open an incident.
 
 - **No records:** inspect the provider project, service/environment filter and last successful collection. A read with zero samples does not confirm that your filters match traffic.
-- **Access denied:** check token type and read scopes. PostHog needs a personal read key; its browser project key cannot read events.
+- **Access denied:** check token type and read scopes. PostHog needs OAuth authorization or a personal API key; its browser project key cannot read events.
 - **Needs evidence:** supply source-mapped frames or usable stack traces and release identity. A trace ID alone is insufficient for a code fix.
 - **Fix deferred or skipped:** inspect the severity threshold, repository switch, connection mode, resolution state and organization budget.
 - **Disconnected source:** retained records and analysis remain visible, while collection stops.
+- **Vercel drain not created:** check that the team uses a Pro or Enterprise plan and that the token can access the team and project.
+- **Cloudflare test fails:** enable Workers Logs for the Worker and use a user API token, not an account API token.
+- **AWS role not assumed:** check that the role's trust policy names Autter's principal and the repository's external ID from the form.
+- **Bugsnag refuses API access:** the Bugsnag organization's plan may not include Data Access API access.
+- **New Relic key rejected:** use a User key (`NRAK-…`) and the account's region. A license key cannot query.
+- **Build incident without a log:** connect the platform under **Runtime settings** → **Data sources** so Autter can read the build log.
 
 ## Migrate an existing organization connection
 
