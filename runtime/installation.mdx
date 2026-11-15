@@ -86,7 +86,7 @@ Minified browser bundles report positions like `/assets/index-4f3c.js:1:58213`. 
 
 ## Enable endpoint regression telemetry
 
-Reuse existing SDK initialization and pass the options only once. Set `release` to the deployed commit SHA and use the actual deployment environment. The backend example opts into bounded slow-request retention; the SDK default is off. For Next.js, pass `retainTracesAboveMs: 2000` to the existing `registerAutter` call.
+Reuse existing SDK initialization and pass the options only once. Set `release` to the deployed commit SHA, or leave it out from `@autter/runtime-node` 1.16.0 so the SDK reports the running commit ([Releases, commits and test runs](/runtime/releases-and-environments)). Use the actual deployment environment. The backend example opts into bounded slow-request retention; the SDK default is off. For Next.js, pass `retainTracesAboveMs: 2000` to the existing `registerAutter` call.
 
 The platform rollout does not change installed SDK settings. Self-hosted ingesters need the versions in the [compatibility table](/runtime/compatibility). See [Endpoint regressions](/runtime/endpoint-regressions) for request histogram requirements, trace comparison, team feedback, and draft fix review.
 

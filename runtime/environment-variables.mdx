@@ -9,8 +9,12 @@ description: "Configuration reference for the Autter Runtime SDKs and the self-h
 | --- | --- | --- |
 | `AUTTER_RUNTIME_KEY` | `@autter/runtime-node`, any OTel SDK | Secret **server key** (`autter_rt_…`). Passed as `apiKey` to `initAutterServer` / `createBrowserRelayHandler`, or as the `Authorization: Bearer` header for a raw OTLP exporter. |
 | `AUTTER_ENDPOINT` | `@autter/runtime-node` | Base URL of your ingester. Defaults to Autter's hosted endpoint (`https://otlp.autter.dev`) if unset. |
-| `GIT_SHA` | any | Convention used in the docs and examples for the `release` field — wire it to your build's git commit so regressions can be traced to a release. |
-| `NODE_ENV` | `@autter/runtime-node` | Commonly passed through as `environment`. |
+| `AUTTER_RELEASE` | `@autter/runtime-node` 1.16.0+, Python `autter_tracing.py` (Runtime 1.20.0+), `@autter/runtime-cli` 1.4.0+ | The release to report when you pass none (`release` in Node, `service.version` in Python). Also the default release for source map uploads without `--release`. Set it where the app builds and where it runs. |
+| `AUTTER_COMMIT` | `@autter/runtime-node` 1.16.0+, Python `autter_tracing.py` (Runtime 1.20.0+), `@autter/runtime-cli` 1.4.0+ | The running commit, 7 to 40 hexadecimal characters. It is the first of the commit variables the SDKs read; the others are `GITHUB_SHA`, `VERCEL_GIT_COMMIT_SHA`, `CF_PAGES_COMMIT_SHA`, `GIT_SHA`, `GIT_COMMIT`, `COMMIT_SHA`, `SOURCE_COMMIT`, `RENDER_GIT_COMMIT`, `RAILWAY_GIT_COMMIT_SHA`, `HEROKU_SLUG_COMMIT` and `SOURCE_VERSION`, in that order. The commit is sent as `deployment.commit` and, with no release set, is the release. See [Releases, commits and test runs](/runtime/releases-and-environments). |
+| `GIT_SHA` | any | One of the commit variables above. The docs and examples also use it for an explicit `release`. |
+| `AUTTER_DETECT_RELEASE` | `@autter/runtime-node` 1.16.0+, Python `autter_tracing.py` (Runtime 1.20.0+) | `false` reports no release when you set none. `deployment.commit` is still sent. Same as `release: false` in Node and `init_tracing(detect_release=False)` in Python. |
+| `AUTTER_DETECT_TEST_ENV` | Python `autter_tracing.py` (Runtime 1.20.0+) | `false` stops `init_tracing()` from reporting `deployment.environment=test` under pytest or `manage.py test`. Same as `init_tracing(detect_test_env=False)`. |
+| `NODE_ENV` | `@autter/runtime-node` | The default `environment`. With neither `environment` nor `NODE_ENV`, the SDK reports `test` under Jest, Vitest or `node --test` (1.16.0+), else `production`. |
 | `AUTTER_COUNT_REQUESTS` | Python `autter_tracing.py` | `true` makes `init_tracing()` count every HTTP request, so error rates are right at any sampling rate; `false` turns counting off. Copies from Autter Runtime 1.18.0 or earlier count only when it is `true`; later copies count unless it is `false`. See [Python request counts](/runtime/integrations#request-counts). |
 
 Frontend equivalents are passed directly to `initAutterBrowser({...})` rather than read from `process.env` (bundlers don't expose server env vars to the browser by default) — for example `import.meta.env.VITE_GIT_SHA` for `release`.
@@ -19,7 +23,7 @@ Frontend equivalents are passed directly to `initAutterBrowser({...})` rather th
 
 These are JavaScript options for `initAutterServer` and Next.js `registerAutter`, not additional environment variables.
 
-- `release`: set this to the deployed commit SHA. `GIT_SHA` is a convention that your build must supply.
+- `release`: the deployed commit SHA. From `@autter/runtime-node` 1.16.0 you can leave it out, and the SDK reports `AUTTER_RELEASE` or the running commit.
 - `environment`: use the actual deployment environment and keep its name stable.
 - `retainTracesAboveMs`: a positive duration in milliseconds opts into bounded retention of slow successful server traces in the local process. Use `2000` as a starting example, not a universal threshold. Zero or omission leaves this retention off. Check export volume after enabling it.
 - `instrumentations`: add required database or dependency instrumentation to the existing initialization. Do not create a second SDK.

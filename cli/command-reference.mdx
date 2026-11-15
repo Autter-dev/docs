@@ -19,6 +19,16 @@ Run `autter help` for the command list installed on your machine.
 | `autter show <revision-or-range>` | Display formatted authorship logs |
 | `autter show-prompt <id>` | Print a prompt record as JSON. Takes the short reference from `blame`, a session ID, a unique prefix or the agent's session ID. See [AI blame](/cli/ai-blame#from-a-line-to-the-prompt-that-wrote-it) |
 
+## Runtime investigation
+
+These commands read Autter Runtime data for your organization. Sign in with `autter login` first. `--org <slug>` picks another organization you belong to, and `--json` prints the full response.
+
+| Command | Purpose |
+| --- | --- |
+| `autter ask <question> [--repo <name>] [--thread <id>] [--mode system\|codebase\|reviews]` | Ask why something happened and what the impact is. Answers come from Runtime evidence and source code, and are saved in the same private thread history as Dashboard Ask |
+| `autter lineage <issue-id> [--repo <name>]` | Print the chain behind a Runtime issue: release, commit, suspect pull request, owner, suspect commits, who wrote each failing frame, and why the error was grouped. Available from Autter CLI 3.10.0. See [Investigate an issue](/runtime/investigate-issues#in-the-terminal) |
+| `autter lineage <file>:<line>` | The same as `autter blame --why <file>:<line>` |
+
 ## Setup and account commands
 
 | Command | Purpose |

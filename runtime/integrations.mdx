@@ -71,6 +71,8 @@ initAutterBrowser({
   Direct ingest is cross-origin. Ad-blockers silently drop these requests, so expect partial data. Use the same-origin relay above whenever you can deploy a Worker or edge route.
 </Warning>
 
+To link browser errors to the server error behind them, turn on [trace propagation](#link-browser-errors-to-the-server-error-behind-them).
+
 React render errors: wrap with `<AutterErrorBoundary>` (from `@autter/runtime-next/client`, works in any React app). Vue/Svelte/Angular: call `captureException(err)` from the framework's error hook (`app.config.errorHandler`, `handleError`, `ErrorHandler`).
 
 ## Node.js (Express, Fastify, Koa, NestJS)
@@ -85,9 +87,10 @@ const { initAutterServer } = require("@autter/runtime-node");
 initAutterServer({
   apiKey: process.env.AUTTER_RUNTIME_KEY,
   service: "payments-api",
-  release: process.env.GIT_SHA,
 });
 ```
+
+From `@autter/runtime-node` 1.16.0 you don't need to pass `release`. With no `release`, the SDK reports `AUTTER_RELEASE`, else the running commit from your hosting environment (`GITHUB_SHA`, `VERCEL_GIT_COMMIT_SHA`, `GIT_SHA`, `RENDER_GIT_COMMIT` and others), as the release and as `deployment.commit`. `release: false` or `AUTTER_DETECT_RELEASE=false` reports no release. With no `environment` and no `NODE_ENV`, it reports `test` under Jest, Vitest or `node --test`, else `production`. See [Releases, commits and test runs](/runtime/releases-and-environments).
 
 Request ids and error hooks:
 
@@ -137,6 +140,100 @@ Server initialization, relay and operation logging use
 `@autter/runtime-next/client`. Logging operations require Node, not edge.
 See the [Next.js logging example](/runtime/operation-logging#nextjs).
 
+From `@autter/runtime-next` 1.11.0, the client tracker sends a `traceparent` on same-origin requests by default, so browser errors link to the server request behind them. See [Link browser errors to the server error behind them](#link-browser-errors-to-the-server-error-behind-them).
+
+## Link browser errors to the server error behind them
+
+When the browser tracker adds a W3C `traceparent` header to your app's requests, your server continues that trace. A browser error then links to the server trace, and the server error, of the same request. In the dashboard, the browser issue shows **Root cause (same request)** and the server issue shows **Seen by users as**. See [Investigate an issue](/runtime/investigate-issues#browser-and-server-errors-of-the-same-request).
+
+`@autter/runtime-node`, `@autter/runtime-next` and OpenTelemetry's HTTP instrumentation continue the trace with no setup.
+
+### Next.js: on by default
+
+From `@autter/runtime-next` 1.11.0, `initAutterBrowser` from `@autter/runtime-next/client` adds a `traceparent` to same-origin `fetch` and XHR requests, such as your route handlers and server actions. This is a behaviour change: earlier versions sent the header only after you called `enableTracePropagation()`.
+
+```tsx
+"use client";
+import { initAutterBrowser } from "@autter/runtime-next/client";
+
+initAutterBrowser({
+  endpoint: "/api/autter-runtime",
+  service: "web-app",
+  // Optional: a cross-origin API you control. It must allow the header in CORS.
+  tracePropagationTargets: ["https://api.example.com/"],
+});
+```
+
+- Turn it off with `tracePropagation: false`.
+- `tracePropagationTargets` adds cross-origin APIs you control. They must allow the header in CORS: `Access-Control-Allow-Headers: traceparent`. See [below](#apis-on-another-origin-cors).
+- A third-party origin never gets the header and sees no new CORS preflight. The tracker's own endpoint never gets one either.
+- `fetch` is traced through the tracker's network observer, so `captureNetworkFailures: false` turns it off for `fetch`. XHR keeps it.
+- The client bundle grows by about 0.6 KB brotlied. Nothing changes during server rendering.
+
+<Warning>
+If your Next.js app imports `enableTracePropagation` from `@autter/runtime-browser/tracing` and calls it before `initAutterBrowser`, its targets are now replaced by the default (same-origin only). Import it from `@autter/runtime-next/client` instead, or pass `tracePropagationTargets` to `initAutterBrowser`.
+</Warning>
+
+### `@autter/runtime-browser`: one call
+
+Plain `@autter/runtime-browser` stays opt-in, because tracing does not fit the main tracker's size budget. Call `enableTracePropagation()` after `initAutterBrowser`:
+
+```ts
+import { initAutterBrowser } from "@autter/runtime-browser";
+import { enableTracePropagation } from "@autter/runtime-browser/tracing";
+
+initAutterBrowser({ endpoint: "/api/autter-runtime", service: "web-app" });
+enableTracePropagation();
+```
+
+Same-origin requests then carry a `traceparent`. To add an API on another origin that you control:
+
+```ts
+enableTracePropagation({ tracePropagationTargets: ["https://api.example.com/"] });
+```
+
+Browser trace propagation needs `@autter/runtime-browser` 1.6.0 or later ([compatibility table](/runtime/compatibility)).
+
+### APIs on another origin (CORS)
+
+`traceparent` is not a CORS-safelisted header. For an API on another origin, the browser sends a preflight and blocks the request unless the API allows the header. Allow your frontend's exact origins and the header.
+
+FastAPI:
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://app.example.com"],
+    allow_methods=["*"],
+    allow_headers=["traceparent", "content-type"],
+    expose_headers=["x-request-id"],
+)
+```
+
+Django, with `pip install django-cors-headers`, in `settings.py`:
+
+```python
+from corsheaders.defaults import default_headers
+
+INSTALLED_APPS = [
+    # ...your apps...
+    "corsheaders",
+]
+MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # before CommonMiddleware
+    # ...your middleware...
+]
+CORS_ALLOWED_ORIGINS = ["https://app.example.com"]
+CORS_ALLOW_HEADERS = (*default_headers, "traceparent")
+CORS_EXPOSE_HEADERS = ["x-request-id"]
+```
+
+OpenTelemetry's FastAPI and Django instrumentation continue the browser's trace with no other setup. The header is unsampled, so the parent-based sampler does not head-sample those requests. `init_tracing()` still exports the whole trace of any request that fails. Same-origin requests need none of this.
+
 ## Python (Django, FastAPI, Flask, Celery)
 
 There is no Autter package for Python. You use OpenTelemetry's SDK, its OTLP/HTTP exporter and the instrumentation for your framework, plus two files from [`adapters/python`](https://github.com/Autter-dev/autter-runtime/tree/main/adapters/python) that you copy into your project:
@@ -168,6 +265,13 @@ AUTTER_COUNT_REQUESTS=true     # count every request, so error rates are right a
 ```
 
 `authorization=Bearer%20${AUTTER_RUNTIME_KEY}` works as well: header values in `OTEL_EXPORTER_OTLP_HEADERS` are URL-encoded, and `x-autter-key` needs no space. `service.version` is the release.
+
+Copies of `autter_tracing.py` from Autter Runtime 1.20.0 fill in what the resource leaves out. A value you set always wins:
+
+- **Commit and release.** `deployment.commit` is the running commit from your hosting environment (`AUTTER_COMMIT`, `GITHUB_SHA`, `GIT_SHA`, `RENDER_GIT_COMMIT` and others, read from environment variables only). With no `service.version`, the release is `AUTTER_RELEASE`, else that commit, so on those platforms you can leave `service.version` out. `AUTTER_DETECT_RELEASE=false` or `init_tracing(detect_release=False)` turns the release default off. The commit is still sent.
+- **Test runs.** Under pytest or `manage.py test`, the adapter reports `deployment.environment=test` unless you set an environment yourself. Turn this off with `AUTTER_DETECT_TEST_ENV=false` or `init_tracing(detect_test_env=False)`. An environment in `OTEL_RESOURCE_ATTRIBUTES` counts as set, so keep `deployment.environment=production` out of the environment your tests run in.
+
+See [Releases, commits and test runs](/runtime/releases-and-environments) for the full list of variables and what Autter does with the `test` environment. Request counts carry the same environment, commit and release as the spans.
 
 Call `init_tracing()` once in each process that serves requests or runs tasks, at startup, before the framework instrumentation:
 
@@ -331,10 +435,12 @@ OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp.autter.dev
 OTEL_EXPORTER_OTLP_HEADERS="authorization=Bearer ${AUTTER_RUNTIME_KEY}"
 OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
 OTEL_SERVICE_NAME=payments-api
-OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.environment=production
+OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.commit=${GIT_SHA},deployment.environment=production
 OTEL_TRACES_SAMPLER=parentbased_traceidratio
 OTEL_TRACES_SAMPLER_ARG=0.01
 ```
+
+`deployment.commit` (a 7 to 40 character hexadecimal SHA) lets Autter map each release to the commit it runs. In the job that runs your tests, set `deployment.environment=test` instead of `production`. See [Releases, commits and test runs](/runtime/releases-and-environments).
 
 <Warning>
   With a plain OpenTelemetry SDK, an error on a trace the sampler drops is not sent. At `0.01`, about 99 errors in 100 are lost. Sample at 100% (`OTEL_TRACES_SAMPLER=parentbased_always_on`), or sample in an OpenTelemetry Collector with the `tail_sampling` processor and an error policy. The `@autter/*` SDKs and Python's `init_tracing()` send every error at any rate.
