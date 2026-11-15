@@ -1,0 +1,133 @@
+---
+title: "Releases, commits and test runs"
+description: "How the Runtime SDKs fill in the release, the running commit and the test environment, how to turn each default off, and what Autter does with test traffic."
+---
+
+Autter needs two facts about every error: which commit was running, and whether it came from production or from your test suite. From Runtime 1.20.0 the SDKs work out both on their own. You can still set them yourself, and a value you set always wins.
+
+Available from Runtime 1.20.0:
+
+- `@autter/runtime-node` 1.16.0, and `@autter/runtime-next` 1.11.0 on the server (it requires `runtime-node` 1.16.0)
+- copies of `autter_tracing.py` from Autter Runtime 1.20.0 ([Python](/runtime/integrations#python-django-fastapi-flask-celery))
+- `@autter/runtime-cli` 1.4.0, for source map uploads
+
+## You no longer need to pass `release`
+
+```js
+// instrument.cjs: no release option
+const { initAutterServer } = require("@autter/runtime-node");
+
+initAutterServer({
+  apiKey: process.env.AUTTER_RUNTIME_KEY,
+  service: "payments-api",
+});
+```
+
+With no `release` option, the Node SDK reports:
+
+1. `AUTTER_RELEASE`, if it is set;
+2. else the running commit, read from the hosting environment.
+
+The commit is the first of these variables that holds 7 to 40 hexadecimal characters:
+
+| Order | Variable | Usually set by |
+| --- | --- | --- |
+| 1 | `AUTTER_COMMIT` | You, for Autter |
+| 2 | `GITHUB_SHA` | GitHub Actions |
+| 3 | `VERCEL_GIT_COMMIT_SHA` | Vercel |
+| 4 | `CF_PAGES_COMMIT_SHA` | Cloudflare Pages |
+| 5 | `GIT_SHA` | Your build or platform |
+| 6 | `GIT_COMMIT` | Your build or platform |
+| 7 | `COMMIT_SHA` | Your build or platform |
+| 8 | `SOURCE_COMMIT` | Your build or platform |
+| 9 | `RENDER_GIT_COMMIT` | Render |
+| 10 | `RAILWAY_GIT_COMMIT_SHA` | Railway |
+| 11 | `HEROKU_SLUG_COMMIT` | Heroku |
+| 12 | `SOURCE_VERSION` | Your build or platform |
+
+- A variable that holds something else, such as a branch name or `refs/heads/main`, is skipped and the next one is tried.
+- The SDK reads environment variables only. It never runs `git`.
+- The full commit is the release, so Autter can link errors to the commit and its pull request.
+- The commit is also sent as the resource attribute `deployment.commit`, whatever the release is. `initAutterServer` and `initAutterLogging` put it on spans and on log records, so request summaries and operation summaries carry it too.
+
+The Python adapter does the same in `init_tracing()`: same variables, same order, lower-cased. With no `service.version` on the resource, the release is `AUTTER_RELEASE`, else the commit. A `deployment.commit` you set in `OTEL_RESOURCE_ATTRIBUTES` is kept, and the release defaults to it.
+
+The browser tracker cannot read your server's environment. Pass `release` to `initAutterBrowser` at build time, for example `import.meta.env.VITE_GIT_SHA`.
+
+<Warning>
+**This is a behaviour change.** A Node or Python service that set no release, and runs where one of these variables holds a commit, now reports one. That turns on release health on the **Deployments** tab and **New in this release** on the **Errors** tab for that service.
+</Warning>
+
+### Set or turn off the release
+
+| You want | Node (`initAutterServer`, `initAutterLogging`) | Python (`init_tracing`) |
+| --- | --- | --- |
+| Your own release name | `release: "2026.11.15"` or `AUTTER_RELEASE=2026.11.15` | `service.version` in `OTEL_RESOURCE_ATTRIBUTES`, or `AUTTER_RELEASE` |
+| No release at all | `release: false` or `AUTTER_DETECT_RELEASE=false` | `AUTTER_DETECT_RELEASE=false` or `init_tracing(detect_release=False)` |
+
+Turning the release off does not stop the commit: `deployment.commit` is still sent.
+
+Other OpenTelemetry senders set both attributes themselves:
+
+```bash
+OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.commit=${GIT_SHA},deployment.environment=production
+```
+
+### Check what your service reports
+
+`verify` picks the release the same way as the SDK and reports the commit it found (`commit` in `--json`):
+
+```bash
+npx @autter/runtime-node verify --service payments-api
+```
+
+See [Is my data arriving?](/runtime/delivery) for the other checks.
+
+### Source maps upload under the same release
+
+`autter-runtime sourcemaps upload` without `--release`, and the bundler plugins, now use `AUTTER_RELEASE` first. After that they read the same variables as before (`GITHUB_SHA`, `VERCEL_GIT_COMMIT_SHA`, `CF_PAGES_COMMIT_SHA`, `GIT_SHA`, any value), then a commit from the SDK's other variables, then `git rev-parse HEAD`. Existing builds upload under the same release as before, and it matches the release the SDK reports by default.
+
+If `AUTTER_COMMIT` and one of those four variables hold different commits, the SDK reports `AUTTER_COMMIT` and the upload uses the other. Set `AUTTER_RELEASE` where the app builds and where it runs to name releases yourself. See [Source maps](/runtime/source-maps).
+
+### Upgrading from an earlier SDK
+
+`enrichDeployment()` used to copy any value of these variables, up to 64 characters, into `deployment.commit`. A value that is not 7 to 40 hexadecimal characters, such as a branch or tag name, is now skipped.
+
+## Test runs report environment `test`
+
+A test suite that runs with telemetry on would otherwise report its errors as production. The SDKs now report the environment `test` when they run under a test runner and you set no environment:
+
+| Sender | Under a test runner | Turn it off |
+| --- | --- | --- |
+| `@autter/runtime-node`, and `@autter/runtime-next` on the server | Jest, Vitest or `node --test`, with no `environment` option and no `NODE_ENV` | Pass `environment`, or set `NODE_ENV` |
+| `autter_tracing.py` | pytest or Django's `manage.py test`, with no environment on the resource | `AUTTER_DETECT_TEST_ENV=false` or `init_tracing(detect_test_env=False)`, or set an environment on the resource |
+| Any other OpenTelemetry SDK | Not detected | Set `deployment.environment=test` in your test configuration |
+
+For a plain OpenTelemetry SDK, set it in the CI job that runs your tests:
+
+```bash
+OTEL_RESOURCE_ATTRIBUTES=deployment.environment=test
+```
+
+An environment you set always wins. In Python, an environment in `OTEL_RESOURCE_ATTRIBUTES` counts as set, so keep `deployment.environment=production` out of the environment your tests run in. The adapter logs one line when it reports `test`.
+
+<Warning>
+**This is a behaviour change.** Under a test runner, a Node service with no `environment` and no `NODE_ENV` used to report `production`. It now reports `test`.
+</Warning>
+
+### What Autter does with test traffic
+
+Autter treats exactly two environment names as test environments: `test` and `testing`, in any case. `staging`, `preview`, `development` and `ci` are not test environments.
+
+- **Stored, but out of the default view.** Errors from a test environment are kept. Runtime views open on **All except test**. Pick **All environments**, or pick `test` by name, in the environment selector to see them. A direct link to a test issue still opens.
+- **No incidents, pages, tickets or notifications by default.** A test-environment error never opens an incident or pages anyone. It is not analysed automatically, so it sends no new-error email. You can still analyse it from its issue page.
+- **Rules.** Alert rules, and rules that file tickets automatically, skip test environments when they have no environment filter. A rule that names `test` still fires.
+- **LLM budget.** The LLM budget alert still counts calls from tests, because they cost real money.
+
+### Autter never decides the environment from the request
+
+The environment is the resource's `deployment.environment.name` or `deployment.environment`, else `production`. Autter never changes it because of what a request says about itself: its user agent, its host or its client address.
+
+The caller controls those values. If a user agent could move an error into `test`, any caller could send that user agent and hide its errors from production views and alerts.
+
+Requests made through Starlette's or FastAPI's `TestClient` (user agent `testclient`) get `autter.test_client: true` on their server span. The Python adapter also marks Django's test `Client` when the instrumentation records the host `testserver`. This is a hint you can read on the trace. Autter never acts on it.

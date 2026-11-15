@@ -81,7 +81,7 @@ the SDK and ingester redact it.
       node --require ./instrument.cjs server.js
       ```
 
-      Reuse your existing SDK initialization if you already have one. The example opts into bounded, local slow-request trace retention. Set `GIT_SHA` to the deployed commit SHA. See [Endpoint regressions](/runtime/endpoint-regressions) for metric requirements and retention limits.
+      Reuse your existing SDK initialization if you already have one. The example opts into bounded, local slow-request trace retention. Set `GIT_SHA` to the deployed commit SHA. From `@autter/runtime-node` 1.16.0 you can leave `release` out: the SDK reports the running commit from your hosting environment ([Releases, commits and test runs](/runtime/releases-and-environments)). See [Endpoint regressions](/runtime/endpoint-regressions) for metric requirements and retention limits.
 
       This records HTTP request metrics and captures crashes and unhandled
       promise rejections. A rejection from a promise started during a request

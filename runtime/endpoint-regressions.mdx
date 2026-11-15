@@ -27,7 +27,7 @@ initAutterServer({
 
 For Next.js, pass the same options to `registerAutter` in your existing server instrumentation file. See [Installation](/runtime/installation).
 
-- Set `release` to the commit SHA that is actually deployed. Configure your build to provide `GIT_SHA`.
+- Set `release` to the commit SHA that is actually deployed. Configure your build to provide `GIT_SHA`. From `@autter/runtime-node` 1.16.0 you can leave `release` out: the SDK reports the running commit from your hosting environment ([Releases, commits and test runs](/runtime/releases-and-environments)).
 - Use the actual environment name. Keep service and environment names stable between releases.
 - Retain normal sampled traces as well as slow traces. The comparison needs both.
 - Add database or dependency instrumentation through the existing `instrumentations` option where needed. HTTP instrumentation alone does not measure all database calls or connection waits.

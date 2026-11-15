@@ -1,0 +1,184 @@
+---
+title: "Investigate an issue"
+description: "Follow a Runtime error from the browser to the server, check how current its diagnosis is, and trace an incident to the release, commit, pull request, owner and authorship behind it."
+---
+
+A Runtime issue page answers four questions: did this error start somewhere else, how current is the diagnosis, which change caused it, and who or what wrote the failing code. The incident page shows the same chain for the incident's first error. The Autter CLI prints it in your terminal.
+
+## Browser and server errors of the same request
+
+When one request fails on both sides, Runtime shows two issues: for example a `TypeError` in your API and the `HttpRequestError` the page saw. Autter now links the two:
+
+- A browser issue shows **Root cause (same request):** followed by the server issue, for example `Root cause (same request): TypeError: Cannot read properties of undefined · 6 of 25 sampled occurrences · checkout-api`.
+- The server issue shows **Seen by users as:** followed by the browser issue.
+
+Each one links to the other issue's page, also when that issue is in a connected repository. Hover the line to see what joined them: a shared trace id or a shared request id.
+
+### Linked, not merged
+
+The two issues stay separate. They are two different errors in two different places: the server issue has the stack of the code that failed, and the browser issue has what the user's page saw. Each keeps its own count, status and owner. The link is worked out when you open the page. Nothing is stored or changed.
+
+### How issues are linked
+
+- Autter reads the issue's 25 newest occurrences and looks for occurrences on the other side that carry the same trace id or request id.
+- A browser issue links only to server issues, and a server issue only to browser issues. Two server issues on the same trace are never linked.
+- Errors from a test environment are never linked to errors from other environments.
+
+A browser error carries a trace id when [trace propagation](/runtime/integrations#link-browser-errors-to-the-server-error-behind-them) is on. It is on by default in `@autter/runtime-next/client` 1.11.0. When a browser issue's occurrences carry neither a trace id nor a request id, the page says: "Turn on trace propagation to link browser errors to the server error behind them."
+
+## How current a diagnosis is
+
+Logs and traces reach Autter a few seconds after the error itself. A root-cause analysis can be written before the evidence that explains it has arrived. The analysis panel, on the issue page and the incident page, now says how current the analysis is.
+
+### The freshness line
+
+| State | What the panel says |
+| --- | --- |
+| New evidence | "Analysed 14:02. 3 occurrences, 4 spans of the analysed trace and 12 log lines arrived after this analysis. Refresh to include them." |
+| Up to date | "Analysed 14:02. Up to date as of 14:10." |
+| Cannot tell | "Analysed 14:02." followed by the reason, for example "Autter could not check the linked logs, so it can't tell whether newer evidence arrived." |
+
+Autter compares what the analysis read with what is stored now:
+
+- **Occurrences:** new occurrences of the issue.
+- **Trace spans:** new spans of the one trace the analysis read.
+- **Log lines:** log lines linked to the analysis's traces, operations or requests that arrived after it.
+
+Times are in your local time zone. Hover a time for the full timestamp. An analysis stored before this change says that Autter can't tell whether newer logs or traces arrived.
+
+### Refresh an analysis
+
+Click **Refresh** to analyse the error again with the newest evidence.
+
+- The previous analysis stays on screen under "Re-analysing with the newest evidence…" until the new one is ready.
+- If the refresh fails or finds nothing new, the previous analysis is kept as it was.
+- A refresh sends no notifications.
+- You can refresh an analysis once every 10 minutes. Until then, the panel says when you can refresh it again.
+
+**Refresh** is not offered, or is disabled with the reason, when:
+
+- the analysis is up to date;
+- Autter is already analysing the error;
+- the analysis is kept as the record of a fix, for example because a draft fix pull request was raised from it (re-run it from the incident);
+- the error was set aside as low value, or is waiting for your answer to Autter's question;
+- your plan's daily limit of error analyses has been reached. A refresh does not count toward that limit.
+
+### The first analysis waits about 20 seconds
+
+The first analysis of a new error now starts about 20 seconds after the error arrives. In that time the request's logs, request summary and trace usually land, so the first analysis can read them. The first analysis, and its notification, arrive about 20 seconds later than before.
+
+## From an incident to the code
+
+### On the issue page
+
+- **Release and commit.** The header shows the release the error ran, `rel <release>`. It links to that release on the **Deployments** tab when Autter knows the release. When the release resolves to a commit, there is also a link to the commit on GitHub.
+- **Suspect commits.** The commits most likely to have introduced the error, with their pull requests and authors. A suspect pull request links to its Autter pull request page and to GitHub. A commit written entirely by an AI agent is listed too, labelled "Written by an AI agent (Claude), no human author". It is never suggested as an owner, because no person wrote it.
+- **Owner.** The person or team assigned the issue, else the suggested owners.
+- **Who wrote the failing code.** See [below](#who-wrote-the-failing-code).
+- **Why it was grouped here.** One sentence on why the newest occurrence joined this issue, for example "Joined this issue through its root cause: it is the same error, wrapped or unwrapped." When the occurrence itself cannot be explained, the issue-level reason is shown, with why in smaller text.
+
+### On the incident page
+
+- The **Suspect PR** chip links to the Autter pull request page and to GitHub. The commit chip links to the commit on GitHub. **Correlated deployment** opens the deployment on the **Deployments** tab.
+- The **From this incident to the code** card shows the chain for the incident's first error, top to bottom: the release and its commit, the suspect commits and pull requests, the owner, and who wrote the failing code. It loads when you scroll to it, so the incident page opens no slower.
+
+### Who wrote the failing code
+
+For up to three frames of your own code in the stack, Autter says who wrote the failing line, in one sentence:
+
+| Who | Example |
+| --- | --- |
+| An AI agent | "Written by Claude Code (model claude-sonnet-4-5) in commit 3f9a2c1 · edited by a person since." |
+| A person | "Written by Sam Lee in commit 1a2b3c4." |
+| Not known | "Not known: no authorship notes cover this commit." |
+
+- **Not known is not a person.** When no authorship note covers the commit, Autter says "Not known". It never assumes a person wrote the line.
+- **AI share.** It also shows how much of the function an AI agent wrote, for example "18 of 24 lines of formatLineItem() were AI-written."
+- **Approximate line numbers.** When the file changed after the note was written, Autter matches the note's own line numbers and labels the frame "line numbers are approximate".
+- **View prompt.** This appears only when the agent's prompt was uploaded, and it opens through the same access checks as the pull request page. If you cannot see that prompt on the pull request page, you cannot see it here. When the agent is known but the prompt was not uploaded, the frame says "The prompt was not uploaded."
+- **Names only.** Autter shows a person's name, never an email address.
+- **Partial results.** Reading history can take a few seconds. If it is not finished, the panel says "Some of this could not be read yet. Reload in a moment to see the rest." and offers **Check again**.
+
+### What it needs
+
+- **Autter CLI authorship notes for the repository.** The Autter CLI writes a note for each commit, and the platform reads the notes uploaded in [connected mode](/cli/connect-platform). Commits without notes show "Not known". See [How Autter works](/cli/how-autter-works).
+- **A release that resolves to a commit.** Autter reads the code at the commit where the error first appeared, else the deployed commit. When no commit is known, it reads the default branch and says so, because that code may have changed since the error appeared. From `@autter/runtime-node` 1.16.0 and the Runtime 1.20.0 Python adapter, the SDK reports the running commit for you. See [Releases, commits and test runs](/runtime/releases-and-environments).
+- **Readable frames.** A frame in a minified bundle is skipped. [Upload source maps](/runtime/source-maps) so frames point at your source files.
+
+## In the terminal
+
+{/* TODO: Confirm Autter CLI 3.10.0 is published with `autter lineage` before merging this page. */}
+
+Available from Autter CLI 3.10.0. `autter lineage <issue-id>` prints the same chain for one issue. The issue id starts with `ri_` and is the last part of the issue page's address.
+
+```bash
+autter lineage ri_0123456789abcdef0123456789
+autter lineage ri_0123456789abcdef0123456789 --repo shop --json
+```
+
+```text
+Issue ri_0123456789abcdef0123456789: TypeError: Cannot read properties of undefined (reading 'id')
+  service checkout-api · environment production · status open · first seen 2026-11-14 09:12 UTC
+  Repository: example-org/shop
+
+Release
+  First seen in release v2.4.1
+  Commit 3f9a2c1 (from GitHub release v2.4.1)
+  https://github.com/example-org/shop/commit/3f9a2c1d4e5f60718293a4b5c6d7e8f901234567
+  Before it: release v2.4.0, commit 1a2b3c4
+
+Pull request
+  #482 Cache order lookups (from suspect commit S1)
+  https://github.com/example-org/shop/pull/482
+
+Owner
+  Assigned: Jane Doe, team payments, via CODEOWNERS: src/orders/ @example-org/payments
+
+Suspect commits
+  S1 3f9a2c1 Cache order lookups
+      by Jane Doe (@janedoe) with Claude · PR #482 · in the release window · 2026-11-13 18:00 UTC
+      Why: Changed the failing line orders.ts:42.
+  S2 9e8d7c6 Refactor order handler
+      written by Claude, no human author · in the release window
+      Why: Changed the failing function handler.
+
+Who wrote the failing code
+  src/orders.ts:42 in handler
+    Claude (model claude-opus-4-5) in commit 3f9a2c1, edited by a person since
+    Run by Jane Doe
+    Function handler (lines 30-60): 25 of 31 lines written by AI
+    Prompt: autter show-prompt s_3f9a2c1d4e5f60::t_0a1b2c3d4e5f60
+  src/db.ts:10 in query
+    Sam Lee in commit 1a2b3c4
+    Line numbers are approximate.
+  src/util.ts:5
+    Not known: no authorship notes
+
+Why this error was grouped into this issue
+  Grouped by its top frames: handler@orders.ts, query@db.ts.
+```
+
+| Option | What it does |
+| --- | --- |
+| `--repo <name>` | Find the issue only in this repository, as Autter names it |
+| `--org <slug>` | Use another organization you belong to |
+| `--json` | Print the response as JSON, for scripts |
+
+- It uses your `autter login`, like `autter ask`.
+- It never prints prompt text. For a frame whose prompt was uploaded, it prints the `autter show-prompt` command to run, and `show-prompt` applies its usual access rules.
+- A part Autter could not read prints one line saying so, and the command still exits 0. It exits 1 when you are not signed in, the issue is not in this organization or repository, or the API cannot be reached.
+- No one is shown by email address.
+
+`autter lineage <file>:<line>` explains one line of code instead. It is the same as `autter blame --why <file>:<line>`. See [AI blame](/cli/ai-blame#from-a-line-to-the-prompt-that-wrote-it).
+
+```bash
+autter lineage src/orders.ts:42
+```
+
+To ask why something happened and what it affected, use `autter ask`. It answers from Runtime evidence and source code:
+
+```bash
+autter ask "Why did checkout start returning 500s after the last deploy, and what is the impact?" --repo shop
+```
+
+See the [CLI command reference](/cli/command-reference#runtime-investigation).

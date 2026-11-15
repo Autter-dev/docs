@@ -100,7 +100,7 @@ npm install -D @autter/runtime-cli
 
 Each plugin turns on hidden source maps when you haven't configured maps, gives every bundle a debug id, uploads the maps when `AUTTER_RUNTIME_KEY` is set, and then deletes the maps it created, so they are never deployed. Without a key it changes nothing and prints one line saying so, so local builds and fork pull requests stay green.
 
-The release defaults to the commit being built (`GITHUB_SHA`, `VERCEL_GIT_COMMIT_SHA`, `CF_PAGES_COMMIT_SHA`, `GIT_SHA`, then `git rev-parse HEAD`). Debug ids match maps to the exact bundle that threw, even when the release your SDK reports differs.
+The release defaults to `AUTTER_RELEASE`, then the commit being built (`GITHUB_SHA`, `VERCEL_GIT_COMMIT_SHA`, `CF_PAGES_COMMIT_SHA`, `GIT_SHA`), then a commit in the other variables `@autter/runtime-node` reads (`AUTTER_COMMIT`, `GIT_COMMIT`, `COMMIT_SHA`, `SOURCE_COMMIT`, `RENDER_GIT_COMMIT`, `RAILWAY_GIT_COMMIT_SHA`, `HEROKU_SLUG_COMMIT`, `SOURCE_VERSION`), then `git rev-parse HEAD`. `AUTTER_RELEASE` needs `@autter/runtime-cli` 1.4.0. When the build and the running app see the same commit variable, this is the release the Node SDK reports by default, so uploads and errors line up without `--release` ([Releases, commits and test runs](/runtime/releases-and-environments#source-maps-upload-under-the-same-release)). Debug ids match maps to the exact bundle that threw, even when the release your SDK reports differs.
 
 ## 3. Verify before you deploy
 
