@@ -44,7 +44,7 @@ variables alone do not create a logs provider or bridge. See [OTLP loggers](/run
 
 ## Identifying attributes and client IPs
 
-{/* TODO: name the Runtime release (runtime-node, otlp-ingester, Python adapter versions) that ships this once it is published. */}
+Available from Runtime 1.19.0: `@autter/runtime-node` 1.15.0, `@autter/otlp-ingester` 1.17.0, and the current Python adapter. Autter cloud runs this ingester version.
 
 OpenTelemetry adds attributes that identify a person or a machine to server spans and to the resource. The Runtime SDKs and the ingester drop them by default, from span, event and link attributes, log records and resources:
 
