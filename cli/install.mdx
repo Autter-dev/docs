@@ -266,6 +266,28 @@ Use `autter upgrade --force` to reinstall the latest release.
 
 This works for every install method, including npm: the npm package is only a bootstrapper, and `autter upgrade` (or the background service's automatic update) replaces the binary in `~/.autter/bin` directly.
 
+## Uninstall
+
+1. See what will be removed:
+
+   ```bash
+   autter uninstall --dry-run
+   ```
+
+2. Remove agent hooks, the editor extensions Autter installed and the global Git `trace2` settings, and stop the background service:
+
+   ```bash
+   autter uninstall
+   ```
+
+   It asks for confirmation at a terminal. In scripts and CI, pass `--yes`.
+
+3. `autter uninstall` leaves the binary and your `PATH` in place. Remove them by hand: delete `~/.autter` (`%USERPROFILE%\.autter` on Windows), then delete the line that loads `~/.autter/env` from your shell file, or the `.autter\bin` entry from your user `PATH` on Windows. `~/.autter` also holds your configuration (`config.json`) and local prompt database (`internal/db`), so keep a copy if you may reinstall.
+
+Git notes already written to your repositories stay there; they are ordinary Git data.
+
+To remove only the agent hooks and keep everything else, run `autter uninstall-hooks` (with `--dry-run` first).
+
 ## Next steps
 
 <CardGroup cols={2}>

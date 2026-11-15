@@ -39,6 +39,19 @@ autter stats main..HEAD --json
   `human_additions + ai_additions` can exceed the raw Git additions when mixed lines count in both categories.
 </Note>
 
+## Untracked and unknown lines
+
+`autter stats` sorts every added line into one of four groups:
+
+| Label | Meaning |
+| --- | --- |
+| **AI** | A coding agent that Autter captures wrote the line |
+| **human** | A person typed the line in an editor with an Autter extension |
+| **untracked** | Autter recorded the commit, but no agent or editor extension recorded this line. Usually typed by hand in an editor Autter doesn't watch |
+| **unknown** | The commit has no Autter record at all, for example because it predates Autter or was made on a machine without it, so nothing is known about the line |
+
+Untracked and unknown lines are normal; they are not errors. `autter stats <commit>` says why a commit has no record and, when there is one, the step to take. In `--json` output both count toward `unknown_additions`, and the record status tells them apart.
+
 ## Use JSON in automation
 
 ```bash

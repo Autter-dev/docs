@@ -49,7 +49,7 @@ Connected data supports:
   Run `autter onboard --connect` to choose connected mode directly. Use `autter onboard --force` when you previously completed onboarding and want to change your choice.
 </Tip>
 
-If browser authorization fails, Autter keeps the machine in local-only mode. Your local attribution continues working. Retry later with `autter onboard --connect` or use the PAT fallback.
+If browser authorization fails, Autter keeps the machine in local-only mode. Your local attribution continues working. Retry later with `autter onboard --connect` or use the PAT fallback. A personal access token (`autter_pat_…`) is not a Runtime key; see [Keys and command-line tools](/runtime/introduction#keys-and-command-line-tools).
 
 ## Sign in again
 
@@ -84,10 +84,6 @@ Use a personal access token only if the browser flow cannot complete.
 <Warning>
   Treat the PAT like a password. Do not commit it or paste it into tickets, chat, or shared logs.
 </Warning>
-
-<Frame caption="Replace this placeholder with an approved connected dashboard screenshot.">
-  <img src="/images/placeholders/platform-dashboard.svg" alt="Placeholder for an Autter platform dashboard with AI authorship metrics" />
-</Frame>
 
 ## How connected storage works
 
