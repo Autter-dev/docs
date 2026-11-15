@@ -62,6 +62,8 @@ existing dependency range proves support. See [Operation logging](/runtime/opera
     ```
 
     ESM-only app? Use `--import` plus OpenTelemetry's loader hook — see the [`@autter/runtime-node` package README](https://github.com/Autter-dev/autter-runtime/tree/main/packages/runtime-node).
+
+    Python backend (Django, FastAPI, Flask, Celery)? Use OpenTelemetry with `init_tracing()` from two copied files: see [Python](/runtime/integrations#python-django-fastapi-flask-celery).
   </Tab>
   <Tab title="Next.js">
     ```bash
