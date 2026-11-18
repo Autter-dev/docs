@@ -25,8 +25,9 @@ Follow the features and improvements shipped across Autter. The newest release a
   - **Start from what you have**: Export a rule, check or dashboard, then import it. The export starts with the `required_providers` block.
   - **Own rate limit**: API requests are limited to 10 writes and 60 reads a minute per token, apart from MCP, and bodies can be up to 1 MB.
   - **HTTP checks**: Version 0.1.0 supports `kind = "http"` checks.
+  - **Journey checks**: A journey check replays a saved journey in a real browser against your production site, on a schedule. It opens an issue after it has passed once and then failed in a row. Terraform supports `kind = "journey"` with a `journey_id`.
 
-  Read [Config as code with Terraform](/runtime/config-as-code).
+  Read [Config as code with Terraform](/runtime/config-as-code) and [Journey checks](/runtime/synthetic-checks#journey-checks).
 </Update>
 
 <Update

@@ -8,7 +8,7 @@ The Autter Terraform provider manages your Runtime configuration as code. It cal
 It manages these resources:
 
 - `autter_alert_rule`: an alert rule in a repository.
-- `autter_synthetic_check`: a synthetic check. Version 0.1.0 supports `kind = "http"` checks only.
+- `autter_synthetic_check`: a synthetic check. It supports `http` and `journey` checks.
 - `autter_dashboard`: a Runtime dashboard.
 
 It also has two data sources, `autter_repository` and `autter_repositories`, which look up your repositories.
@@ -135,7 +135,23 @@ resource "autter_synthetic_check" "health" {
 }
 ```
 
-The provider accepts `kind = "http"` only in 0.1.0. That is also the default.
+The provider supports `kind = "http"` and `kind = "journey"`. `http` is the default.
+
+A journey check replays a saved journey in a browser. It takes a `journey_id`, and `url` is the site origin with no path. Do not set `method`, `headers`, `expected_status`, `body_contains`, `timeout_ms` or `latency_threshold_ms`. `interval_seconds` is 900, 3600, 21600 or 86400.
+
+```hcl
+resource "autter_synthetic_check" "checkout_journey" {
+  repository_id    = data.autter_repository.web.id
+  name             = "Checkout journey"
+  kind             = "journey"
+  url              = "https://app.example.com"
+  journey_id       = "JOURNEY_ID"
+  interval_seconds = 3600
+  failures_to_fire = 2
+}
+```
+
+See [Journey checks](/runtime/synthetic-checks#journey-checks).
 
 ### Dashboard
 

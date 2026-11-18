@@ -65,6 +65,10 @@ Notes per resource:
 - **Check URLs** are stored normalized. `https://example.com` reads back as `https://example.com/`.
 - **Dashboard widgets** sent without an `id` get `w1`, `w2` and so on, by position. Give every widget an id, or none.
 - **Limits.** Your plan's number of checks and fastest interval apply. Past them the API answers `422 limit_reached`.
+- **Check kinds.** A check has a `kind`, either `http` (the default) or `journey`. The kind is fixed once set. Sending a different kind for an existing check answers `400`.
+- **Journey checks.** Send `kind: "journey"`, a `journey_id` and a `url`. The `journey_id` is required for a journey check, and null or left out for an HTTP check. The `url` is the site origin, with no path. Sending `method`, `headers`, `expected_status`, `body_contains`, `timeout_ms` or `latency_threshold_ms` with a journey check answers `400`.
+- **Intervals.** `interval_seconds` is 60, 300, 900 or 3600 for an HTTP check, and 900, 3600, 21600 or 86400 for a journey check. The journey plan limits are in [Synthetic checks](/runtime/synthetic-checks#journey-checks).
+- **Check output.** A check also returns `kind`, `journey_id` and `first_passed_at`. A journey check opens no issue until `first_passed_at` is set.
 
 Example:
 
@@ -97,6 +101,7 @@ An alert rule, a synthetic check and a dashboard each have an **Export as Terraf
 
 - Each attribute is the API field of the same name.
 - A dashboard filter's list of values (`in`, `not_in`) is written as `values`, and a single value as `value`.
+- A journey check is written with `kind = "journey"`, its `journey_id` and no HTTP-only attributes. An HTTP check is written without `kind`.
 - Only the fields a PUT takes are written. Nulls and empty lists are left out.
 - A check's headers become `sensitive` variables, because their values are never returned.
 
