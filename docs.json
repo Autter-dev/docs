@@ -207,6 +207,7 @@
             "group": "Reference",
             "pages": [
               "runtime/public-api",
+              "runtime/config-as-code",
               "runtime/compatibility",
               "runtime/delivery",
               "runtime/environment-variables",

@@ -85,19 +85,31 @@ curl -X PUT "https://api.autter.dev/api/v1/repositories/acme%2Fweb/alert-rules/C
 
 Errors look like `{ "error": { "code", "message", "detail"? } }`. The message says what to change. The codes are `unauthorized`, `insufficient_scope`, `insufficient_role`, `feature_disabled`, `repository_not_found`, `not_found`, `name_conflict`, `invalid_argument`, `limit_reached`, `rate_limited` and `internal_error`.
 
-Requests share the token's MCP rate limit: 60 reads and 10 writes a minute. Past it, the API answers `429` with `Retry-After`.
+Each token has an API rate limit of 60 reads and 10 writes a minute. It is separate from the token's MCP limit. Past it, the API answers `429` with `Retry-After`.
+
+Request bodies can be up to 1 MB. A larger body is refused with `413`, and malformed JSON with `400`. Both use the code `invalid_argument`.
 
 Every PUT and DELETE is written to the organization's audit log (**Settings → Access Tokens → Activity**), with the method, resource, repository, name, status and outcome.
 
-## Export as Terraform (preview)
+## Export as Terraform
 
-An alert rule, a synthetic check and a dashboard each have an **Export as Terraform (preview)** action. It writes HCL for the resources `autter_alert_rule`, `autter_synthetic_check` and `autter_dashboard`, plus the `autter_repository` data source.
+An alert rule, a synthetic check and a dashboard each have an **Export as Terraform** action. It writes HCL that starts with the `required_providers` block for the [Autter Terraform provider](/runtime/config-as-code). It then writes the resources `autter_alert_rule`, `autter_synthetic_check` and `autter_dashboard`, plus the `autter_repository` data source.
 
 - Each attribute is the API field of the same name.
+- A dashboard filter's list of values (`in`, `not_in`) is written as `values`, and a single value as `value`.
 - Only the fields a PUT takes are written. Nulls and empty lists are left out.
 - A check's headers become `sensitive` variables, because their values are never returned.
 
 ```hcl
+terraform {
+  required_providers {
+    autter = {
+      source  = "Autter-dev/autter"
+      version = "~> 0.1"
+    }
+  }
+}
+
 data "autter_repository" "acme_web" {
   full_name = "acme/web"
 }
@@ -118,6 +130,4 @@ resource "autter_alert_rule" "checkout_errors" {
 }
 ```
 
-<Warning>
-  There is no Terraform provider yet. The export is a preview. Until a provider exists, send the same fields to the API with `PUT`.
-</Warning>
+To apply the export, see [Config as code with Terraform](/runtime/config-as-code).
