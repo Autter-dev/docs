@@ -39,6 +39,16 @@ Autter can propose concrete fixes for review findings. Before applying one:
   A suggested fix is generated code. Treat it as a proposal, not as a verified patch.
 </Warning>
 
+## Explain a term
+
+Select a word or phrase anywhere in the dashboard and Capt. Patch explains it. You get two answers: what the term means in general, and what it means in your own codebase.
+
+The codebase answer cites numbered sources. Each source opens the file at the line in Autter, and links to the same place on GitHub.
+
+The explanation also links related pages: the pull request, a Runtime issue, a scan finding, a wiki page, or an endpoint's handler. Product terms link to their docs. Only pages in your own organization are clickable.
+
+If a model is busy, Autter retries once and falls back to a second model. If both fail, you get one message with one **Try again** button. Failed tries do not count toward the per-minute limit.
+
 ## Improve the feedback
 
 - write narrow, testable [review rules](/configuration/rules)

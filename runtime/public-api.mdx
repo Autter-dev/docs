@@ -1,0 +1,123 @@
+---
+title: "Public API and Terraform export"
+description: "Manage alert rules, synthetic checks and dashboards as code with the Autter API."
+---
+
+The Autter API at `/api/v1` manages alert rules, synthetic checks and dashboards as code. Anything that speaks HTTP can call it.
+
+- Base URL: `https://api.autter.dev/api/v1`
+- OpenAPI spec: `GET /api/v1/openapi.json`. No token is needed.
+
+## Authentication
+
+Send a personal access token (**Settings → Access Tokens**) as a bearer token:
+
+```bash
+curl https://api.autter.dev/api/v1/repositories \
+  -H "Authorization: Bearer $AUTTER_TOKEN"
+```
+
+| Token | API access |
+| --- | --- |
+| No scope restrictions | Reads and writes |
+| `api:read` | Reads |
+| `api:read` and `api:write` | Reads and writes |
+| Scoped to MCP only | Refused with `insufficient_scope` |
+
+Your role also applies, as in the dashboard:
+
+| Resource | Read | Create | Change or delete |
+| --- | --- | --- | --- |
+| Alert rules | Any member | Owner, admin | Owner, admin |
+| Synthetic checks | Any member | Owner, admin | Owner, admin |
+| Dashboards | Any member | Any non-viewer | Owner, admin, or the member who created it |
+
+While their switch is off, synthetic checks and dashboards answer `403 feature_disabled`. See [Synthetic checks](/runtime/synthetic-checks) and [Dashboards](/runtime/dashboards).
+
+## Endpoints
+
+```text
+GET    /api/v1/repositories
+GET    /api/v1/repositories/{repository}/{resource}
+GET    /api/v1/repositories/{repository}/{resource}/{name}
+PUT    /api/v1/repositories/{repository}/{resource}/{name}
+DELETE /api/v1/repositories/{repository}/{resource}/{name}
+```
+
+- `{resource}` is `alert-rules`, `synthetic-checks` or `dashboards`.
+- `{repository}` is the repository's id, its full name with the slash encoded (`acme%2Fweb`), or a short name that only one repository has.
+- `{name}` is the resource's name, URL-encoded.
+- Fields are snake_case, and so are nested fields such as `filters.error_type` and `actions.in_app`.
+
+## PUT is an upsert by name
+
+- The body is the whole resource. A field you leave out takes its default. It does not keep the stored value.
+- If no resource has the name, it is created (`201`).
+- If one resource has the name, it is updated to match the body (`200`).
+- If the resource already matches, nothing is written (`200`). Applying the same body twice changes nothing.
+- A `name` in the body must equal the one in the path. To rename a resource, delete it and create it again.
+- If two or more resources already share a name, the API answers `409 name_conflict` with their ids. Rename all but one in the dashboard.
+
+Notes per resource:
+
+- **Starting resources.** The first read of a repository's alert rules or dashboards writes its starting rules and two starter dashboards. A PUT with one of their names adopts it.
+- **Check headers.** Header values are stored encrypted and never returned. A check lists `header_names`. Sending the same headers again changes nothing. Different headers, or none, replace them.
+- **Check URLs** are stored normalized. `https://example.com` reads back as `https://example.com/`.
+- **Dashboard widgets** sent without an `id` get `w1`, `w2` and so on, by position. Give every widget an id, or none.
+- **Limits.** Your plan's number of checks and fastest interval apply. Past them the API answers `422 limit_reached`.
+
+Example:
+
+```bash
+curl -X PUT "https://api.autter.dev/api/v1/repositories/acme%2Fweb/alert-rules/Checkout%20errors" \
+  -H "Authorization: Bearer $AUTTER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Checkout errors",
+    "enabled": true,
+    "triggers": ["new"],
+    "filters": { "services": ["checkout"], "assignee": "any" },
+    "actions": { "oncall": true }
+  }'
+```
+
+## Errors and rate limits
+
+Errors look like `{ "error": { "code", "message", "detail"? } }`. The message says what to change. The codes are `unauthorized`, `insufficient_scope`, `insufficient_role`, `feature_disabled`, `repository_not_found`, `not_found`, `name_conflict`, `invalid_argument`, `limit_reached`, `rate_limited` and `internal_error`.
+
+Requests share the token's MCP rate limit: 60 reads and 10 writes a minute. Past it, the API answers `429` with `Retry-After`.
+
+Every PUT and DELETE is written to the organization's audit log (**Settings → Access Tokens → Activity**), with the method, resource, repository, name, status and outcome.
+
+## Export as Terraform (preview)
+
+An alert rule, a synthetic check and a dashboard each have an **Export as Terraform (preview)** action. It writes HCL for the resources `autter_alert_rule`, `autter_synthetic_check` and `autter_dashboard`, plus the `autter_repository` data source.
+
+- Each attribute is the API field of the same name.
+- Only the fields a PUT takes are written. Nulls and empty lists are left out.
+- A check's headers become `sensitive` variables, because their values are never returned.
+
+```hcl
+data "autter_repository" "acme_web" {
+  full_name = "acme/web"
+}
+
+resource "autter_alert_rule" "checkout_errors" {
+  repository_id = data.autter_repository.acme_web.id
+  name          = "Checkout errors"
+  enabled       = true
+  triggers      = ["new"]
+  filters = {
+    services = ["checkout"]
+    assignee = "any"
+  }
+  actions = {
+    oncall           = true
+    auto_assignments = false
+  }
+}
+```
+
+<Warning>
+  There is no Terraform provider yet. The export is a preview. Until a provider exists, send the same fields to the API with `PUT`.
+</Warning>

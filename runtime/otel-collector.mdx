@@ -1,0 +1,317 @@
+---
+title: "OpenTelemetry Collector"
+description: "Send Runtime telemetry from services that already export OpenTelemetry through a collector you run."
+---
+
+Services that already export OpenTelemetry can send to Autter Runtime through an OpenTelemetry Collector you run. You do not need an Autter SDK or a direct OTLP export.
+
+The collector holds the ingest key, keeps every error, samples the rest, drops request headers and query strings, and exports OTLP/HTTP to the ingester. The same config is shown in the Runtime setup guide under **Connect your services → Set up manually → OTel Collector**.
+
+To send the same telemetry to another vendor as well, see the migration guides for [Datadog](/runtime/migrate/datadog), [New Relic](/runtime/migrate/new-relic) and [Dynatrace](/runtime/migrate/dynatrace).
+
+This page is written against ingester 1.8.0 (`@autter/runtime-node` and `@autter/runtime-next` 1.7.0). One request is one count. Errors never add requests. The ingester counts what it rejects or drops, per repository. See [Compatibility](/runtime/compatibility) for versions.
+
+## The config
+
+Save it as `otel-collector.yaml` next to the collector. It needs `otelcol-contrib`. The `span_metrics` connector and the `tail_sampling`, `filter`, `transform` and `resource` processors are not in the core build.
+
+The config is written for `otelcol-contrib` 0.161.0 and uses that release's component names. These are `span_metrics` and `otlp_http` (formerly `spanmetrics` and `otlphttp`, which 0.161.0 still loads as deprecated names) and the filter processor's `trace_conditions` and `metric_conditions` (the `traces.span` and `metrics.metric` keys are deprecated). A collector older than these names rejects the file. Keep the config you have on an older collector, or upgrade the collector and the config together.
+
+```yaml
+# Autter Runtime: OpenTelemetry Collector (contrib) config.
+# Keeps every error and LLM call, samples the rest, counts every request,
+# drops request headers and query strings, and sends OTLP/HTTP to Autter.
+#
+# AUTTER_RUNTIME_KEY: a server ingest key (autter_rt_...) of ONE repository.
+# Self-hosted ingester? Replace https://otlp.autter.dev with its URL.
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+connectors:
+  # Every server span, before sampling, becomes a delta http.server.duration
+  # histogram: the ingester's request counts and error rates stay exact.
+  span_metrics/autter:
+    namespace: http.server
+    histogram:
+      unit: ms
+      explicit:
+        buckets: [5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2500ms, 5s, 10s]
+    dimensions:
+      - name: http.route
+      - name: http.request.method
+      - name: http.response.status_code
+      - name: http.status_code
+    aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
+    metrics_flush_interval: 60s
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 20
+
+  # Fills in only what a sender left out: insert never overwrites.
+  resource/autter:
+    attributes:
+      # Legacy key on purpose: deployment.environment.name, when a sender
+      # sets it, still wins.
+      - key: deployment.environment
+        value: production
+        action: insert
+      # Shows these services as "via OTel Collector" in Autter. An Autter
+      # SDK keeps its own name.
+      - key: telemetry.distro.name
+        value: otelcol-contrib
+        action: insert
+      - key: telemetry.distro.version
+        value: "0.161.0"
+        action: insert
+
+  # Request and response headers (cookies, auth) and query strings never
+  # leave this collector.
+  transform/autter-redact:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - 'delete_matching_keys(attributes, "^http[.](request|response)[.]header[.]")'
+          - 'delete_key(attributes, "url.query")'
+          - 'replace_pattern(attributes["url.full"], "[?#].*", "") where attributes["url.full"] != nil'
+          - 'replace_pattern(attributes["http.url"], "[?#].*", "") where attributes["http.url"] != nil'
+          - 'replace_pattern(attributes["http.target"], "[?#].*", "") where attributes["http.target"] != nil'
+      - context: spanevent
+        statements:
+          - 'delete_matching_keys(attributes, "^http[.](request|response)[.]header[.]")'
+          - 'delete_key(attributes, "url.query")'
+    log_statements:
+      - context: log
+        statements:
+          - 'delete_matching_keys(attributes, "^http[.](request|response)[.]header[.]")'
+          - 'delete_key(attributes, "url.query")'
+          - 'replace_pattern(attributes["url.full"], "[?#].*", "") where attributes["url.full"] != nil'
+
+  # Only server spans feed the request counts. Autter SDKs count their own.
+  filter/autter-server-spans:
+    error_mode: ignore
+    trace_conditions:
+      - 'span.kind != SPAN_KIND_SERVER'
+      - 'IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+
+  # The counts come from span_metrics/autter; a sender's own delta HTTP
+  # duration histograms would count every request twice.
+  filter/autter-http-duration:
+    error_mode: ignore
+    metric_conditions:
+      - '(metric.name == "http.server.request.duration" or metric.name == "http.server.duration") and not IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+
+  tail_sampling/autter:
+    decision_wait: 10s
+    num_traces: 100000
+    expected_new_traces_per_sec: 100
+    policies:
+      # Errors are never sampled away (the Autter SDKs' always-on errors).
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: exceptions
+        type: ottl_condition
+        ottl_condition:
+          error_mode: ignore
+          spanevent:
+            - 'name == "exception"'
+      # LLM calls are costed per call: keep all of them.
+      - name: llm-calls
+        type: ottl_condition
+        ottl_condition:
+          error_mode: ignore
+          span:
+            - 'attributes["gen_ai.system"] != nil'
+            - 'attributes["gen_ai.operation.name"] != nil'
+      # Autter SDKs already sample and tail-retain: pass them through.
+      - name: autter-sdks
+        type: ottl_condition
+        ottl_condition:
+          error_mode: ignore
+          span:
+            - 'IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+      - name: slow
+        type: latency
+        latency:
+          threshold_ms: 2000
+      - name: baseline
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+
+  # Kept server spans are not counted again: span_metrics/autter counted them.
+  transform/autter-tail-retained:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - 'set(attributes["autter.tail_retained"], true) where kind == SPAN_KIND_SERVER and not IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+
+  # The ingester takes at most 1 MiB per request and 300 requests a minute
+  # per key. Spans past 5000 and log records past 2000 in one request come
+  # back as rejected in partial_success, which the exporter logs.
+  batch/autter:
+    send_batch_size: 256
+    send_batch_max_size: 512
+    timeout: 5s
+
+exporters:
+  otlp_http/autter:
+    endpoint: https://otlp.autter.dev
+    headers:
+      authorization: "Bearer ${env:AUTTER_RUNTIME_KEY}"
+    compression: gzip
+    retry_on_failure:
+      enabled: true
+    sending_queue:
+      enabled: true
+      queue_size: 1000
+
+service:
+  extensions: [health_check]
+  pipelines:
+    # Unsampled, only to count requests.
+    traces/autter-requests:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, filter/autter-server-spans]
+      exporters: [span_metrics/autter]
+    metrics/autter-requests:
+      receivers: [span_metrics/autter]
+      processors: [memory_limiter, batch/autter]
+      exporters: [otlp_http/autter]
+    traces/autter:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, transform/autter-redact, tail_sampling/autter, transform/autter-tail-retained, batch/autter]
+      exporters: [otlp_http/autter]
+    metrics/autter:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, filter/autter-http-duration, batch/autter]
+      exporters: [otlp_http/autter]
+    logs/autter:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, transform/autter-redact, batch/autter]
+      exporters: [otlp_http/autter]
+```
+
+Set `AUTTER_RUNTIME_KEY` to a server ingest key (`autter_rt_…`) of the repository the telemetry belongs to. If you self-host the ingester, replace `https://otlp.autter.dev` with its URL.
+
+Run the collector:
+
+```bash
+docker run -d --name otel-collector -p 4317:4317 -p 4318:4318 \
+  -e AUTTER_RUNTIME_KEY \
+  -v "$PWD/otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro" \
+  otel/opentelemetry-collector-contrib:0.161.0
+```
+
+Check the file against the collector's own config schema before you deploy it:
+
+```bash
+docker run --rm -v "$PWD/otel-collector.yaml:/cfg.yaml:ro" \
+  otel/opentelemetry-collector-contrib:0.161.0 validate --config=/cfg.yaml
+```
+
+## Point your services at the collector
+
+The key stays in the collector. Each service only needs the collector's address:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+OTEL_SERVICE_NAME=payments-api
+OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.environment.name=production
+# The collector samples. The app must not, or errors on dropped traces never arrive.
+OTEL_TRACES_SAMPLER=parentbased_always_on
+```
+
+## What each part does
+
+| Component | Why |
+| --- | --- |
+| `memory_limiter` | First in every pipeline. A burst is refused at the receiver instead of running the collector out of memory. |
+| `resource/autter` | Fills in `deployment.environment` and the collector's `telemetry.distro.*` only where the sender left them out (`insert` never overwrites). The legacy environment key is on purpose. The ingester prefers `deployment.environment.name`, so a sender's own value still wins. |
+| `transform/autter-redact` | Deletes `http.request.header.*` and `http.response.header.*` (cookies, `Authorization`) and `url.query`. It cuts the query string and fragment off `url.full`, `http.url` and `http.target`. It does this on spans, span events and logs. |
+| `span_metrics/autter` and `filter/autter-server-spans` | Every server span, before sampling, becomes a delta `http.server.duration` histogram (milliseconds) with `http.route` and the status code. The ingester folds it into the request rollup, so request counts and failed requests stay exact however hard the traces are sampled. |
+| `filter/autter-http-duration` | Drops a sender's own `http.server.request.duration` and `http.server.duration` histograms, which would count every request a second time. |
+| `tail_sampling/autter` | Keeps every trace with an `ERROR` span status, an `exception` span event, an LLM (`gen_ai.*`) span or a span over 2 seconds. It keeps every trace from an Autter SDK, and 10% of the rest. |
+| `transform/autter-tail-retained` | Marks the kept server spans `autter.tail_retained=true`, so the ingester does not count them as requests again. A kept request that failed adds its one error. |
+| `batch/autter` | 256 to 512 items per request, flushed every 5 seconds, well under the ingester's 5,000 spans and 2,000 log records per request. Last in every pipeline, after sampling. |
+| `otlp_http/autter` | OTLP/HTTP (protobuf, gzip) to `https://otlp.autter.dev` with `Authorization: Bearer <server key>`. It retries 429s and 5xx responses from a queue. |
+
+## What to set, and what never to set
+
+The Autter SDKs never sample errors away. They use an always-on tracer, and the trace around an error is kept. Spans exported that way carry `autter.tail_retained`. The ingester leaves them out of the span-fed request rollup because the SDK's request metrics already counted them. A collector gets the same result this way:
+
+- **Apps do not sample.** Use `OTEL_TRACES_SAMPLER=parentbased_always_on`. An error on a trace the app dropped never reaches the collector.
+- **Keep `span_metrics/autter` and `transform/autter-tail-retained` together.** The ingester counts one request for each request (its outermost server span) that does not carry `autter.tail_retained`. It never scales a sampled span back up. With both parts, requests are counted from every server span (the histogram) and not again from the sampled ones. If you drop the request-count pipeline, drop the tail-retained step too. Otherwise healthy requests are counted nowhere and the service shows errors with no requests. With neither, request counts follow the sample: about 10% of healthy requests and every failing one.
+- **Never set `autter.metrics_wired`.** `@autter/runtime-node` sets this resource attribute because its delta request metrics count every request it serves. Ingester 1.8.0 honors it: a kept request from such a resource is left to the metric feed. If a collector set it, a failure the histogram does not see would be counted nowhere. That includes a request with no HTTP status, such as gRPC, and a service no histogram counts.
+- **A kept server span adds no request, and a kept request that failed adds one error.** `span_metrics/autter` already counts a 5xx response as a failed request. So a 5xx request is one request and two errors. An error recorded in a request that answered under 500 (a handled exception, a 4xx recorded as an error) is one request and one error. Each request counts once. When a framework nests a server span under the HTTP one, only the outermost counts. On ingester 1.7.0, every error on a kept server span added one request and one error.
+- **One exporter and key per repository.** The key, not the payload, picks the repository. To split one collector across repositories, give each its own `otlp_http` exporter and key and route by `service.name`.
+- **Autter SDK services pass through untouched.** Their spans are already sampled, so `autter-sdks` keeps them all. They are left out of `span_metrics/autter`, the histogram filter and the tail-retained step.
+
+Without tail sampling, drop `tail_sampling/autter`, `transform/autter-tail-retained`, `span_metrics/autter`, its two pipelines and `filter/autter-http-duration`. Every server span is then counted once.
+
+## Ingester limits
+
+The batch sizes in the config follow these limits. They are the ingester 1.8.0 defaults.
+
+| Limit | Answer |
+| --- | --- |
+| Request body over 1 MiB, measured after gzip is inflated | `413`. The batch is lost. |
+| More than 2000 log records in one request | `200`. The first 2000 are stored and the rest are rejected in `partial_success`. Before 1.8.0 this was a `400` for the whole request. |
+| More than 5000 spans in one request | `200`. The first 5000 are stored and the rest are rejected in `partial_success`. Before 1.8.0 they were dropped silently. |
+| Cumulative `http.server.duration` or `http.server.request.duration` points | Rejected in `partial_success`. Only delta temporality sums. |
+| More than 128 `resourceLogs` or `scopeLogs` in one request | `400` for the whole request. |
+| More than 300 requests a minute per key | `429`. The exporter retries. |
+| A body that is neither `application/x-protobuf` nor `application/json`, or `zstd` or `br` encoding | `415`. Keep `compression: gzip`. |
+
+The collector's `otlp_http` exporter reads `partial_success` and logs a warning with the number of rejected spans, log records or data points and the ingester's message. It does not retry them. Every rejection and drop is also counted per repository and shown under Source coverage.
+
+## How Autter recognizes collector-fed services
+
+From ingester 1.8.0, the ingester records how telemetry arrived, as `via`:
+
+- `collector`: the request's User-Agent is an OpenTelemetry Collector (any distribution, ADOT, Grafana Alloy, Fluent Bit or Vector), or the distro name is an otelcol build.
+- `direct`: an SDK exporter sent it.
+- `relay`: browser events forwarded with a server key.
+
+The sender's identity is its `telemetry.distro.name` and `telemetry.distro.version`. If those are missing, it is `opentelemetry-<telemetry.sdk.language>` with `telemetry.sdk.version`.
+
+The Source coverage panel (see below) shows each service as **via OTel Collector**, **direct** or **browser relay**. A service with an Autter SDK keeps its own name behind a collector, and compatibility warnings still apply to it. A collector receiver with no SDK identity at all, such as Prometheus or file logs, still shows as via OTel Collector.
+
+On an older ingester, the panel falls back to the distro name. `resource/autter` inserts `telemetry.distro.name: otelcol-contrib` when the sender set none, so those services show as **via OTel Collector**. A service on a plain OpenTelemetry SDK sent without this processor shows as **OpenTelemetry SDK (language)**. A receiver with no SDK identity shows as **Not reported**.
+
+## Source coverage
+
+The Source coverage panel is under **Repository → Settings → Runtime**. It lists every source of the repository with a health state, a one-line reason and a fix:
+
+- **SDK services and collector or OpenTelemetry senders.** The sender, version, how the telemetry arrives, the last event, requests and errors in 24 hours, and compatibility warnings for outdated Autter SDKs.
+- **Connectors** (Sentry, PostHog, Datadog, Grafana, Vercel, Cloudflare, webhooks). Status, last error, poll lag, last record, and records accepted and dropped by scope in 24 hours, with the service or environment that was dropped.
+- **Source maps.** The last upload, and how many in-app browser frames stay unresolved in 7 days. Over 30% means you should upload source maps. See [Source maps](/runtime/source-maps).
+- **Ingester.** Version, schema level, when it last reported, and the active key prefixes.
+- **Rejected and dropped** (ingester 1.8.0). What the ingester refused or did not store for the repository in 24 hours, by route and reason, with what each reason means and its fix. It also lists keys of the repository (revoked ones included) that the ingester refused. Keys are shown by display prefix only.
+
+The rejected-and-dropped row has one of three health states:
+
+| Health | When |
+| --- | --- |
+| Failing | In the last hour, the ingester rejected requests of this repository (or sent with one of its keys, revoked ones included) with an answer exporters do not retry: 400, 401, 403, 404, 413, 415 or 500. That telemetry is lost. |
+| Lagging | In the last hour, rejections that exporters retry (429 `rate_limited`, 503 `storage_unavailable`). The data arrives late, or is lost when the exporter's queue fills. Or, in 24 hours, any rejection not in the last hour, records dropped from accepted requests (`spans_over_limit`, `log_records_over_limit`, `cumulative_histogram`, invalid browser events), or batches the sink webhook gave up on. |
+| Healthy | Nothing rejected, dropped or unforwarded in 24 hours. Truncated attribute values are listed but are not a problem. The records were stored. |
+
+On an ingester older than 1.8.0, or one without ClickHouse, the row is left out and the ingester row says why the counts are not available.

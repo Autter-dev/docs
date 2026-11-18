@@ -1,0 +1,45 @@
+---
+title: "Review your changes locally"
+description: "Run Autter's rule-based pull request checks on your changes before you open a pull request."
+---
+
+`autter review` runs the rule-based checks of Autter's pull request review on your changes, before a pull request exists. It makes no AI model calls and usually takes a few seconds. The full review, with its AI checks, runs on the pull request.
+
+The checks cover secrets, security (static, auth, rate limiting, resilience, LLM, RLS and privacy), race conditions, logging, infrastructure and CI/CD, supply chain, architecture, code health and hygiene, TODOs and UI. Your organization's review settings apply.
+
+The files you review are sent to Autter. The command needs [connected mode](/cli/connect-platform) and `autter login`.
+
+## Run a review
+
+```bash
+autter review
+```
+
+By default it reviews what a pull request from this branch would contain: everything since the merge base with the default branch, committed or not, with untracked files included. It reviews up to 60 files. Pass paths to review fewer.
+
+| Option | Purpose |
+| --- | --- |
+| `<path>...` | Only changes under these files or directories. |
+| `--base <ref>` | Compare with the merge base of this branch or commit. |
+| `--uncommitted` | Only changes that are not committed yet, compared with `HEAD`. |
+| `--write` | Also write `.autter/findings.md`. |
+| `--repo <remote\|owner/repo>` | The repository, when the remote does not identify it. |
+| `--org <slug>` | Use another organization you belong to. |
+| `--json` | Print the result as JSON, with a `local` placement for each finding. |
+
+The result is kept in `.autter/local-review.json`. `autter findings` and the VS Code extension show it next to the pull request's findings. A finding whose line you have edited since is listed as changed.
+
+## Dismiss a finding
+
+```bash
+autter review --dismiss <finding-id>
+autter review --dismiss <finding-id> --undo
+```
+
+A dismissed finding leaves `autter findings`, and the pull request's page shows it as dismissed. `--undo` restores it.
+
+Local reviews also show on the pull request. Its page lists the reviews of its branch, with each finding marked as still flagged by the pull request review, dismissed by you, or no longer flagged.
+
+## Check a pushed branch in the sandbox
+
+`autter review` looks at your local changes. To build and test a pushed branch as well, use [`autter sandbox run`](/cli/sandbox). It runs the same rule-based checks over the branch's diff, without opening a pull request.
