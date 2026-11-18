@@ -126,6 +126,7 @@
               "features/platform-overview",
               "features/code-review",
               "features/codebase-scans",
+              "features/track-findings-as-tasks",
               "features/wiki",
               "features/pipeline",
               "features/analytics",
