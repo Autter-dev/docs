@@ -1,0 +1,83 @@
+---
+title: "Track findings as tasks"
+description: "Accept a Captain Patch suggestion to turn a scan finding into a task on the Issues board, optionally filed in Jira, Linear, or GitHub."
+---
+
+Captain Patch turns scan findings into suggestions. When you accept a suggestion, it becomes a task on the repository's Issues board, and you can also file it in a connected issue tracker.
+
+## Open a suggestion from a finding
+
+Every scan finding has a **View in Captain Patch** link. It opens the repository's **Issues** tab and goes to one of three places:
+
+- The task, if the suggestion was already accepted
+- The suggestion, if it is still waiting
+- The suggestions queue
+
+The suggestions queue shows only this repository's suggestions, most severe first. It shows **Showing N of M**, and **Load more** brings in the rest.
+
+## Accept a suggestion
+
+Accepting a suggestion asks where to track it:
+
+- **Kanban board only**: the task stays in Autter.
+- **Kanban board and** a connected Jira, Linear, or GitHub tracker: the task is also filed there.
+
+The repository's main tracker is preselected. A tracker that cannot file for this repository is greyed out with the reason, for example "Map a Jira project to this repository first". Clicking **Accept** twice does nothing extra.
+
+If filing in the tracker fails, the task stays on the board and a warning says why. When the task is created, the confirmation has an **Open task** button.
+
+## What a task contains
+
+- The severity, which is also added as a label
+- The file and line
+- The evidence
+- The remediation
+- Links to the finding and to the suggestion
+
+On the board the card says **From finding**.
+
+## Slack notifications
+
+In **Settings** → **Notifications**, two Slack events cover tasks. Both are on by default.
+
+| Event | When it posts |
+| --- | --- |
+| Task created from a finding | A suggestion is accepted |
+| Task closed | A task closes, with the reason |
+
+Posts carry the severity, title, and location, with **Open task** and **View finding** links. No finding text or code is posted. See [Slack](/features/slack) for setup.
+
+## Auto-close and reopen
+
+A task closes on its own in two cases:
+
+- **A scan verifies the fix.** When the newest full scan of the default branch lists the finding as Fixed, the task closes on the board and in Jira, Linear, or GitHub, with a comment. Slack is notified.
+- **An Autter fix PR merges.** Merging a fix PR for the finding closes the task.
+
+If a later scan finds the same finding again, the task reopens once.
+
+## Jira
+
+Connect Jira from the repository's **Issues** tab, under **Connect tools**. You can connect in two ways:
+
+- **Sign in with Jira.** If Jira sign-in is not set up on your Autter server, the sheet says so. An Autter admin can turn it on, or you can use an API token.
+- **API token.** Fill in the API-token form.
+
+To file tasks in Jira, map a Jira project to the repository first.
+
+How tasks appear in Jira:
+
+- New issues use the project's Bug type, then Task if there is no Bug type.
+- Descriptions and comments keep their formatting, such as headings, lists, and code.
+- Labels with spaces work.
+- Edits to the task description reach Jira.
+
+Changes made in Jira reach Autter within about 2 minutes on connections made with Jira sign-in.
+
+### Needs reconnect
+
+If a Jira sign-in connection needs new permissions, it shows **Needs reconnect** with a **Reconnect Jira** button. Click it and approve the new permissions.
+
+### When Jira cannot close a task
+
+If the Jira project has no transition to Done, the card returns to its column and shows "Couldn't close in Jira: no transition to Done". Add a transition to Done in Jira's workflow, then move the card to Done again to retry.
