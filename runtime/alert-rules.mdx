@@ -5,7 +5,7 @@ description: "Decide who hears about a Runtime issue, and how: Slack, daily emai
 
 Alert rules decide who hears about a Runtime issue and how. Each repository has its own rules under **Repository → Settings → Runtime → Alert rules**. Owners and admins can create, change and delete rules. Any member can read them.
 
-Alert rules fire on issue events. Runtime has no metric or log-count threshold alerts. For the same signals from a URL, see [Synthetic checks](/runtime/synthetic-checks). A failing check opens a Runtime issue, and your alert rules deliver it.
+Alert rules fire on issue events. Runtime has no metric or log-count threshold alerts. For the same signals from a URL, see [Synthetic checks](/runtime/synthetic-checks). A failing check opens a Runtime issue, and your alert rules deliver it. Journey checks, which replay a saved journey in a browser, open issues the same way.
 
 ## What a rule has
 
@@ -103,4 +103,4 @@ You can edit or delete a guardrail rule like any other rule.
 
 ## Rules as code
 
-Alert rules support list, get, upsert by name and delete through the [public API](/runtime/public-api). A rule's page has an **Export as Terraform (preview)** action that writes it as HCL.
+Alert rules support list, get, upsert by name and delete through the [public API](/runtime/public-api). A rule's page has an **Export as Terraform** action that writes it as HCL.

@@ -1,17 +1,19 @@
 ---
 title: "Synthetic checks"
-description: "Request a public URL on a schedule and get an alert when it fails."
+description: "Request a public URL, or replay a saved journey in a browser, on a schedule and get an alert when it fails."
 ---
 
 A synthetic check is an HTTP request that Autter sends to a public URL on a schedule. A check fails on a wrong status, a missing piece of body text, a timeout or a slow response.
 
 After a set number of failures in a row, the check opens one Runtime issue. The first success after that resolves it. Your repository's [alert rules](/runtime/alert-rules) deliver both, and the recovery replies in the same Slack thread as the alert.
 
+A journey check replays a saved user journey in a real browser instead. See [Journey checks](#journey-checks).
+
 Synthetic checks are on by default. Owners and admins can turn them off on the Pipeline page, under **Execution stages → Runtime**.
 
 ## Add a check
 
-Open **Runtime → Checks** in the repository and add a check. Owners and admins can create, change and delete checks. Any member can read them.
+Open **Runtime → Checks** in the repository and add a check. Choose **HTTP request** for the check below, or [**Journey**](#journey-checks). The kind is fixed once the check is saved. Owners and admins can create, change and delete checks. Any member can read them.
 
 | Field | What it does |
 | --- | --- |
@@ -42,12 +44,99 @@ Changing what a check requests resets its failure streak.
 | Free | 3 | Every 5 minutes |
 | Paid | 50 | Every minute |
 
+These limits are for HTTP checks. Journey checks have their own limits, and they also count toward the total number of checks. See [Journey checks](#limits-1).
+
 Autter keeps the last 1,000 results of each check.
 
 ## Alerts
 
 A check alerts after 2 failures in a row by default. You can change that per check. The alert is a Runtime issue from the source `synthetic`. It follows your repository's [alert rules](/runtime/alert-rules), so it appears in Slack, the daily email, the in-app feed and on-call the way any other issue does.
 
+## Journey checks
+
+A journey check replays one saved journey from the repository's **Journeys** tab in a real browser against your production site, on a schedule. It catches a broken user flow that a single HTTP request cannot, such as a button that no longer works or a page that loads but never renders.
+
+A journey check makes no AI model calls, and nothing is billed per run. It runs signed out and changes nothing on your site.
+
+### Add a journey check
+
+1. Open **Runtime → Checks** in the repository and add a check.
+2. Choose **Journey**.
+3. Fill in the form.
+
+| Field | What it does |
+| --- | --- |
+| Name | The name of the check. |
+| Site | The address of your production site, with no path, for example `https://app.example.com`. |
+| Journey | The saved journey to replay. |
+| Run | Every 15 minutes, every hour, every 6 hours or every day. The default is every hour. |
+| Alert after … failures in a row | How many failures in a row open an issue. The default is 2. |
+| Service | The Runtime service the issue belongs to. The default is the site's host. |
+| Environment | The environment the issue belongs to. The default is production. |
+
+A site with a path, a query or a fragment is refused. Private, loopback and link-local addresses are refused.
+
+The journey picker lists the repository's journeys, with the ones you can use first. Each shows its goal, its start path and its number of steps. A journey that you cannot pick is greyed out, with the reason next to it. A journey is greyed out when it:
+
+- signs in or signs up,
+- writes data,
+- has no saved start path,
+- is muted,
+- is an API or CLI journey, or
+- needs one of the journeys above to run first.
+
+Journey checks run signed out, because they have no login support yet. A journey that needs a sign-in cannot be used.
+
+Autter sends the requests with the user agent `AutterSyntheticCheck/1.0`. If your site blocks unknown traffic, allow this user agent.
+
+### Limits
+
+| Plan | Journey checks | Fastest interval |
+| --- | --- | --- |
+| Free | 1 | Every hour |
+| Paid | 10 per organization | Every 15 minutes |
+
+Journey checks also count toward the total number of checks: 3 on the free plan and 50 on paid plans. The list shows how many you use, for example "Journey checks: 2 of 10".
+
+### Results
+
+Each check in the list shows a **Journey** or **HTTP** badge, what it replays, how often it runs and how many failures it waits for. The state is one of:
+
+- **Queued**: the check has not run yet.
+- **Has not passed against this URL yet**: shown in amber, with the failing step under **Last result**.
+- **Cannot run**: followed by the reason, for example that the journey is muted or was removed. Nothing alerts.
+- **Passing**.
+- **Failing**, with how many failures in a row it has had.
+- **Failing, issue open**.
+- **Paused**.
+
+Open a check to see its results. Each row shows When, Result, Time and Detail. Detail says where the run stopped, for example:
+
+- `Step 2 of 3: no button “Continue” on /pricing`
+- `After step 2 of 3: 500 on POST /api/quote`
+- `Expected the page to show “Plans”.`
+- `The page did not load: … answered 503.`
+
+A page that loads but never renders, or never responds, is a failure.
+
+A failed run has a **Screenshot** link. Password and one-time-code fields are masked in the screenshot. Any member of the repository can open it. A run that fails and then passes when replayed a second time is recorded as a pass, with the note "Passed when replayed a second time."
+
+Select **Run now** to run a check right away. The check shows **Queued** until the run ends. The button is disabled while the check is queued or when it cannot run.
+
+### Alerts
+
+A journey check opens no issue until it has passed once. Until then, a failure shows as "Has not passed against this URL yet". This stops a journey that never worked on your site from raising an alert.
+
+After the first pass, the set number of failures in a row opens one Runtime issue titled "Journey check failing:" followed by the check name. Its message names the journey goal, the site and the error. Your repository's [alert rules](/runtime/alert-rules) deliver it to Slack, email, the in-app feed and on-call.
+
+The first passing run after that resolves the issue and replies in the same Slack thread. You do not need a "resolved" rule.
+
+Changing a check's site or journey returns it to "Has not passed yet" and drops its queued runs. Deleting, switching off or retargeting a failing check resolves its issue.
+
+If Autter cannot run a check, for example when no runner has capacity, the runner stopped or the browser did not start, no result is recorded. These failures do not count toward the failures in a row.
+
+The Synthetic checks switch on the Pipeline page turns off journey checks too.
+
 ## Checks as code
 
-Checks support list, get, upsert by name and delete through the [public API](/runtime/public-api). While the feature is turned off, the API answers `403 feature_disabled`. A check has an **Export as Terraform (preview)** action.
+Checks support list, get, upsert by name and delete through the [public API](/runtime/public-api). While the feature is turned off, the API answers `403 feature_disabled`. A check has an **Export as Terraform** action. Journey checks use the same API and the same action. See [Public API](/runtime/public-api).

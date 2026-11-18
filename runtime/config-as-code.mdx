@@ -1,0 +1,271 @@
+---
+title: "Config as code with Terraform"
+description: "Manage Runtime alert rules, synthetic checks and dashboards with the Autter Terraform provider."
+---
+
+The Autter Terraform provider manages your Runtime configuration as code. It calls the [public API](/runtime/public-api).
+
+It manages these resources:
+
+- `autter_alert_rule`: an alert rule in a repository.
+- `autter_synthetic_check`: a synthetic check. It supports `http` and `journey` checks.
+- `autter_dashboard`: a Runtime dashboard.
+
+It also has two data sources, `autter_repository` and `autter_repositories`, which look up your repositories.
+
+The provider needs Terraform 1.5 or later (or OpenTofu).
+
+## Install the provider
+
+Add the provider to `required_providers`:
+
+```hcl
+terraform {
+  required_providers {
+    autter = {
+      source  = "Autter-dev/autter"
+      version = "~> 0.1"
+    }
+  }
+}
+```
+
+Then run `terraform init`.
+
+## Create a token
+
+1. In the Autter app, open **Settings → Access Tokens**.
+2. Create a personal access token.
+3. Give it the `api:read` and `api:write` scopes, or no scope restrictions.
+
+A token scoped to MCP only is refused.
+
+## Configure the provider
+
+Set the token in an environment variable:
+
+```bash
+export AUTTER_API_TOKEN="autter_pat_…"
+```
+
+```hcl
+provider "autter" {}
+```
+
+| Setting | Environment variable | Notes |
+| --- | --- | --- |
+| `api_token` | `AUTTER_API_TOKEN` | Sensitive. The setting overrides the variable. |
+| `base_url` | `AUTTER_BASE_URL` | Defaults to `https://api.autter.dev`. |
+
+Keep the token out of your configuration files and use the environment variable.
+
+If no token is set, Terraform stops and names `api_token`, `AUTTER_API_TOKEN` and the scopes you need.
+
+## Examples
+
+Every resource takes a `repository_id` and a `name`. Together they identify the resource. Changing either one replaces it.
+
+### Repository data source
+
+Look up a repository by full name (`owner/repo`, any case) or by short name. Use only one of the two. A short name that more than one repository has is an error that lists the candidates.
+
+```hcl
+data "autter_repository" "web" {
+  full_name = "acme/web"
+}
+```
+
+### Alert rule
+
+```hcl
+resource "autter_alert_rule" "checkout_errors" {
+  repository_id = data.autter_repository.web.id
+  name          = "Checkout errors"
+  triggers      = ["new", "regressed", "spiking"]
+
+  filters = {
+    environments = ["production"]
+    services     = ["checkout", "payments"]
+    priorities   = ["p0", "p1"]
+    message = {
+      op    = "contains"
+      value = "Timeout"
+    }
+    threshold = {
+      min_events     = 5
+      window_minutes = 30
+    }
+  }
+
+  actions = {
+    # {} posts to the repository's Slack route. Set channel_id for another channel.
+    slack = {}
+    email = {
+      assignee = true
+      watchers = true
+    }
+    oncall = true
+  }
+}
+```
+
+### Synthetic check
+
+```hcl
+variable "status_api_key" {
+  type      = string
+  sensitive = true
+}
+
+resource "autter_synthetic_check" "health" {
+  repository_id        = data.autter_repository.web.id
+  name                 = "Health"
+  url                  = "https://status.example.com/health"
+  method               = "GET"
+  expected_status      = 200
+  body_contains        = "ok"
+  interval_seconds     = 300
+  latency_threshold_ms = 1500
+  failures_to_fire     = 3
+  service              = "status-page"
+
+  headers = {
+    "X-Api-Key" = var.status_api_key
+  }
+}
+```
+
+The provider supports `kind = "http"` and `kind = "journey"`. `http` is the default.
+
+A journey check replays a saved journey in a browser. It takes a `journey_id`, and `url` is the site origin with no path. Do not set `method`, `headers`, `expected_status`, `body_contains`, `timeout_ms` or `latency_threshold_ms`. `interval_seconds` is 900, 3600, 21600 or 86400.
+
+```hcl
+resource "autter_synthetic_check" "checkout_journey" {
+  repository_id    = data.autter_repository.web.id
+  name             = "Checkout journey"
+  kind             = "journey"
+  url              = "https://app.example.com"
+  journey_id       = "JOURNEY_ID"
+  interval_seconds = 3600
+  failures_to_fire = 2
+}
+```
+
+See [Journey checks](/runtime/synthetic-checks#journey-checks).
+
+### Dashboard
+
+```hcl
+resource "autter_dashboard" "checkout" {
+  repository_id = data.autter_repository.web.id
+  name          = "Checkout health"
+
+  variables = {
+    service = "checkout"
+    range   = "24h"
+  }
+
+  widgets = [
+    {
+      id       = "errors"
+      title    = "Server errors by route"
+      viz      = "bar"
+      source   = "errors"
+      measure  = "count"
+      group_by = ["route"]
+      filters = [
+        # One value: use value. A number is fine.
+        { field = "status_code", op = "gte", value = 500 },
+        # A list, for in and not_in: use values.
+        { field = "environment", op = "in", values = ["production", "staging"] },
+      ]
+    },
+    {
+      id      = "latency"
+      title   = "p95 latency"
+      viz     = "line"
+      source  = "spans"
+      measure = "p95"
+      field   = "duration_ms"
+    },
+  ]
+}
+```
+
+Give every widget an `id` or none. If you leave `layout` out, each widget gets its default size.
+
+For every attribute, see the [provider documentation on the Terraform Registry](https://registry.terraform.io/providers/Autter-dev/autter/latest/docs).
+
+## Start from an existing resource
+
+You do not have to write the configuration yourself. An alert rule (repository **Settings → Runtime**), a synthetic check (**Runtime → Checks**) and a dashboard (**Runtime → Dashboards**) each have an **Export as Terraform** action.
+
+The export starts with the `required_providers` block. It then writes the `autter_repository` data source and the resource, with each attribute set to what Autter stores.
+
+1. Click **Export as Terraform** and save the HCL in your configuration.
+2. Add an `import` block, or run `terraform import`.
+3. Run `terraform plan`.
+
+An alert rule or a dashboard imports with no changes. A synthetic check with headers exports each header as a `sensitive` variable, because Autter never returns header values. Set the variables, for example with `TF_VAR_…` environment variables. The plan then shows one in-place update that sends them.
+
+In the export, a dashboard filter with one value uses `value`, and a filter with a list uses `values`.
+
+## Import
+
+The import ID is `<repository>:<name>`. The repository is its id or `owner/repo`. The name can contain colons.
+
+```bash
+terraform import autter_alert_rule.checkout_errors "acme/web:Checkout errors"
+```
+
+You can also use an `import` block:
+
+```hcl
+import {
+  to = autter_alert_rule.checkout_errors
+  id = "acme/web:Checkout errors"
+}
+```
+
+After an import, `repository_id` holds the repository's id.
+
+You can skip the import. If you create a resource whose name is already in use, the provider adopts the existing one and replaces its settings with your configuration. The apply prints a warning. This is how you bring a repository's starting alert rules and dashboards under Terraform.
+
+## Drift and normalization
+
+Autter normalizes what it stores. It lowercases triggers, adds a trailing slash to `https://example.com`, and fills in default widget fields and layout. None of this shows as a change in `terraform plan`.
+
+If someone changes a resource in the Autter app, the next plan shows that field changing back to your configuration.
+
+Applying the same configuration twice sends nothing.
+
+## Headers are sensitive
+
+A check's header values are stored encrypted and never read back. Keep them in `sensitive` variables.
+
+The provider detects a header that someone adds or removes in the app. It does not detect a changed value under the same name.
+
+## Rate limits and body size
+
+Each token can make 10 writes and 60 reads a minute through the API. The limit is separate from the token's MCP limit.
+
+The provider sends writes one at a time. When it reaches the limit, it waits for the time in `Retry-After` and logs `rate limit reached, waiting`. A first apply of many resources takes about a minute for every ten resources.
+
+The API accepts JSON bodies up to 1 MB. A larger body is refused with `413` and the code `invalid_argument`.
+
+## Errors you may see
+
+| Error | What it means | What to do |
+| --- | --- | --- |
+| `name_conflict` | Two or more resources in the repository share the name. The error lists their ids. | Rename all but one in the Autter app, then run Terraform again. |
+| Plan limit reached | The check would go past your plan's number of checks or fastest interval. | Remove a check, use a slower interval, or change your plan. |
+| The feature is turned off for this organization | Synthetic checks or dashboards are off for your organization. The error says where to turn them on. | Turn the feature on, then run Terraform again. |
+| Your role cannot … | Your role cannot make the change. | Use a token from a member with a role that can. See the roles in [Public API](/runtime/public-api). |
+| The token lacks the `api:read` / `api:write` scope | The token is scoped to MCP only. | Create a token with `api:read` and `api:write`. |
+
+## Related
+
+- [Public API and Terraform export](/runtime/public-api)
+- [Alert rules](/runtime/alert-rules)
+- [Synthetic checks](/runtime/synthetic-checks)
+- [Dashboards](/runtime/dashboards)

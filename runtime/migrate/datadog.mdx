@@ -376,7 +376,7 @@ Until the connector accepts those, forward monitor alerts only after you check a
 
 An Autter [alert rule](/runtime/alert-rules) fires on issue events: `new`, `regressed`, `spiking`, `assigned` and `resolved`. It can filter by environment, service, level, priority (`p0` to `p3`), error type and message (equals, contains, starts with, regex), and assignee. It can require a minimum number of events or users in a window of up to 7 days. It posts to Slack, adds a line to the daily email summary, notifies in-app, and pages on-call for critical issues.
 
-A [synthetic check](/runtime/synthetic-checks) is an HTTP GET or HEAD request to a public URL, with an expected status, optional body text and an optional latency threshold. It runs from one region. A [dashboard](/runtime/dashboards) has line, bar, stat and table widgets over logs, spans, errors, metrics and LLM calls. A dashboard widget shows data. It does not alert.
+A [synthetic check](/runtime/synthetic-checks) is an HTTP GET or HEAD request to a public URL, with an expected status, optional body text and an optional latency threshold. It runs from one region. A [journey check](/runtime/synthetic-checks#journey-checks) replays a saved journey in a browser instead. A [dashboard](/runtime/dashboards) has line, bar, stat and table widgets over logs, spans, errors, metrics and LLM calls. A dashboard widget shows data. It does not alert.
 
 Monitor types are Datadog's list in [Monitor types](https://docs.datadoghq.com/monitors/types/).
 
