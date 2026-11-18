@@ -183,14 +183,29 @@
               "runtime/releases-and-environments",
               "runtime/source-maps",
               "runtime/external-sources",
+              "runtime/otel-collector",
               "runtime/without-npm",
               "runtime/without-docker",
-              "runtime/self-hosting"
+              "runtime/self-hosting",
+              "runtime/alert-rules",
+              "runtime/synthetic-checks",
+              "runtime/dashboards",
+              "runtime/automations",
+              "runtime/coverage-gaps"
+            ]
+          },
+          {
+            "group": "Migrate to Autter",
+            "pages": [
+              "runtime/migrate/datadog",
+              "runtime/migrate/new-relic",
+              "runtime/migrate/dynatrace"
             ]
           },
           {
             "group": "Reference",
             "pages": [
+              "runtime/public-api",
               "runtime/compatibility",
               "runtime/delivery",
               "runtime/environment-variables",
@@ -222,6 +237,13 @@
             "pages": [
               "cli/ai-blame",
               "cli/commit-stats"
+            ]
+          },
+          {
+            "group": "Check your changes",
+            "pages": [
+              "cli/review",
+              "cli/sandbox"
             ]
           },
           {

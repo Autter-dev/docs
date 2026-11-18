@@ -34,6 +34,11 @@ These commands read Autter Runtime data for your organization. Sign in with `aut
 | `autter logs [--repo <name>] [--severity <level>] [--service <name>] [--environment <name>] [--since 1h\|7d] [--from <time>] [--to <time>] [--query <text>] [--field k=v] [--filter f:op:v] [--limit 1..200] [--json]` | Search captured Runtime errors, warnings and info events (default: last 24 hours). See [`autter logs`](/cli/more-commands#autter-logs) |
 | `autter threads [search <keywords>]` | List or search saved investigations from Dashboard Ask and `autter ask`. See [`autter threads`](/cli/more-commands#autter-threads) |
 | `autter threads show <id>` | Print one saved investigation |
+| `autter review [<path>...] [--base <ref> \| --uncommitted] [--write] [--json]` | Run the rule-based pull request checks on your changes. No AI calls. See [Review your changes locally](/cli/review) |
+| `autter review --dismiss <finding-id> [--undo]` | Dismiss, or restore, one finding of your last local review |
+| `autter sandbox run [--branch <name>] [--checks build,test,rules] [--no-wait] [--json]` | Build, test and rule-check a pushed branch without opening a pull request. No AI calls, nothing posted to GitHub. Exits 1 when a check fails or cannot run. See [Check a branch in the sandbox](/cli/sandbox) |
+| `autter sandbox status <id> [--json]` | Show one sandbox run |
+| `autter sandbox list [--all] [--limit <n>] [--json]` | Show this repository's sandbox runs |
 
 ## Repository knowledge
 

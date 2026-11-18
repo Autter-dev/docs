@@ -1,0 +1,53 @@
+---
+title: "Dashboards and saved queries"
+description: "Save Runtime Explorer queries and build dashboards over logs, spans, errors, metrics and LLM calls."
+---
+
+Runtime dashboards show your telemetry on one page. You save queries in Explorer, and you build dashboards from starters or from scratch.
+
+Dashboards and saved queries are on by default and are not limited by plan. Owners and admins can turn them off on the Pipeline page, under **Execution stages → Runtime**. They need Runtime data. A dashboard widget shows data. It does not alert. For alerts, use [alert rules](/runtime/alert-rules) or [synthetic checks](/runtime/synthetic-checks).
+
+## Save a query
+
+Save a query in Explorer to run it again later. A repository can hold up to 200 saved queries.
+
+## Build a dashboard
+
+A repository can hold up to 50 dashboards. Each dashboard can have up to 24 widgets on a 12-column grid. A widget is 1 to 4 rows tall.
+
+Start from one of two starter dashboards, or build from scratch:
+
+| Starter | Shows |
+| --- | --- |
+| Service overview | Requests, failed requests, errors captured, p95 latency, request rate and latency by service, errors over time and by type, busiest and slowest routes. |
+| LLM cost | Spend, calls, output tokens, p95 call latency, spend and calls by model, spend by operation, failed calls. |
+
+A repository gets its starter dashboards the first time its dashboards are read. A deleted starter stays deleted.
+
+### Widgets
+
+Each widget picks a source, a measure and a chart type:
+
+| Setting | Options |
+| --- | --- |
+| Source | Logs, spans, errors, metrics, LLM calls |
+| Chart | Line, bar, stat, table |
+| Measure | count, rate, p50, p95, p99, sum |
+
+A widget can group by up to 3 fields and have up to 10 filters. A line chart shows up to 8 series, a bar chart up to 20 categories and a table up to 100 rows. A widget title can be up to 120 characters. Each widget has a 15-second limit.
+
+### Variables
+
+Every dashboard has three variables that apply to all its widgets:
+
+- **Service**: one service, or all services.
+- **Environment**: one environment, all environments, or by default every environment except test ones.
+- **Time range**: 1 hour, 6 hours, 24 hours, 7 days or 30 days.
+
+## Who can change what
+
+Any member can read dashboards. Any member except a viewer can create one. Owners, admins and the member who created a dashboard can change or delete it.
+
+## Dashboards as code
+
+Dashboards support list, get, upsert by name and delete through the [public API](/runtime/public-api). A dashboard has an **Export as Terraform (preview)** action. While the feature is turned off, the API answers `403 feature_disabled`.

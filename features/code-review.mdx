@@ -47,6 +47,14 @@ Define standards in plain language. For example:
 
 Keep rules specific and testable. See [Review rules](/configuration/rules) and [Create a custom rule](/guides/custom-rules).
 
+## See what a change reaches
+
+The Autter check on a pull request ends its summary with a link: "See what this change reaches (N files, M callers)". It opens the pull request's page at the change map. N is the number of files that depend on the changed files. M is the number of direct callers of the changed symbols.
+
+The check details open with a "What this change reaches" section. It lists the five most-connected changed files, each with its number of dependents. Each finding on the check links to its line.
+
+If the repository is not indexed yet, the check says the blast radius is not available yet and links to the repository's index status.
+
 ## Handle findings
 
 <Steps>

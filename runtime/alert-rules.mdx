@@ -1,0 +1,106 @@
+---
+title: "Alert rules"
+description: "Decide who hears about a Runtime issue, and how: Slack, daily email, in-app or on-call."
+---
+
+Alert rules decide who hears about a Runtime issue and how. Each repository has its own rules under **Repository → Settings → Runtime → Alert rules**. Owners and admins can create, change and delete rules. Any member can read them.
+
+Alert rules fire on issue events. Runtime has no metric or log-count threshold alerts. For the same signals from a URL, see [Synthetic checks](/runtime/synthetic-checks). A failing check opens a Runtime issue, and your alert rules deliver it.
+
+## What a rule has
+
+A rule has a name, an on/off switch, triggers, filters and actions. Every enabled rule that matches an event fires. When two rules name the same Slack channel, person or pager for one event, that target gets the event once.
+
+Rule names can be up to 120 characters. Lists in filters can hold up to 50 items, and each value can be up to 200 characters.
+
+### Triggers
+
+| Trigger | Fires when |
+| --- | --- |
+| `new` | A new issue is created. |
+| `regressed` | A resolved issue comes back. |
+| `spiking` | An issue's event rate spikes. |
+| `assigned` | An issue is assigned to someone. Removing an assignee does not count. |
+| `resolved` | An issue is resolved. This one is optional. |
+
+Other events (reopened, ignored, unignored, priority changed) trigger no rule. They still refresh the issue's Slack message.
+
+### Filters
+
+All filters are optional. An empty list matches anything.
+
+| Filter | Matches |
+| --- | --- |
+| Environments, services | The issue's environment or service, exactly. |
+| Levels | The issue's level (`fatal`, `error`, `warning` and so on), ignoring case. |
+| Priorities | `p0` to `p3`, or `none` for an issue that is not ranked yet. |
+| Error type, message | `equals`, `contains`, `starts_with` or `regex`. Message falls back to the issue title. Start a regex with `(?i)` to ignore case. |
+| Assignee | `any`, `assigned` (to anyone), `unassigned`, `me` (the rule's author), or a specific user. |
+| Threshold | At least a minimum number of events, users or both, in a window of up to 7 days. |
+
+Rules read the issue as it is when the event is handled, not as it was when the event was recorded. A priority set a moment after the issue was created counts.
+
+Ignored issues never alert, except through a `resolved` trigger. An issue the SDK declared expected never alerts as `new` or `regressed`, and never pages.
+
+### Minimum counts
+
+A threshold is checked when the event is handled. If it is not met and the window is still open, Autter checks again every 5 minutes and when the window closes. A rule such as "a new issue that reaches 50 events within an hour" alerts when it gets there.
+
+### Actions
+
+| Action | What happens |
+| --- | --- |
+| Slack | One thread per issue in the channel you pick. Leave the channel empty to use the repository's Slack route (**Settings → Notifications**). |
+| Email | A line in each recipient's daily update summary. It is never an email of its own. |
+| In-app | A notification in the feed. Notifications addressed to people are visible only to them. |
+| On-call | An on-call page, only when the issue is critical: P0, or a fatal error. |
+| Also send automatic assignments | Sends automatic assignments to Slack and on-call too. Off by default. |
+
+Recipients for email and in-app are the assignee, watchers (the assignee plus every member who assigned, resolved, ignored or reopened the issue), specific members, or everyone. The member whose action caused the event is never told about it.
+
+Automatic assignments come from CODEOWNERS, blame of the top frame and assignment rules. A backfill can assign hundreds of old issues at once, so a rule's Slack and on-call actions skip those events unless you turn on **Also send automatic assignments to Slack and on-call**. Email and in-app still go out.
+
+### Default rules
+
+A repository that never had rules gets two the first time its rules are read:
+
+1. **New and regressed issues in production.** Triggers `new` and `regressed`, environments `production` and `prod`, Slack to the repository's routed channel. With no Slack app or no route, it does nothing.
+2. **Tell the assignee.** Trigger `assigned` to anyone, with in-app and daily email to the assignee.
+
+A deleted default stays deleted. To keep a rule around, turn it off instead of deleting it.
+
+## Slack threads
+
+Slack alerts use one thread per issue and channel.
+
+- The first alert posts the root message.
+- Later events edit the root message to show the issue's current state, and add a short reply in the thread.
+- Spikes, priority changes and similar events reply at most once every 30 minutes. Held-back updates are counted into the next reply, for example "3 more updates since the last message".
+- State changes (regressed, resolved, assigned, reopened, ignored) always reply.
+- Any event on an issue that has threads edits those root messages, even when no rule sends that event to Slack.
+
+The root message shows the title (linked to the issue in Autter), repository, service, environment and level. It also shows the state (Active, Regressed, Resolved, Resolved in next release, Ignored), priority, events, users, assignee and last seen. For a regression it shows the release and the fix pull request.
+
+Alerts about events older than 24 hours are skipped. A backlog usually means alerting was not running, and a day-old "new issue" post is noise.
+
+## On-call pages
+
+An on-call action on a critical issue pages through the repository's on-call policy, by opening a critical incident for the issue. The policy must be on and cover the issue's environment and service. If it does not, nothing is opened and the delivery shows as skipped with the reason.
+
+An issue that already belongs to an unresolved incident is left to that incident's page. The incident path and the alert path never page twice for one issue.
+
+## Guardrails from fixes
+
+When Autter fixes a Runtime issue, it also proposes the alert rule that would have caught it. The pull request shows it in a **Guardrail** section. The guardrail is on already.
+
+- The rule is named `Guard: <issue id>` and is created by `autter-bot`. It is reused if a rule of that name exists.
+- It uses only the `new`, `regressed` or `spiking` triggers, and it is scoped to a service, error type or message.
+- It always delivers to the repository's Slack route and in-app. It never adds a channel, person, email or on-call page of its own.
+- It is created after the fix passes a check, and before the pull request opens.
+- Only error fixes get one. Performance, CI, vendor and improvement fixes do not, and neither do cross-repository fixes.
+
+You can edit or delete a guardrail rule like any other rule.
+
+## Rules as code
+
+Alert rules support list, get, upsert by name and delete through the [public API](/runtime/public-api). A rule's page has an **Export as Terraform (preview)** action that writes it as HCL.
