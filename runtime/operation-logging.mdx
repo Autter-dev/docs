@@ -49,8 +49,8 @@ separately; local source changes do not upgrade the hosted service.
 
 Use a secret server Runtime ingest key, such as `AUTTER_RUNTIME_KEY`, scoped to
 your repository. An Autter CLI/PAT or MCP access token is a different credential.
-Browser client keys cannot send `/v1/logs`. Create Runtime keys under **Settings
-→ Access Tokens → Runtime ingest keys**; share the environment variable name
+Browser client keys cannot send `/v1/logs`. Create Runtime keys in **Settings → Keys and
+tokens → Set up a key**, choose **Send errors from my backend service**, and pick the repository; share the environment variable name
 with your coding agent, without pasting the key value.
 
 An empty authenticated request checks route availability without adding records:

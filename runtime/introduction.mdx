@@ -105,8 +105,8 @@ Autter has two command-line tools and four kinds of key. Each key does one job; 
 
 | Prefix | Name | Create it in | Where it goes | What it can do | If you use it in the wrong place |
 | --- | --- | --- | --- | --- | --- |
-| `autter_rt_` | Runtime server key | **Settings → Access Tokens → Runtime ingest keys** (choose the repository) | Backend environment variables (`AUTTER_RUNTIME_KEY`), relays, edge secrets | **Secret.** Send OTLP traces, metrics and logs, and browser events | In a browser bundle it leaks; rotate it |
-| `autter_rtc_` | Runtime client key | Same place, as a client key with allowed origins | Frontend code, for direct browser capture only | **Publishable.** Send browser events (`/v1/browser`) from allowed origins | On a server it is refused for OTLP |
+| `autter_rt_` | Runtime server key | **Settings → Keys and tokens → Set up a key**, choose **Send errors from my backend service**, and pick the repository | Backend environment variables (`AUTTER_RUNTIME_KEY`), relays, edge secrets | **Secret.** Send OTLP traces, metrics and logs, and browser events | In a browser bundle it leaks; rotate it |
+| `autter_rtc_` | Runtime client key | **Settings → Keys and tokens → Set up a key**, choose **Catch errors in my frontend**, as a client key with allowed origins | Frontend code, for direct browser capture only | **Publishable.** Send browser events (`/v1/browser`) from allowed origins | On a server it is refused for OTLP |
 | `autter_rtu_` | Source map upload key | The repository's **Runtime** settings → **Source map upload key** | The CI or build step that uploads source maps | Upload and check source maps, nothing else | As an ingest key it is refused ([Delivery](/runtime/delivery)) |
 | `autter_pat_` | Personal access token | **Org Settings → Access Tokens** | `autter login --token` when browser sign-in cannot complete; MCP clients | Act as you in the Autter platform from the Autter CLI or MCP | Not a Runtime key: ingest refuses it |
 
