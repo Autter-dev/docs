@@ -102,8 +102,12 @@ For up to three frames of your own code in the stack, Autter says who wrote the 
 ### What it needs
 
 - **Autter CLI authorship notes for the repository.** The Autter CLI writes a note for each commit, and the platform reads the notes uploaded in [connected mode](/cli/connect-platform). Commits without notes show "Not known". See [How Autter works](/cli/how-autter-works).
+- **The repository connected through the GitHub App.** Autter reads blame, compare and file history from GitHub. Without it, Autter says: "GitHub could not be read for this repository, so only commits with authorship notes were replayed: coverage is partial at best and line numbers are best effort."
+- **Connected mode for everyone who commits.** Each developer runs `autter onboard --connect`. `autter login` alone uploads nothing.
 - **A release that resolves to a commit.** Autter reads the code at the commit where the error first appeared, else the deployed commit. When no commit is known, it reads the default branch and says so, because that code may have changed since the error appeared. From `@autter/runtime-node` 1.16.0 and the Runtime 1.20.0 Python adapter, the SDK reports the running commit for you. See [Releases, commits and test runs](/runtime/releases-and-environments).
 - **Readable frames.** A frame in a minified bundle is skipped. [Upload source maps](/runtime/source-maps) so frames point at your source files.
+
+See [Link errors to code](/runtime/link-errors-to-code) for the full setup.
 
 ## In the terminal
 

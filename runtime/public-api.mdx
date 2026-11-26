@@ -10,7 +10,7 @@ The Autter API at `/api/v1` manages alert rules, synthetic checks and dashboards
 
 ## Authentication
 
-Send a personal access token (**Settings → Access Tokens**) as a bearer token:
+Send a personal access token as a bearer token. Create one under **Settings → Keys and tokens → Set up a key** by choosing **Run Autter in CI or a script**:
 
 ```bash
 curl https://api.autter.dev/api/v1/repositories \
@@ -93,7 +93,7 @@ Each token has an API rate limit of 60 reads and 10 writes a minute. It is separ
 
 Request bodies can be up to 1 MB. A larger body is refused with `413`, and malformed JSON with `400`. Both use the code `invalid_argument`.
 
-Every PUT and DELETE is written to the organization's audit log (**Settings → Access Tokens → Activity**), with the method, resource, repository, name, status and outcome.
+Every PUT and DELETE is written to the organization's audit log (the **Activity** section of **Settings → Keys and tokens**), with the method, resource, repository, name, status and outcome.
 
 ## Export as Terraform
 

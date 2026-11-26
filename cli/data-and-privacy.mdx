@@ -18,7 +18,7 @@ flowchart LR
 | Data | Local-only | Connected personal dashboard | Teams or Enterprise |
 | --- | --- | --- | --- |
 | Prompt records | Local SQLite | Uploaded unless `prompt_storage` is `local` | Team prompt store, with best-effort secret and PII redaction |
-| Line-level attribution | Local Git notes | Local Git notes | Local Git notes plus team and SCM-linked processing where enabled |
+| Line-level attribution | Local Git notes | Local Git notes, uploaded to your organization in connected mode {/* TODO: align with CLI data-privacy.md, which does not list note upload. */} | Local Git notes plus team and SCM-linked processing where enabled |
 | Agent and model identifiers | Git notes | Git notes and connected transcript or usage records | Git notes and team analytics |
 | Git name and email | Git notes | Used with connected attribution | Stored as employee identity and SCM membership |
 | Tool calls, MCP calls, skills, errors, interruptions, tokens | Not uploaded as cloud analytics | Uploaded for personal analytics | Uploaded for team analytics |
@@ -106,13 +106,17 @@ This stops future connected writes from that machine. It does not automatically 
 
 ## Stay connected but keep prompts local
 
-You can keep platform authentication while preventing future prompt uploads:
+You can stay signed in to the platform while stopping uploads from your machine:
 
 ```bash
 autter config set prompt_storage local
 ```
 
-Attribution and other enabled telemetry can still sync. Use local-only mode if you want to stop connected storage as a whole.
+This stops every connected upload from that machine, not only prompts. Authorship notes, transcripts, and usage data stay on your computer, and `autter whoami` shows "Cloud upload: off". Runtime then cannot show who wrote the code behind an error for your commits.
+
+{/* TODO: confirm whether exclude_prompts_in_repositories keeps notes uploading and recommend it here if so. */}
+
+Use `prompt_storage local` only when you want to stop connected storage as a whole. To stop it for one repository, see [Disable Autter for a repository](#disable-autter-for-a-repository).
 
 ## Disable Autter for a repository
 
@@ -127,7 +131,7 @@ This adds the repository's remote to your machine-level exclusion list.
 ## Protect sensitive data
 
 - Never place credentials or secrets in agent prompts.
-- Keep `prompt_storage` set to `local` for repositories that cannot upload prompts.
+- Exclude repositories that cannot upload any data. See [Disable Autter for a repository](#disable-autter-for-a-repository). Setting `prompt_storage` to `local` stops every upload from your machine, including authorship notes.
 - Review Git-note access because attribution includes developer identity.
 - Store CI access tokens in a secret manager.
 - Review organization permissions before enabling prompt access for developers.

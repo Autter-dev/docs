@@ -94,8 +94,8 @@ The platform rollout does not change installed SDK settings. Self-hosted ingeste
 
 Every ingest key is scoped to one `orgId` + `repositoryId`. If you're self-hosting the ingester, generate a key yourself — see [Environment variables](/runtime/environment-variables#autter_ingest_keys). If you're using Autter's hosted ingester at `otlp.autter.dev`, create a key from your Autter organization.
 
-In the hosted dashboard, open **Settings → Access Tokens → Runtime ingest
-keys → Create key** and select the repository. Use a secret server key for
+In the hosted dashboard, open **Settings → Keys and tokens → Set up a key**,
+choose **Send errors from my backend service**, and pick the repository. Use a secret server key for
 OTLP traces/metrics/logs and backend relays; use an origin-restricted client
 key only for direct browser capture. CLI/PAT and MCP tokens cannot substitute
 for a Runtime ingest key. Store server keys in your environment or secret

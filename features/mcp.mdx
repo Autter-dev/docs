@@ -33,7 +33,7 @@ This closes the loop between "Autter found a problem" and "the agent fixed it," 
 The MCP server is part of the Autter platform. Clients connect over Streamable HTTP to `https://api.autter.dev/mcp` and authenticate in one of two ways:
 
 - **OAuth (recommended):** the client discovers authorization metadata from the `401` response, registers via dynamic client registration, opens a browser consent screen, and receives a scoped access token.
-- **Personal access token:** you create a token in **Org Settings → Access Tokens** and send it as `Authorization: Bearer autter_pat_…`.
+- **Personal access token:** you create a token under **Settings → Keys and tokens → Set up a key** and send it as `Authorization: Bearer autter_pat_…`. Choose **Run Autter in CI or a script**, or for an MCP-only token, choose **Connect Cursor, Claude Code or another AI tool** and then **My client can't open a browser (CI, headless)**.
 
 <Steps>
   <Step title="Connect via OAuth or a token">
@@ -100,7 +100,7 @@ A token used with MCP can be unrestricted, meaning it works for both CLI login a
 A token restricted to MCP scopes cannot sign in to the Autter CLI. Create an unrestricted token if you need CLI login and MCP access on the same token.
 
 <Warning>
-  Treat an Autter access token like a password. Give an agent only the scopes it needs, and revoke a token in **Org Settings → Access Tokens** if it is exposed.
+  Treat an Autter access token like a password. Give an agent only the scopes it needs, and revoke a token in **Settings → Keys and tokens** if it is exposed.
 </Warning>
 
 ## Usage limits

@@ -70,7 +70,7 @@ Use a personal access token only if the browser flow cannot complete.
     Go to [app.autter.dev](https://app.autter.dev) and sign in.
   </Step>
   <Step title="Create a personal access token">
-    Open the organization you want to connect. Go to **Org Settings → Access Tokens**, create a token, and copy it.
+    Open the organization you want to connect. Go to **Settings → Keys and tokens** and click **Set up a key**. Choose **Run Autter in CI or a script**, create the token, and copy it.
   </Step>
   <Step title="Complete CLI sign-in">
     Pass the token to the CLI:
@@ -89,7 +89,13 @@ Use a personal access token only if the browser flow cannot complete.
 
 An access token belongs to your account. If you belong to several organizations, Autter uses the repository's Git remote to identify its owning organization. If no match exists, it uses your default organization.
 
-Connected mode keeps line-level attribution in local Git notes under `refs/notes/ai`. Prompt transcripts and usage data also sync to your organization's Autter environment.
+Connected mode keeps line-level attribution in local Git notes under `refs/notes/ai`. It also uploads each commit's authorship note to your organization, and Autter Runtime reads those notes to show which coding agent or person wrote the code behind an error. Prompt transcripts and usage data also sync to your organization's Autter environment.
+
+`autter login` on its own uploads nothing. Run `autter onboard --connect` to turn on uploads. To upload notes that existed before you connected, run `autter notes migrate`.
+
+If no organization has connected the repository yet, the Autter CLI keeps its authorship notes on your computer and checks again once a day. It uploads them after an organization connects the repository, and never sends them to another organization. `autter sync status` shows these notes as "Kept on this computer".
+
+To see how authorship notes link production errors to code, read [Link errors to code](/runtime/link-errors-to-code).
 
 After a commit, Autter reads any captured agent transcript, normalizes it, and redacts detected secrets before it leaves the machine. The transcript is queued as a content-addressed object. Its `cas:<hash>` reference is added to the matching prompt record so review and blame tools can resolve the conversation behind an attributed change.
 
@@ -99,14 +105,14 @@ Usage metrics route to the organization database associated with the signed iden
 
 ## Manage access
 
-Open **Org Settings → Access Tokens** in the dashboard to:
+Open **Settings → Keys and tokens** in the dashboard to:
 
-- Review active tokens
+- See your keys and tokens
 - Revoke a token
-- Review sign-in and data-push activity
+- Review the **Activity** section for key and token creation and revocation, CLI sign-ins, and data pushed to the cloud with a token
 
 <Tip>
-  The same Access Tokens screen creates tokens for the [MCP server](/features/mcp), so a coding agent can act on Autter data directly. Restrict a token to MCP scopes if you do not want it usable for CLI login. See [Connect an agent over MCP](/guides/mcp-setup).
+  The same page creates tokens for the [MCP server](/features/mcp), so a coding agent can act on Autter data directly. Use **Restrict scopes** to limit a token to MCP scopes if you do not want it usable for CLI login. See [Connect an agent over MCP](/guides/mcp-setup).
 </Tip>
 
 To remove credentials from the current machine:

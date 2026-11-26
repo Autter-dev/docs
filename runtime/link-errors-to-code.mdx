@@ -1,0 +1,174 @@
+---
+title: "Link errors to code"
+description: "Connect a Runtime error to the release, commit, pull request, owner and AI agent behind the failing line, and check that each link works."
+---
+
+Set this up once and every Runtime error shows the release and commit it came from, the suspect commits and pull request, and who wrote the failing code: a person or an AI agent. You see it on the issue page, on the incident page, and with `autter lineage`.
+
+<Note>
+This is unrelated to `autter telemetry`, the Autter CLI's anonymous usage telemetry. This page is about the errors your own services send to Runtime.
+</Note>
+
+## What links to what
+
+| Link | What makes it | Set it up |
+| --- | --- | --- |
+| Telemetry to repository | Every Runtime key belongs to exactly one repository. Everything sent with the key is filed under that repository. | [Step 2](#set-it-up) |
+| Error to release and commit | The SDK sends `service.version` (the release) and `deployment.commit` (the running commit). Autter maps each release to a commit. | [Step 3](#set-it-up) |
+| Minified frame to source line | Source maps, matched by debug id. | [Step 4](#set-it-up) |
+| Commit to suspect commits, pull request and owner | Autter reads blame and compare data through the GitHub App. | [Step 1](#set-it-up) |
+| Failing line to AI agent or person | Autter CLI authorship notes, uploaded in connected mode. File history comes from GitHub through the App. | [Step 5](#set-it-up) |
+| Deploy markers (optional) | GitHub, Vercel and Cloudflare deployments and the commits they shipped. | [Step 6](#set-it-up) |
+
+## Before you begin
+
+- An Autter organization, and a role other than viewer. Viewers cannot create keys and get `403 insufficient_role`.
+- The repository connected through the GitHub App. Without it, Autter replays only commits that have authorship notes and says: "GitHub could not be read for this repository, so only commits with authorship notes were replayed: coverage is partial at best and line numbers are best effort."
+- These versions or later:
+
+| Component | Version | Why |
+| --- | --- | --- |
+| `@autter/runtime-node` | 1.16.0 | Detects the running commit |
+| `autter_tracing.py` (Python) | Runtime 1.20.0 | Detects the running commit |
+| `@autter/runtime-browser` | 1.6.0 | Debug ids for source maps |
+| `@autter/runtime-cli` | 1.4.0 | Source map uploads |
+| Ingester | 1.20.0 | Accepts the `commit` field and `vcs.ref.head.revision` |
+| Autter CLI | 3.10.0 | `autter lineage` |
+
+## Set it up
+
+<Steps>
+  <Step title="Connect the repository">
+    Install the GitHub App with access to the repository, then add the repository in Autter. See [GitHub setup](/guides/github-setup).
+
+    Do this first. Autter refuses CLI uploads for a repository that no organization has connected. The CLI keeps them on your machine and checks again once a day.
+  </Step>
+
+  <Step title="Create a Runtime key for that repository">
+    Open **Settings → Keys and tokens** and click **Set up a key**. Choose **Send errors from my backend service**, then follow the prompts: enter a **Name**, choose the **Repository**, and click **Create key**. Copy the key when "Your key is ready" appears. You cannot see it again.
+
+    Store it as `AUTTER_RUNTIME_KEY`. Services in different repositories need different keys.
+
+    The same screen has two other intents: **Catch errors in my frontend** gives an `autter_rtc_` key, and **Upload source maps from my build** gives an `autter_rtu_` key.
+  </Step>
+
+  <Step title="Report the running commit and the release">
+    Pick your sender.
+
+    <Tabs>
+      <Tab title="Node">
+        `initAutterServer` and `initAutterLogging` detect both for you.
+
+        - **Commit:** the first of these variables that holds 7 to 40 hexadecimal characters: `AUTTER_COMMIT`, `GITHUB_SHA`, `VERCEL_GIT_COMMIT_SHA`, `CF_PAGES_COMMIT_SHA`, `GIT_SHA`, `GIT_COMMIT`, `COMMIT_SHA`, `SOURCE_COMMIT`, `RENDER_GIT_COMMIT`, `RAILWAY_GIT_COMMIT_SHA`, `HEROKU_SLUG_COMMIT`, `SOURCE_VERSION`. Branch names and refs are skipped. The SDK never runs `git`. It sends the commit as `deployment.commit`.
+        - **Release:** the `release` option, else `AUTTER_RELEASE`, else the detected commit.
+        - **Turn the release off:** `release: false` or `AUTTER_DETECT_RELEASE=false`.
+
+        Values in `OTEL_RESOURCE_ATTRIBUTES` (`service.version`, `deployment.environment.name`) win. See [Releases, commits and test runs](/runtime/releases-and-environments).
+      </Tab>
+      <Tab title="Python">
+        `init_tracing()` uses the same variables in the same order. The release is `AUTTER_RELEASE`, else the commit.
+      </Tab>
+      <Tab title="Browser">
+        The browser cannot read your server's environment. Pass `release` to `initAutterBrowser` at build time.
+      </Tab>
+      <Tab title="Edge">
+        `@autter/runtime-edge` detects nothing. Pass `release` explicitly.
+      </Tab>
+      <Tab title="Other OpenTelemetry">
+        Set both attributes yourself:
+
+        ```bash
+        OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.commit=${GIT_SHA},deployment.environment.name=production
+        ```
+
+        Autter also accepts `vcs.ref.head.revision` as the commit.
+      </Tab>
+    </Tabs>
+
+    Use unique release names, such as the commit SHA, or GitHub release tags. See [How Autter finds a release's commit](/runtime/releases-and-environments#how-autter-finds-a-releases-commit).
+  </Step>
+
+  <Step title="Upload source maps (minified or bundled code only)">
+    Skip this step if your code runs unminified. Otherwise create the upload key under **Repositories → (your repository) → Settings → Runtime**, on the **Sources** tab, in **Source map upload key**. Then run:
+
+    ```bash
+    npx @autter/runtime-cli@latest sourcemaps setup
+    npx autter-runtime sourcemaps verify dist
+    ```
+
+    Without maps, Autter skips the frame: `Skipped <path>: it is a minified bundle, so its line is not a source line (upload source maps).` See [Source maps](/runtime/source-maps).
+  </Step>
+
+  <Step title="Turn on AI authorship for every developer who commits">
+    Each developer runs these on their machine.
+
+    1. Install the Autter CLI.
+    2. Run `autter onboard --connect`.
+    3. Run `autter whoami` or `autter sync status`. Neither should print "Cloud upload: off; records stay on this computer."
+    4. To upload notes that existed before you connected, run `autter notes migrate`.
+    5. To release a backlog held at connect time, run `autter sync import --yes`.
+
+    `autter login` alone never uploads notes. Uploads need `notes_backend.kind` set to `http` or `both`, and `prompt_storage` not set to `local`. Connected onboarding sets `both`, which writes notes to Git and uploads them. Commits made without the CLI show "Not known".
+
+    <Warning>
+    Do not set `prompt_storage local` globally. It stops every connected upload, including authorship notes.
+    </Warning>
+  </Step>
+
+  <Step title="Add deploy markers (optional)">
+    GitHub needs no setup: the App reads `deployment_status` and `release` webhooks. To record Vercel and Cloudflare deployments and their commits, connect them under the repository's Runtime settings, on the **Sources** tab. These feed **Correlated deployment** and the **Deployments** tab.
+  </Step>
+</Steps>
+
+## Check that it works
+
+1. Run `npx @autter/runtime-node verify --service <name>`. A pass prints `ok release release <sha> stored on the error and the span`. `--json` includes `commit`.
+   - `no release set: errors are not tied to a deploy, so "broke in release X" can't work` means the service reports no release.
+   - `sent release X, stored [...]` means the ingester did not keep `service.version`. Check for a collector or proxy that rewrites resource attributes.
+2. Run `npx autter-runtime sourcemaps verify <dir>` on your build output.
+3. Run `autter sync status` on a developer's machine.
+4. Trigger a real error and open its issue page. The header shows `rel <release>` with a commit link. The page shows **Suspect commits** and "Who wrote the failing code".
+5. Run `autter lineage ri_…` with the issue id. It exits 0 even when one part cannot be read.
+
+## Troubleshooting
+
+{/* TODO: squash-merge behaviour unconfirmed. Notes rewritten by CI may reach Git only, so squash commits may show "Not known" until `autter notes migrate` runs after fetching notes. */}
+
+| What you see | Cause | Fix |
+| --- | --- | --- |
+| "No commit is known for release X, so authorship was read at the default branch, which may have changed since the error appeared." | No `deployment.commit`, a reused release name with no dominant commit, or a commit variable that is not hexadecimal | Set `AUTTER_COMMIT` or a platform commit variable where the app runs. Use unique release names or GitHub release tags. |
+| "Not known: no authorship notes cover this commit." | The committer is not in connected mode, the commit was made without the CLI, the notes were not uploaded, or the repository is not connected | Follow step 5. Run `autter notes migrate`. |
+| "GitHub could not be read for this repository…" | The GitHub App is not installed or has no access to the repository | Follow step 1. |
+| `autter sync status` says "Kept on this computer (repository not connected to any of your orgs)" | The repository is not connected | Connect the repository. The notes upload within about a day and are never sent to another organization. |
+| "N records queued before you connected (or by an older autter) are held and will not upload." | A backlog was held at connect time | Run `autter sync import --yes`. |
+| "Cloud upload: off …" | The CLI is not in connected mode, or `prompt_storage` is `local` | Run `autter onboard --connect`. Do not set `prompt_storage local` globally. |
+| `403 upload_key_not_allowed` | You used an `autter_rtu_` source map key to send telemetry | Use the server key for telemetry. |
+| Errors from your tests are missing | Environments `test` and `testing` are hidden by default | Choose **All environments** in the environment selector. |
+| The source map release differs from the SDK release | `AUTTER_COMMIT` and `GITHUB_SHA` hold different commits | Set `AUTTER_RELEASE` where the app builds and where it runs. |
+
+## What each link sends
+
+- **Your services** send errors with the commit SHA and release attached.
+- **The Autter CLI**, in connected mode, uploads authorship notes and, optionally, agent transcripts.
+
+For what stays local, what enters Git and how to opt out, see [Data and privacy](/cli/data-and-privacy).
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Releases, commits and test runs" href="/runtime/releases-and-environments">
+    How the SDKs fill in the release and commit.
+  </Card>
+  <Card title="Source maps" href="/runtime/source-maps">
+    Resolve minified frames to your source.
+  </Card>
+  <Card title="Investigate issues" href="/runtime/investigate-issues">
+    Read suspect commits and who wrote the failing code.
+  </Card>
+  <Card title="Connect to the platform" href="/cli/connect-platform">
+    Connected mode for the Autter CLI.
+  </Card>
+  <Card title="GitHub setup" href="/guides/github-setup">
+    Install the GitHub App.
+  </Card>
+</CardGroup>

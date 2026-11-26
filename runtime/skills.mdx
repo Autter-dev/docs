@@ -96,8 +96,9 @@ Ask `autter-runtime-setup` to connect your existing Sentry, PostHog, Datadog, AW
 
 ## Getting an ingest key (application instrumentation)
 
-Create one on your Autter dashboard: **Settings → Access Tokens → Runtime
-ingest keys → Create key**. Pick the repository, then choose:
+Create one on your Autter dashboard: **Settings → Keys and tokens → Set up a key**,
+choose **Send errors from my backend service** (server) or **Catch errors in my frontend**
+(client), and pick the repository. The kind you choose sets the key type:
 
 - **Server** (`autter_rt_…`) — secret, for backends and relays. Keep it in
   env vars, never commit it.

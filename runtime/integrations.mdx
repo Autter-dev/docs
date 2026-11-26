@@ -264,6 +264,8 @@ OTEL_TRACES_SAMPLER_ARG=0.01   # 1% of healthy traces; init_tracing() still send
 AUTTER_COUNT_REQUESTS=true     # count every request, so error rates are right at 1%
 ```
 
+Add `deployment.commit=${GIT_SHA}` so Autter can link errors to the commit. See [Link errors to code](/runtime/link-errors-to-code).
+
 `authorization=Bearer%20${AUTTER_RUNTIME_KEY}` works as well: header values in `OTEL_EXPORTER_OTLP_HEADERS` are URL-encoded, and `x-autter-key` needs no space. `service.version` is the release.
 
 Copies of `autter_tracing.py` from Autter Runtime 1.20.0 fill in what the resource leaves out. A value you set always wins:

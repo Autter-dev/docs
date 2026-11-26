@@ -177,6 +177,7 @@
             "group": "Guides",
             "pages": [
               "runtime/skills",
+              "runtime/link-errors-to-code",
               "runtime/investigate-issues",
               "runtime/operation-logging",
               "runtime/endpoint-regressions",

@@ -54,6 +54,8 @@ The Python adapter does the same in `init_tracing()`: same variables, same order
 
 The browser tracker cannot read your server's environment. Pass `release` to `initAutterBrowser` at build time, for example `import.meta.env.VITE_GIT_SHA`.
 
+The edge SDK, `@autter/runtime-edge`, detects no release and sends no `deployment.commit`. Pass `release` explicitly.
+
 <Warning>
 **This is a behaviour change.** A Node or Python service that set no release, and runs where one of these variables holds a commit, now reports one. That turns on release health on the **Deployments** tab and **New in this release** on the **Errors** tab for that service.
 </Warning>
@@ -72,6 +74,24 @@ Other OpenTelemetry senders set both attributes themselves:
 ```bash
 OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.commit=${GIT_SHA},deployment.environment.name=production
 ```
+
+Autter also accepts `vcs.ref.head.revision` as the commit (ingester 1.20.0).
+
+### How Autter finds a release's commit
+
+Autter maps each release to the commit it shipped. It uses the strongest source it has, in this order:
+
+1. **The SDK.** The `deployment.commit` your service sent.
+2. **Vercel or Cloudflare.** The commit of the platform deployment.
+3. **A GitHub release tag.** A published release tag resolves to its commit through the GitHub API, using the GitHub App. Spellings match, so `v1.4.2`, `1.4.2` and `web@1.4.2` are the same release. `web@` and `api@` are different releases.
+
+When none of those has a commit, Autter falls back to:
+
+1. a commit SHA inside the release name, such as `web@2026.10.20-a1b2c3d`;
+2. the deployment that shipped the release;
+3. the default branch. Autter then says: "No commit is known for release X, so authorship was read at the default branch, which may have changed since the error appeared."
+
+A release name you reuse across deploys gets a commit only if one commit carries at least 90% of that release's events. Use unique release names, such as the commit SHA, or GitHub release tags. See [Link errors to code](/runtime/link-errors-to-code).
 
 ### Check what your service reports
 

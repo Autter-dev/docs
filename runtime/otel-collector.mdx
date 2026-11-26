@@ -239,6 +239,8 @@ OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.environment.name=
 OTEL_TRACES_SAMPLER=parentbased_always_on
 ```
 
+Add `deployment.commit=${GIT_SHA}` so Autter can link errors to the commit. See [Link errors to code](/runtime/link-errors-to-code).
+
 ## What each part does
 
 | Component | Why |
