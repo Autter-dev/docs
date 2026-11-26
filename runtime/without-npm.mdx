@@ -24,10 +24,16 @@ OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp.autter.dev
 OTEL_EXPORTER_OTLP_HEADERS="authorization=Bearer ${AUTTER_RUNTIME_KEY}"
 OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
 OTEL_SERVICE_NAME=payments-api
-OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.environment=production
+OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.environment.name=production,service.instance.id=${HOSTNAME}
 OTEL_TRACES_SAMPLER=parentbased_traceidratio
 OTEL_TRACES_SAMPLER_ARG=0.01
 ```
+
+Set `service.instance.id` to a value unique per process (a host or pod name works for one process per host). `@autter/runtime-node` sets it for you.
+
+<Warning>
+  With a plain OpenTelemetry SDK, an error on a trace the sampler drops is not sent: at `0.01`, about 99 errors in 100 are lost. Python services keep every error with two copied files and `init_tracing()` ([Python](/runtime/integrations#python-django-fastapi-flask-celery)). For other languages, sample at 100% or sample in an OpenTelemetry Collector ([sampling guidance](/runtime/integrations#sampling-guidance-all-stacks)).
+</Warning>
 
 Install that language's OTel SDK and OTLP exporter from its own package manager (`pip`, `gem`, `go get`, `cargo`, Maven/Gradle, NuGet, Composer, …) and enable its auto-instrumentation. Per-language snippets for Go, Rust, Python, and friends live in [Stack integrations](/runtime/integrations).
 

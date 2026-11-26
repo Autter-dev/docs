@@ -1,0 +1,341 @@
+---
+title: "Move from New Relic"
+description: "Send the same telemetry to Autter Runtime and New Relic, compare the two, then switch alerting over."
+---
+
+This guide is for teams on New Relic who want Autter Runtime's error issues, root-cause analysis and draft fix pull requests, without a gap in alerting. You keep New Relic running while Autter receives the same telemetry. You compare the two, then switch over.
+
+Autter Runtime is built around issues. Errors are grouped into issues, and alert rules fire on issue events such as new, regressed and spiking. Runtime has no metric or NRQL threshold alerts. If most of your New Relic alert conditions are NRQL thresholds, anomaly or infrastructure conditions, read the [condition table](#new-relic-alert-conditions-and-their-autter-equivalents) first. Many have no Autter equivalent.
+
+The send-to-both step needs services that emit OpenTelemetry (OTLP). A service instrumented only with a New Relic agent keeps sending to New Relic as before. Bring its errors into Autter with the [New Relic connector](#2-bring-errors-and-history-across-with-the-new-relic-connector).
+
+## 1. Send to both
+
+Run one OpenTelemetry Collector that exports to Autter and to New Relic's OTLP endpoint. The config is the [Autter collector config](/runtime/otel-collector), plus these parts:
+
+| Added | What it does |
+| --- | --- |
+| `otlp_http/newrelic` on `traces/autter` and `logs/autter` | New Relic receives the same traces and logs as Autter. |
+| `metrics/newrelic` pipeline | The apps' own metrics, unfiltered, go to New Relic. Autter's `metrics/autter` drops the apps' HTTP duration histograms so Autter does not count requests twice. New Relic still needs them. |
+
+New Relic recommends the OTLP/HTTP exporter for collectors, the `api-key` header with a license key, and gzip or zstd compression. See [OTLP endpoint best practices](https://docs.newrelic.com/docs/opentelemetry/best-practices/opentelemetry-otlp/) and [Collector processing](https://docs.newrelic.com/docs/opentelemetry/get-started/collector-processing/opentelemetry-collector-processing-intro/). The `otlp_http` exporter is in every collector build, including the `otelcol-contrib` 0.161.0 that the Autter config pins.
+
+Set these variables:
+
+| Variable | Value |
+| --- | --- |
+| `NEW_RELIC_LICENSE_KEY` | An ingest license key. It is sent as the `api-key` header. |
+| `NEW_RELIC_OTLP_ENDPOINT` | US: `https://otlp.nr-data.net`. EU: `https://otlp.eu01.nr-data.net`. JP: `https://otlp.jp.nr-data.net`. US FedRAMP: `https://gov-otlp.nr-data.net`. |
+| `AUTTER_RUNTIME_KEY` | A server ingest key of one Autter repository. See [OpenTelemetry Collector](/runtime/otel-collector). |
+
+New Relic's endpoints take port 443, 4317 or 4318. With `https` and no port, 443 is used, so the values above need none ([OTLP endpoint best practices](https://docs.newrelic.com/docs/opentelemetry/best-practices/opentelemetry-otlp/)).
+
+Save this as `otel-collector.yaml`:
+
+```yaml
+# Dual send: Autter and New Relic.
+# The Autter collector config, plus New Relic's OTLP
+# endpoint on the traces and logs pipelines and a New Relic metrics pipeline.
+#
+# NEW_RELIC_LICENSE_KEY: an ingest license key, sent in the api-key header.
+# NEW_RELIC_OTLP_ENDPOINT: https://otlp.nr-data.net (US),
+# https://otlp.eu01.nr-data.net (EU), https://otlp.jp.nr-data.net (JP) or
+# https://gov-otlp.nr-data.net (US FedRAMP):
+# https://docs.newrelic.com/docs/opentelemetry/best-practices/opentelemetry-otlp/
+#
+# Autter Runtime: OpenTelemetry Collector (contrib) config.
+# Keeps every error and LLM call, samples the rest, counts every request,
+# drops request headers and query strings, and sends OTLP/HTTP to Autter.
+#
+# AUTTER_RUNTIME_KEY: a server ingest key (autter_rt_...) of ONE repository.
+# Self-hosted ingester? Replace https://otlp.autter.dev with its URL.
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+connectors:
+  # Every server span, before sampling, becomes a delta http.server.duration
+  # histogram: the ingester's request counts and error rates stay exact.
+  span_metrics/autter:
+    namespace: http.server
+    histogram:
+      unit: ms
+      explicit:
+        buckets: [5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2500ms, 5s, 10s]
+    dimensions:
+      - name: http.route
+      - name: http.request.method
+      - name: http.response.status_code
+      - name: http.status_code
+    aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
+    metrics_flush_interval: 60s
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 20
+
+  # Fills in only what a sender left out: insert never overwrites.
+  resource/autter:
+    attributes:
+      # Legacy key on purpose: deployment.environment.name, when a sender
+      # sets it, still wins.
+      - key: deployment.environment
+        value: production
+        action: insert
+      # Shows these services as "via OTel Collector" in Autter. An Autter
+      # SDK keeps its own name.
+      - key: telemetry.distro.name
+        value: otelcol-contrib
+        action: insert
+      - key: telemetry.distro.version
+        value: "0.161.0"
+        action: insert
+
+  # Request and response headers (cookies, auth) and query strings never
+  # leave this collector.
+  transform/autter-redact:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - 'delete_matching_keys(attributes, "^http[.](request|response)[.]header[.]")'
+          - 'delete_key(attributes, "url.query")'
+          - 'replace_pattern(attributes["url.full"], "[?#].*", "") where attributes["url.full"] != nil'
+          - 'replace_pattern(attributes["http.url"], "[?#].*", "") where attributes["http.url"] != nil'
+          - 'replace_pattern(attributes["http.target"], "[?#].*", "") where attributes["http.target"] != nil'
+      - context: spanevent
+        statements:
+          - 'delete_matching_keys(attributes, "^http[.](request|response)[.]header[.]")'
+          - 'delete_key(attributes, "url.query")'
+    log_statements:
+      - context: log
+        statements:
+          - 'delete_matching_keys(attributes, "^http[.](request|response)[.]header[.]")'
+          - 'delete_key(attributes, "url.query")'
+          - 'replace_pattern(attributes["url.full"], "[?#].*", "") where attributes["url.full"] != nil'
+
+  # Only server spans feed the request counts. Autter SDKs count their own.
+  filter/autter-server-spans:
+    error_mode: ignore
+    trace_conditions:
+      - 'span.kind != SPAN_KIND_SERVER'
+      - 'IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+
+  # The counts come from span_metrics/autter; a sender's own delta HTTP
+  # duration histograms would count every request twice.
+  filter/autter-http-duration:
+    error_mode: ignore
+    metric_conditions:
+      - '(metric.name == "http.server.request.duration" or metric.name == "http.server.duration") and not IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+
+  tail_sampling/autter:
+    decision_wait: 10s
+    num_traces: 100000
+    expected_new_traces_per_sec: 100
+    policies:
+      # Errors are never sampled away (the Autter SDKs' always-on errors).
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: exceptions
+        type: ottl_condition
+        ottl_condition:
+          error_mode: ignore
+          spanevent:
+            - 'name == "exception"'
+      # LLM calls are costed per call: keep all of them.
+      - name: llm-calls
+        type: ottl_condition
+        ottl_condition:
+          error_mode: ignore
+          span:
+            - 'attributes["gen_ai.system"] != nil'
+            - 'attributes["gen_ai.operation.name"] != nil'
+      # Autter SDKs already sample and tail-retain: pass them through.
+      - name: autter-sdks
+        type: ottl_condition
+        ottl_condition:
+          error_mode: ignore
+          span:
+            - 'IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+      - name: slow
+        type: latency
+        latency:
+          threshold_ms: 2000
+      - name: baseline
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+
+  # Kept server spans are not counted again: span_metrics/autter counted them.
+  transform/autter-tail-retained:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - 'set(attributes["autter.tail_retained"], true) where kind == SPAN_KIND_SERVER and not IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+
+  # The ingester takes at most 1 MiB per request and 300 requests a minute
+  # per key. Spans past 5000 and log records past 2000 in one request come
+  # back as rejected in partial_success, which the exporter logs.
+  batch/autter:
+    send_batch_size: 256
+    send_batch_max_size: 512
+    timeout: 5s
+
+exporters:
+  otlp_http/autter:
+    endpoint: https://otlp.autter.dev
+    headers:
+      authorization: "Bearer ${env:AUTTER_RUNTIME_KEY}"
+    compression: gzip
+    retry_on_failure:
+      enabled: true
+    sending_queue:
+      enabled: true
+      queue_size: 1000
+
+  otlp_http/newrelic:
+    endpoint: ${env:NEW_RELIC_OTLP_ENDPOINT}
+    headers:
+      api-key: ${env:NEW_RELIC_LICENSE_KEY}
+    compression: gzip
+    retry_on_failure:
+      enabled: true
+    sending_queue:
+      enabled: true
+      queue_size: 1000
+
+service:
+  extensions: [health_check]
+  pipelines:
+    # Unsampled, only to count requests.
+    traces/autter-requests:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, filter/autter-server-spans]
+      exporters: [span_metrics/autter]
+    metrics/autter-requests:
+      receivers: [span_metrics/autter]
+      processors: [memory_limiter, batch/autter]
+      exporters: [otlp_http/autter]
+    traces/autter:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, transform/autter-redact, tail_sampling/autter, transform/autter-tail-retained, batch/autter]
+      exporters: [otlp_http/autter, otlp_http/newrelic]
+    metrics/autter:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, filter/autter-http-duration, batch/autter]
+      exporters: [otlp_http/autter]
+    logs/autter:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, transform/autter-redact, batch/autter]
+      exporters: [otlp_http/autter, otlp_http/newrelic]
+    # The apps' own metrics, unfiltered.
+    metrics/newrelic:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, batch/autter]
+      exporters: [otlp_http/newrelic]
+```
+
+Run it, passing the New Relic variables too:
+
+```bash
+docker run -d --name otel-collector -p 4317:4317 -p 4318:4318 \
+  -e AUTTER_RUNTIME_KEY -e NEW_RELIC_LICENSE_KEY -e NEW_RELIC_OTLP_ENDPOINT \
+  -v "$PWD/otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro" \
+  otel/opentelemetry-collector-contrib:0.161.0
+```
+
+Check the file before you deploy it:
+
+```bash
+docker run --rm -v "$PWD/otel-collector.yaml:/cfg.yaml:ro" \
+  otel/opentelemetry-collector-contrib:0.161.0 validate --config=/cfg.yaml
+```
+
+Then point each service at the collector with the environment variables on the [OpenTelemetry Collector](/runtime/otel-collector#point-your-services-at-the-collector) page. This is what changes for New Relic:
+
+- **Traces are sampled.** Apps send everything (`parentbased_always_on`). The collector keeps every trace with an error, an exception, an LLM call or a span over 2 seconds, and 10% of the rest. New Relic gets that sample, so trace-derived counts in New Relic cover the sample, not all requests. Metrics are not sampled.
+- **Request and response headers and query strings are removed** from spans, span events and logs before either destination sees them.
+- **Resource attributes the collector inserts** reach New Relic too: `deployment.environment: production` when a service sets no environment, the collector's `telemetry.distro.*`, and `autter.tail_retained` on kept server spans.
+- **Payload size.** New Relic takes payloads under 1 MB (10^6 bytes). The pipelines batch 256 to 512 items with gzip. Lower `send_batch_max_size` if the exporter logs rejected payloads.
+- **Metric temporality.** New Relic recommends delta temporality (`OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=delta` in the apps). Autter sums only delta HTTP duration histograms too, so the setting suits both. The config does not convert metrics.
+- **One Autter repository per key.** To split one collector across repositories, give each repository its own `otlp_http` exporter and key, as described on the collector page.
+
+<Warning>
+  This config has not been run against a collector or a New Relic account for this guide. Run the `validate` command before you deploy it.
+</Warning>
+
+An Autter SDK has no documented way to send to a second exporter, so the collector is the supported way to send to both.
+
+## 2. Bring errors and history across with the New Relic connector
+
+The New Relic connector reads errors out of New Relic into Autter. See [External log sources](/runtime/external-sources).
+
+1. In New Relic, create a User key (`NRAK-…`). License and ingest keys cannot query.
+2. Open **Repository → Settings → Runtime → Data sources** and connect New Relic. Enter the region (US or EU NerdGraph host), the account ID and the APM or Browser application names.
+3. Select **Test access**, then save.
+
+What arrives: APM `TransactionError` and Browser `JavaScriptError` events, queried with NRQL. New Relic's APM error events carry no stack trace. APM records group by class and message, and they join an Autter SDK issue only by error code, not by frames. Browser errors keep their stack, which is usually minified.
+
+What does not arrive: metrics, dashboards, alert conditions, and anything older than the initial backfill of 24 hours. Records from the backfill are visible, but they do not start automatic investigation or fixes. The connector reaches the US and EU NerdGraph hosts only, so it does not cover JP or FedRAMP accounts.
+
+### Alert notifications
+
+The connector takes no New Relic webhooks. They are alert notifications, not error events. Forwarding New Relic alerts into Autter through a generic webhook connection is not covered by this guide, because the notification payload has not been checked against the webhook's record shape. Keep paging from New Relic for those conditions during the overlap.
+
+## New Relic alert conditions and their Autter equivalents
+
+An Autter [alert rule](/runtime/alert-rules) fires on issue events: `new`, `regressed`, `spiking`, `assigned` and `resolved`. It can filter by environment, service, level, priority (`p0` to `p3`), error type and message (equals, contains, starts with, regex), and assignee. It can require a minimum number of events or users in a window of up to 7 days. It posts to Slack, adds a line to the daily email summary, notifies in-app, and pages on-call for critical issues.
+
+A [synthetic check](/runtime/synthetic-checks) is an HTTP GET or HEAD request to a public URL, with an expected status, optional body text and an optional latency threshold. It runs from one region. A [journey check](/runtime/synthetic-checks#journey-checks) replays a saved journey in a browser instead. A [dashboard](/runtime/dashboards) has line, bar, stat and table widgets over logs, spans, errors, metrics and LLM calls. A dashboard widget shows data. It does not alert.
+
+Condition and threshold types are New Relic's, from [Alert conditions](https://docs.newrelic.com/docs/alerts/create-alert/create-alert-condition/alert-conditions/). Synthetic monitor types are from [Synthetic monitor types](https://docs.newrelic.com/docs/synthetics/synthetic-monitoring/getting-started/types-synthetic-monitors/).
+
+| New Relic | Autter | Notes |
+| --- | --- | --- |
+| NRQL condition on error events (count of `TransactionError` or `JavaScriptError`) | Partly: alert rule | Errors become issues, and a rule fires per issue, with a minimum event or user count in a window. A count across all errors: no equivalent. |
+| NRQL query conditions (other) | No equivalent | A dashboard widget can show the query's data. |
+| APM metric conditions | Partly: alert rule | Error rate: use the `spiking` trigger or a minimum count per issue. Response time and throughput: no equivalent. |
+| Static threshold | No equivalent | Except as above. |
+| Anomaly threshold, anomaly conditions | No equivalent | |
+| Outlier detection | No equivalent | |
+| Predictive alerts | No equivalent | |
+| Lost signal threshold | No equivalent | |
+| Key transaction metrics, web transaction percentile | No equivalent | |
+| Java instance, JVM health metric conditions | No equivalent | |
+| Infrastructure conditions (including host not reporting) | No equivalent | |
+| Synthetic multi-location conditions | Synthetic check | Probes run from one region only. |
+| Ping monitor | Synthetic check | |
+| API tests | Partly: synthetic check | API tests are scripts. A check is one GET or HEAD request with an expected status, body text and latency. |
+| Certificate check monitor | No equivalent | |
+| Broken links monitor | No equivalent | |
+| Simple browser, scripted browser and step monitors | No equivalent | |
+
+## Cutover checklist
+
+1. List your New Relic alert conditions and synthetic monitors and sort them with the table above: recreate as an alert rule or synthetic check, or keep in New Relic.
+2. Deploy the dual-send collector, run `validate`, and move services onto it one at a time. In Autter, **Repository → Settings → Runtime → Source coverage** shows each service as "via OTel Collector". In New Relic, check that the same services still report traces, logs and metrics.
+3. Connect the New Relic connector for history and for services that still run a New Relic agent.
+4. Recreate the issue-based conditions as [alert rules](/runtime/alert-rules) under **Repository → Settings → Runtime → Alert rules**. Send them to the Slack channels and on-call your New Relic workflows use. Recreate ping monitors as [synthetic checks](/runtime/synthetic-checks).
+5. Run both for long enough to see your usual traffic and a few real errors. Compare Autter's issues with New Relic's errors for the same services and time range.
+6. Move paging. Turn on the on-call action in the Autter rules, then disable the New Relic conditions they replace. Disable them. Do not delete them until the rollback window ends.
+7. When New Relic is no longer needed for these services, switch the collector to the Autter-only config on the [collector page](/runtime/otel-collector) and disconnect the New Relic connector.
+
+## Roll back
+
+- **Before step 7:** re-enable the New Relic conditions and turn off the Autter rules' on-call action. New Relic has received everything all along.
+- **After step 7:** put the dual-send config back, with the same file and variables. Services keep pointing at the collector, so nothing changes in them. New Relic has a gap for the time the config was removed.
+- **Leaving Autter entirely:** remove `otlp_http/autter` and the Autter-only pipelines from the collector, or point services back at New Relic directly. Apps were set to `parentbased_always_on` for the collector. Restore their previous sampler if they no longer go through it. Pause or disconnect the New Relic connector in repository settings.

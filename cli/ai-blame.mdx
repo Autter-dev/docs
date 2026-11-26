@@ -14,9 +14,17 @@ autter blame src/services/review.ts
 
 The output follows `git blame` conventions and adds AI authorship where available. Standard `git blame` flags remain available.
 
-<Frame caption="Replace this placeholder with final terminal or editor attribution output.">
-  <img src="/images/placeholders/ai-blame.svg" alt="Placeholder for Autter AI blame showing human and Codex-authored lines" />
-</Frame>
+For a file where Codex wrote three lines, the output (piped, so without the prompt legend) looks like this:
+
+```text
+3e1a9c2 (Dana Kim <dana@example.com> 2026-11-12 14:03:26 +0000 1) export function reviewScore(findings: Finding[]): number {
+3e1a9c2 (codex                       2026-11-12 14:03:26 +0000 2)   if (findings.length === 0) return 100;
+3e1a9c2 (codex                       2026-11-12 14:03:26 +0000 3)   const weights = findings.map((f) => SEVERITY_WEIGHT[f.severity]);
+3e1a9c2 (codex                       2026-11-12 14:03:26 +0000 4)   return Math.max(0, 100 - sum(weights));
+3e1a9c2 (Dana Kim <dana@example.com> 2026-11-12 14:03:26 +0000 5) }
+```
+
+Lines a coding agent wrote show the agent in the author column; other lines show the Git author.
 
 ## Common examples
 
@@ -33,6 +41,37 @@ autter blame HEAD~1 -- src/services/review.ts
 # Produce machine-readable output
 autter blame src/services/review.ts --json
 ```
+
+## From a line to the prompt that wrote it
+
+On a terminal, `autter blame` ends with a legend of the prompts behind its AI lines:
+
+```text
+Prompts behind the AI lines:
+  s_3f9a2c1d  claude  claude-opus-4-5  lines 138-140
+Details: autter show-prompt s_3f9a2c1d  |  autter blame --why src/services/review.ts:138
+```
+
+Follow one line to its session, model and change:
+
+1. `autter blame <file>` gives each prompt a short reference such as `s_3f9a2c1d`. Add `--show-prompt` to print the reference on every AI line; the legend is then printed even when output is piped.
+2. `autter blame --why <file>:<line>` explains one line: agent, model, prompt reference, the agent's own session ID, the commit, and the prompt transcript.
+3. `autter show-prompt <reference>` prints the full prompt record as JSON, including the commit whose authorship note holds it.
+4. `git show <commit>` shows the change itself.
+
+`autter show-prompt` accepts:
+
+| ID | Example |
+| --- | --- |
+| Short reference from `blame` (any unique prefix of 4+ hex characters) | `s_3f9a2c1d` |
+| Full session ID | `s_3f9a2c1d4e5f60` |
+| A line's attestation key | `s_3f9a2c1d4e5f60::t_0a1b2c3d4e5f60` |
+| Prompt hash from older notes | `0123456789abcdef` |
+| The agent's own session ID | a Claude Code session ID |
+
+Run `autter show-prompt --help` for the same list.
+
+Transcripts are read from your machine first, then from Autter when you are connected and signed in. Secrets are redacted before a transcript is stored. When a transcript can't be shown, `--why` and `show-prompt` (in `transcript.reason`) say why: no transcript was recorded, it stayed on the machine that made the commit (local mode), or you need to run `autter login`. Authorship notes made on other machines arrive with `autter fetch-notes`.
 
 ## Use blame during review
 

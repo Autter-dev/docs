@@ -10,6 +10,27 @@ Follow the features and improvements shipped across Autter. The newest release a
 {/* Generated from the website repo's src/lib/changelog.ts, the source of truth behind autter.dev/changelog. Update that file first, then regenerate this page so the two never drift. */}
 
 <Update
+  label="2026-11-18"
+  description="Manage Runtime alert rules, checks and dashboards with Terraform"
+  tags={["New feature"]}
+  rss={{
+    title: "Manage Runtime alert rules, checks and dashboards with Terraform",
+    description: "The Autter Terraform provider is available. It manages alert rules, synthetic checks and dashboards as code, and Export as Terraform now writes configuration for it."
+  }}
+>
+  ## Manage Runtime alert rules, checks and dashboards with Terraform
+
+  The Autter Terraform provider is available. It manages alert rules, synthetic checks and dashboards as code, and Export as Terraform now writes configuration for it.
+
+  - **Start from what you have**: Export a rule, check or dashboard, then import it. The export starts with the `required_providers` block.
+  - **Own rate limit**: API requests are limited to 10 writes and 60 reads a minute per token, apart from MCP, and bodies can be up to 1 MB.
+  - **HTTP checks**: Version 0.1.0 supports `kind = "http"` checks.
+  - **Journey checks**: A journey check replays a saved journey in a real browser against your production site, on a schedule. It opens an issue after it has passed once and then failed in a row. Terraform supports `kind = "journey"` with a `journey_id`.
+
+  Read [Config as code with Terraform](/runtime/config-as-code) and [Journey checks](/runtime/synthetic-checks#journey-checks).
+</Update>
+
+<Update
   label="2026-08-15"
   description="Connecting your AI models now takes one line of code"
   tags={["New feature"]}

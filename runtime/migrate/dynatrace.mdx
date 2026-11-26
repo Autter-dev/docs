@@ -1,0 +1,362 @@
+---
+title: "Move from Dynatrace"
+description: "Send the same telemetry to Autter Runtime and Dynatrace, compare the two, then switch alerting over."
+---
+
+This guide is for teams on Dynatrace who want Autter Runtime's error issues, root-cause analysis and draft fix pull requests, without a gap in alerting. You keep Dynatrace running while Autter receives the same telemetry. You compare the two, then switch over.
+
+Autter Runtime is built around issues. Errors are grouped into issues, and alert rules fire on issue events such as new, regressed and spiking. Runtime has no metric thresholds, baselines or anomaly detection. If most of your Dynatrace alerting is metric events or Davis anomaly detection, read the [alerting table](#dynatrace-alerting-and-its-autter-equivalents) first. Much of it has no Autter equivalent.
+
+The send-to-both step needs services that emit OpenTelemetry (OTLP). Services monitored only by OneAgent keep reporting to Dynatrace as before. Autter has no Dynatrace connector, so their errors reach Autter only once they also emit OpenTelemetry or use an Autter SDK.
+
+## 1. Send to both
+
+Run one OpenTelemetry Collector that exports to Autter and to Dynatrace's OTLP API. The config is the [Autter collector config](/runtime/otel-collector), plus these parts:
+
+| Added | What it does |
+| --- | --- |
+| `otlp_http/dynatrace` on `traces/autter` and `logs/autter` | Dynatrace receives the same traces and logs as Autter. |
+| `metrics/dynatrace` pipeline | The apps' own metrics, unfiltered, go to Dynatrace. Autter's `metrics/autter` drops the apps' HTTP duration histograms so Autter does not count requests twice. Dynatrace still needs them. |
+| `cumulative_to_delta/dynatrace` (in `metrics/dynatrace` only) | Dynatrace requires delta temporality. This turns cumulative metrics into delta for Dynatrace without changing what Autter receives. |
+
+From Dynatrace's documentation ([OTLP API](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api), [Collector configuration](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector/configuration)):
+
+- The OTLP API takes HTTP with binary protobuf only. gRPC and JSON are not supported. The collector's `otlp_http` exporter sends protobuf over HTTP.
+- Authentication is a platform token in `Authorization: Bearer <token>`, with the scopes `openpipeline:traces:ingest`, `openpipeline:metrics:ingest` and `openpipeline:logs:ingest`.
+- Dynatrace requires metrics with delta temporality. The `cumulative_to_delta` processor converts them. Set `max_staleness` above how often metrics arrive. Dynatrace's example uses `25h`. In `otelcol-contrib` 0.161.0, the version the Autter config pins, the processor is `cumulative_to_delta` and it has `max_staleness` ([processor README at 0.161.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.161.0/processor/cumulativetodeltaprocessor/README.md)).
+
+Set these variables:
+
+| Variable | Value |
+| --- | --- |
+| `DT_ENDPOINT` | SaaS: `https://<your-environment-id>.live.dynatrace.com/api/v2/otlp`. Environment ActiveGate: `https://<your-activegate-domain>:9999/e/<your-environment-id>/api/v2/otlp`. Containerized ActiveGate: `https://<your-activegate-domain>/e/<your-environment-id>/api/v2/otlp`. If you copy the environment ID from the browser, remove `.apps` from it, or requests return 404. |
+| `DT_PLATFORM_TOKEN` | A platform token with the three `openpipeline:*:ingest` scopes above. |
+| `AUTTER_RUNTIME_KEY` | A server ingest key of one Autter repository. See [OpenTelemetry Collector](/runtime/otel-collector). |
+
+The exporter appends `/v1/traces`, `/v1/metrics` and `/v1/logs` to `DT_ENDPOINT`, the paths the OTLP API expects. Dynatrace's OTLP API page gives no base URL for Dynatrace Managed, so this guide has none.
+
+### Collector distribution
+
+Dynatrace supports its own collector distribution. It gives limited support to the core and contrib builds, and recommends contrib only for testing, not production ([Dynatrace OTel Collector](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector)). The Autter config needs contrib components (the `span_metrics` connector and the `tail_sampling`, `filter`, `transform` and `resource` processors) and pins `otelcol-contrib` 0.161.0. Whether the Dynatrace distribution includes all of them has not been checked. Until it is, this guide uses contrib.
+
+Save this as `otel-collector.yaml`:
+
+```yaml
+# Dual send: Autter and Dynatrace.
+# The Autter collector config, plus Dynatrace's OTLP
+# API on the traces and logs pipelines and a Dynatrace metrics pipeline that
+# turns cumulative metrics into delta (Dynatrace accepts delta only).
+#
+# DT_ENDPOINT: https://<environment-id>.live.dynatrace.com/api/v2/otlp (SaaS)
+# or https://<activegate>:9999/e/<environment-id>/api/v2/otlp (ActiveGate).
+# DT_PLATFORM_TOKEN: a platform token with openpipeline:traces:ingest,
+# openpipeline:metrics:ingest and openpipeline:logs:ingest.
+# https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api
+# https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector/configuration
+#
+# Autter Runtime: OpenTelemetry Collector (contrib) config.
+# Keeps every error and LLM call, samples the rest, counts every request,
+# drops request headers and query strings, and sends OTLP/HTTP to Autter.
+#
+# AUTTER_RUNTIME_KEY: a server ingest key (autter_rt_...) of ONE repository.
+# Self-hosted ingester? Replace https://otlp.autter.dev with its URL.
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+connectors:
+  # Every server span, before sampling, becomes a delta http.server.duration
+  # histogram: the ingester's request counts and error rates stay exact.
+  span_metrics/autter:
+    namespace: http.server
+    histogram:
+      unit: ms
+      explicit:
+        buckets: [5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2500ms, 5s, 10s]
+    dimensions:
+      - name: http.route
+      - name: http.request.method
+      - name: http.response.status_code
+      - name: http.status_code
+    aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
+    metrics_flush_interval: 60s
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 20
+
+  # Fills in only what a sender left out: insert never overwrites.
+  resource/autter:
+    attributes:
+      # Legacy key on purpose: deployment.environment.name, when a sender
+      # sets it, still wins.
+      - key: deployment.environment
+        value: production
+        action: insert
+      # Shows these services as "via OTel Collector" in Autter. An Autter
+      # SDK keeps its own name.
+      - key: telemetry.distro.name
+        value: otelcol-contrib
+        action: insert
+      - key: telemetry.distro.version
+        value: "0.161.0"
+        action: insert
+
+  # Request and response headers (cookies, auth) and query strings never
+  # leave this collector.
+  transform/autter-redact:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - 'delete_matching_keys(attributes, "^http[.](request|response)[.]header[.]")'
+          - 'delete_key(attributes, "url.query")'
+          - 'replace_pattern(attributes["url.full"], "[?#].*", "") where attributes["url.full"] != nil'
+          - 'replace_pattern(attributes["http.url"], "[?#].*", "") where attributes["http.url"] != nil'
+          - 'replace_pattern(attributes["http.target"], "[?#].*", "") where attributes["http.target"] != nil'
+      - context: spanevent
+        statements:
+          - 'delete_matching_keys(attributes, "^http[.](request|response)[.]header[.]")'
+          - 'delete_key(attributes, "url.query")'
+    log_statements:
+      - context: log
+        statements:
+          - 'delete_matching_keys(attributes, "^http[.](request|response)[.]header[.]")'
+          - 'delete_key(attributes, "url.query")'
+          - 'replace_pattern(attributes["url.full"], "[?#].*", "") where attributes["url.full"] != nil'
+
+  # Only server spans feed the request counts. Autter SDKs count their own.
+  filter/autter-server-spans:
+    error_mode: ignore
+    trace_conditions:
+      - 'span.kind != SPAN_KIND_SERVER'
+      - 'IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+
+  # The counts come from span_metrics/autter; a sender's own delta HTTP
+  # duration histograms would count every request twice.
+  filter/autter-http-duration:
+    error_mode: ignore
+    metric_conditions:
+      - '(metric.name == "http.server.request.duration" or metric.name == "http.server.duration") and not IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+
+  tail_sampling/autter:
+    decision_wait: 10s
+    num_traces: 100000
+    expected_new_traces_per_sec: 100
+    policies:
+      # Errors are never sampled away (the Autter SDKs' always-on errors).
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: exceptions
+        type: ottl_condition
+        ottl_condition:
+          error_mode: ignore
+          spanevent:
+            - 'name == "exception"'
+      # LLM calls are costed per call: keep all of them.
+      - name: llm-calls
+        type: ottl_condition
+        ottl_condition:
+          error_mode: ignore
+          span:
+            - 'attributes["gen_ai.system"] != nil'
+            - 'attributes["gen_ai.operation.name"] != nil'
+      # Autter SDKs already sample and tail-retain: pass them through.
+      - name: autter-sdks
+        type: ottl_condition
+        ottl_condition:
+          error_mode: ignore
+          span:
+            - 'IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+      - name: slow
+        type: latency
+        latency:
+          threshold_ms: 2000
+      - name: baseline
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+
+  # Kept server spans are not counted again: span_metrics/autter counted them.
+  transform/autter-tail-retained:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - 'set(attributes["autter.tail_retained"], true) where kind == SPAN_KIND_SERVER and not IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+
+  # Dynatrace requires delta temporality; 25h is Dynatrace's own example.
+  cumulative_to_delta/dynatrace:
+    max_staleness: 25h
+
+  # The ingester takes at most 1 MiB per request and 300 requests a minute
+  # per key. Spans past 5000 and log records past 2000 in one request come
+  # back as rejected in partial_success, which the exporter logs.
+  batch/autter:
+    send_batch_size: 256
+    send_batch_max_size: 512
+    timeout: 5s
+
+exporters:
+  otlp_http/autter:
+    endpoint: https://otlp.autter.dev
+    headers:
+      authorization: "Bearer ${env:AUTTER_RUNTIME_KEY}"
+    compression: gzip
+    retry_on_failure:
+      enabled: true
+    sending_queue:
+      enabled: true
+      queue_size: 1000
+
+  otlp_http/dynatrace:
+    endpoint: ${env:DT_ENDPOINT}
+    headers:
+      Authorization: "Bearer ${env:DT_PLATFORM_TOKEN}"
+    retry_on_failure:
+      enabled: true
+    sending_queue:
+      enabled: true
+      queue_size: 1000
+
+service:
+  extensions: [health_check]
+  pipelines:
+    # Unsampled, only to count requests.
+    traces/autter-requests:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, filter/autter-server-spans]
+      exporters: [span_metrics/autter]
+    metrics/autter-requests:
+      receivers: [span_metrics/autter]
+      processors: [memory_limiter, batch/autter]
+      exporters: [otlp_http/autter]
+    traces/autter:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, transform/autter-redact, tail_sampling/autter, transform/autter-tail-retained, batch/autter]
+      exporters: [otlp_http/autter, otlp_http/dynatrace]
+    metrics/autter:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, filter/autter-http-duration, batch/autter]
+      exporters: [otlp_http/autter]
+    logs/autter:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, transform/autter-redact, batch/autter]
+      exporters: [otlp_http/autter, otlp_http/dynatrace]
+    # The apps' own metrics, unfiltered, as delta.
+    metrics/dynatrace:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, cumulative_to_delta/dynatrace, batch/autter]
+      exporters: [otlp_http/dynatrace]
+```
+
+Run it, passing the Dynatrace variables too:
+
+```bash
+docker run -d --name otel-collector -p 4317:4317 -p 4318:4318 \
+  -e AUTTER_RUNTIME_KEY -e DT_ENDPOINT -e DT_PLATFORM_TOKEN \
+  -v "$PWD/otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro" \
+  otel/opentelemetry-collector-contrib:0.161.0
+```
+
+Check the file before you deploy it:
+
+```bash
+docker run --rm -v "$PWD/otel-collector.yaml:/cfg.yaml:ro" \
+  otel/opentelemetry-collector-contrib:0.161.0 validate --config=/cfg.yaml
+```
+
+Then point each service at the collector with the environment variables on the [OpenTelemetry Collector](/runtime/otel-collector#point-your-services-at-the-collector) page. This is what changes for Dynatrace:
+
+- **Traces are sampled.** Apps send everything (`parentbased_always_on`). The collector keeps every trace with an error, an exception, an LLM call or a span over 2 seconds, and 10% of the rest. Dynatrace gets that sample. Metrics are not sampled.
+- **Request and response headers and query strings are removed** from spans, span events and logs before either destination sees them.
+- **Resource attributes the collector inserts** reach Dynatrace too: `deployment.environment: production` when a service sets no environment, the collector's `telemetry.distro.*`, and `autter.tail_retained` on kept server spans.
+- **One Autter repository per key.** To split one collector across repositories, give each repository its own `otlp_http` exporter and key, as described on the collector page.
+
+Dynatrace's pages do not state a payload limit or a compression setting for the OTLP API. The exporter uses its default (gzip).
+
+<Warning>
+  This config has not been run against a collector or a Dynatrace environment for this guide. Run the `validate` command before you deploy it.
+</Warning>
+
+An Autter SDK has no documented way to send to a second exporter, so the collector is the supported way to send to both.
+
+## 2. History and alerts: no connector, the generic webhook for problems
+
+Autter has no Dynatrace connector, so no Dynatrace history comes across. Autter starts with what the collector sends from the day you switch it on. See [External log sources](/runtime/external-sources) for the supported connectors.
+
+Dynatrace problems can be forwarded to a generic webhook connection under **Repository → Settings → Runtime → Data sources**. It takes JSON records at a private URL, optionally with an `x-autter-signature` shared-secret header. See the [generic webhook record](/runtime/external-sources#generic-webhook-record). An alert record needs:
+
+| Field | Value |
+| --- | --- |
+| `eventId` | Unique per delivery. A resolve needs a new one. |
+| `title` | The problem's title. |
+| `occurredAt` | An ISO 8601 timestamp. |
+| `fingerprint` | The same for the fire and the resolve of one problem. |
+| `kind`, `action` | `"alert"`, and `"fired"` or `"resolved"`. |
+| `service`, `environment` | Optional. The connection's own are used when you leave them out. |
+
+Where Dynatrace has those values:
+
+- **Workflows** are Dynatrace's current way. Classic problem notifications continue to work but get no new capabilities. Use an HTTP Request action with a Jinja payload. The problem's id is `event.id`, its display id is `display_id`, its title is `event.name`, its status is `event.status` (`ACTIVE` or `CLOSED`), its start is `event.start`, and its link is `{{ problem_link() }}`. See the [upgrade guide from classic problem notifications](https://docs.dynatrace.com/docs/platform/upgrade/keep-problems-and-alerting-working/upgrade-guide-alert-notification).
+- **Classic custom integration** (Settings Classic → Integration → Problem notifications → Custom integration) has placeholders such as `{PID}`, `{ProblemID}`, `{ProblemTitle}` and `{State}` (`OPEN` or `RESOLVED`), and lets you add HTTP headers. See [Send Dynatrace notifications via webhooks](https://docs.dynatrace.com/docs/analyze-explore-automate/notifications-and-alerting/problem-notifications/webhook-integration).
+
+<Warning>
+  Check one test delivery before you rely on this. These points are not confirmed:
+
+  - The classic integration has no timestamp placeholder, so it cannot fill `occurredAt`, and the webhook rejects a record without one. Use a workflow.
+  - Dynatrace's upgrade guide says the format of `event.start` differs from Dynatrace Classic, but does not give it. The webhook needs a value that JavaScript's `Date.parse` reads (ISO 8601).
+  - `action` must be `"resolved"` when `event.status` is `CLOSED` and `"fired"` otherwise. Whether to do that with a Jinja condition in one payload or with separate workflows for opening and closing has not been checked against Dynatrace's workflow documentation.
+</Warning>
+
+A forwarded problem carries no stack, and records without usable frames get no automatic draft fix.
+
+## Dynatrace alerting and its Autter equivalents
+
+An Autter [alert rule](/runtime/alert-rules) fires on issue events: `new`, `regressed`, `spiking`, `assigned` and `resolved`. It can filter by environment, service, level, priority (`p0` to `p3`), error type and message (equals, contains, starts with, regex), and assignee. It can require a minimum number of events or users in a window of up to 7 days. It posts to Slack, adds a line to the daily email summary, notifies in-app, and pages on-call for critical issues.
+
+A [synthetic check](/runtime/synthetic-checks) is an HTTP GET or HEAD request to a public URL, with an expected status, optional body text and an optional latency threshold. It runs from one region. A [journey check](/runtime/synthetic-checks#journey-checks) replays a saved journey in a browser instead. A [dashboard](/runtime/dashboards) has line, bar, stat and table widgets over logs, spans, errors, metrics and LLM calls. A dashboard widget shows data. It does not alert.
+
+The metric event strategies are from [Metric events](https://docs.dynatrace.com/docs/dynatrace-intelligence/anomaly-detection/metric-events). The synthetic monitor types are the three the [Synthetic app](https://docs.dynatrace.com/docs/observe/digital-experience/synthetic-on-grail/synthetic-app) creates (Browser, HTTP, Network availability).
+
+| Dynatrace | Autter | Notes |
+| --- | --- | --- |
+| Problems about failures (errors, exceptions) in services the collector feeds | Alert rule | The errors become Autter issues from the collector's traces and logs. `new`, `regressed` and `spiking` rules fire on them. |
+| Problems forwarded by a workflow | Partly: generic webhook | See step 2. Not confirmed end to end. |
+| Metric events: static threshold | No equivalent | A dashboard widget can show the metric. |
+| Metric events: auto-adaptive threshold | No equivalent | |
+| Metric events: seasonal baseline | No equivalent | |
+| [Health alerts for frontends](https://docs.dynatrace.com/docs/observe/digital-experience/rum/analyze-and-alert/health-alerts) | No equivalent | |
+| [Alerts from business events](https://docs.dynatrace.com/docs/observe/business-observability/alert-from-business-events-or-flow) | No equivalent | |
+| HTTP monitor | Synthetic check | One request per check, from one region. |
+| Browser monitor | No equivalent | |
+| Network availability (NAM) monitor | No equivalent | |
+
+## Cutover checklist
+
+1. List your Dynatrace alerting (metric events, anomaly detection settings, synthetic monitors, problem notifications) and sort it with the table above: recreate as an alert rule or synthetic check, or keep in Dynatrace.
+2. Create a platform token with the three ingest scopes, deploy the dual-send collector, run `validate`, and move services onto it one at a time. In Autter, **Repository → Settings → Runtime → Source coverage** shows each service as "via OTel Collector". In Dynatrace, check that the same services still report traces, logs and metrics.
+3. If you forward problems, create the generic webhook connection and a workflow. Check that one test problem opens and resolves an Autter incident.
+4. Recreate the error-based alerting as [alert rules](/runtime/alert-rules) under **Repository → Settings → Runtime → Alert rules**. Send them to the Slack channels and on-call your Dynatrace notifications use. Recreate HTTP monitors as [synthetic checks](/runtime/synthetic-checks).
+5. Run both for long enough to see your usual traffic and a few real errors. Compare Autter's issues with Dynatrace's problems and failed requests for the same services and time range.
+6. Move paging. Turn on the on-call action in the Autter rules, then disable the Dynatrace notifications they replace. Disable them. Do not delete them until the rollback window ends.
+7. When Dynatrace is no longer needed for these services, switch the collector to the Autter-only config on the [collector page](/runtime/otel-collector). Delete the workflow and the generic webhook connection, and revoke the platform token.
+
+## Roll back
+
+- **Before step 7:** re-enable the Dynatrace notifications and turn off the Autter rules' on-call action. Dynatrace has received everything all along.
+- **After step 7:** put the dual-send config back, with the same file and variables. Use a new platform token if you revoked the old one. Services keep pointing at the collector, so nothing changes in them. Dynatrace has a gap for the time the config was removed.
+- **Leaving Autter entirely:** remove `otlp_http/autter` and the Autter-only pipelines from the collector, or point services back at Dynatrace directly. Apps were set to `parentbased_always_on` for the collector. Restore their previous sampler if they no longer go through it. Disable the workflow that forwards problems.

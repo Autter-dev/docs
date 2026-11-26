@@ -9,8 +9,13 @@ description: "Configuration reference for the Autter Runtime SDKs and the self-h
 | --- | --- | --- |
 | `AUTTER_RUNTIME_KEY` | `@autter/runtime-node`, any OTel SDK | Secret **server key** (`autter_rt_…`). Passed as `apiKey` to `initAutterServer` / `createBrowserRelayHandler`, or as the `Authorization: Bearer` header for a raw OTLP exporter. |
 | `AUTTER_ENDPOINT` | `@autter/runtime-node` | Base URL of your ingester. Defaults to Autter's hosted endpoint (`https://otlp.autter.dev`) if unset. |
-| `GIT_SHA` | any | Convention used in the docs and examples for the `release` field — wire it to your build's git commit so regressions can be traced to a release. |
-| `NODE_ENV` | `@autter/runtime-node` | Commonly passed through as `environment`. |
+| `AUTTER_RELEASE` | `@autter/runtime-node` 1.16.0+, Python `autter_tracing.py` (Runtime 1.20.0+), `@autter/runtime-cli` 1.4.0+ | The release to report when you pass none (`release` in Node, `service.version` in Python). Also the default release for source map uploads without `--release`. Set it where the app builds and where it runs. |
+| `AUTTER_COMMIT` | `@autter/runtime-node` 1.16.0+, Python `autter_tracing.py` (Runtime 1.20.0+), `@autter/runtime-cli` 1.4.0+ | The running commit, 7 to 40 hexadecimal characters. It is the first of the commit variables the SDKs read; the others are `GITHUB_SHA`, `VERCEL_GIT_COMMIT_SHA`, `CF_PAGES_COMMIT_SHA`, `GIT_SHA`, `GIT_COMMIT`, `COMMIT_SHA`, `SOURCE_COMMIT`, `RENDER_GIT_COMMIT`, `RAILWAY_GIT_COMMIT_SHA`, `HEROKU_SLUG_COMMIT` and `SOURCE_VERSION`, in that order. The commit is sent as `deployment.commit` and, with no release set, is the release. See [Releases, commits and test runs](/runtime/releases-and-environments). |
+| `GIT_SHA` | any | One of the commit variables above. The docs and examples also use it for an explicit `release`. |
+| `AUTTER_DETECT_RELEASE` | `@autter/runtime-node` 1.16.0+, Python `autter_tracing.py` (Runtime 1.20.0+) | `false` reports no release when you set none. `deployment.commit` is still sent. Same as `release: false` in Node and `init_tracing(detect_release=False)` in Python. |
+| `AUTTER_DETECT_TEST_ENV` | Python `autter_tracing.py` (Runtime 1.20.0+) | `false` stops `init_tracing()` from reporting `deployment.environment=test` under pytest or `manage.py test`. Same as `init_tracing(detect_test_env=False)`. |
+| `NODE_ENV` | `@autter/runtime-node` | The default `environment`. With neither `environment` nor `NODE_ENV`, the SDK reports `test` under Jest, Vitest or `node --test` (1.16.0+), else `production`. |
+| `AUTTER_COUNT_REQUESTS` | Python `autter_tracing.py` | `true` makes `init_tracing()` count every HTTP request, so error rates are right at any sampling rate; `false` turns counting off. Copies from Autter Runtime 1.18.0 or earlier count only when it is `true`; later copies count unless it is `false`. See [Python request counts](/runtime/integrations#request-counts). |
 
 Frontend equivalents are passed directly to `initAutterBrowser({...})` rather than read from `process.env` (bundlers don't expose server env vars to the browser by default) — for example `import.meta.env.VITE_GIT_SHA` for `release`.
 
@@ -18,12 +23,12 @@ Frontend equivalents are passed directly to `initAutterBrowser({...})` rather th
 
 These are JavaScript options for `initAutterServer` and Next.js `registerAutter`, not additional environment variables.
 
-- `release`: set this to the deployed commit SHA. `GIT_SHA` is a convention that your build must supply.
+- `release`: the deployed commit SHA. From `@autter/runtime-node` 1.16.0 you can leave it out, and the SDK reports `AUTTER_RELEASE` or the running commit.
 - `environment`: use the actual deployment environment and keep its name stable.
 - `retainTracesAboveMs`: a positive duration in milliseconds opts into bounded retention of slow successful server traces in the local process. Use `2000` as a starting example, not a universal threshold. Zero or omission leaves this retention off. Check export volume after enabling it.
 - `instrumentations`: add required database or dependency instrumentation to the existing initialization. Do not create a second SDK.
 
-Use Node/Next.js SDK 1.3.0 or later; prefer patch 1.3.1. Self-hosted ingesters require 1.3.1 or later. There is no dedicated `retainTracesAboveMs` environment variable. See [Endpoint regressions](/runtime/endpoint-regressions) for limits and external OTel requirements.
+Needs Node/Next.js SDK 1.3.0+ and, self-hosted, ingester 1.3.1+ ([compatibility table](/runtime/compatibility)). There is no dedicated `retainTracesAboveMs` environment variable. See [Endpoint regressions](/runtime/endpoint-regressions) for limits and external OTel requirements.
 
 ## Operation logging options
 
@@ -42,6 +47,54 @@ language exporters may support `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`,
 `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL` and `OTEL_EXPORTER_OTLP_LOGS_HEADERS`; these
 variables alone do not create a logs provider or bridge. See [OTLP loggers](/runtime/operation-logging#other-languages-and-existing-otlp-loggers).
 
+## Identifying attributes and client IPs
+
+Available from Runtime 1.19.0: `@autter/runtime-node` 1.15.0, `@autter/otlp-ingester` 1.17.0, and the current Python adapter. Autter cloud runs this ingester version.
+
+OpenTelemetry adds attributes that identify a person or a machine to server spans and to the resource. The Runtime SDKs and the ingester drop them by default, from span, event and link attributes, log records and resources:
+
+| What | Keys |
+| --- | --- |
+| The client's address and port, and the server's own IP | `net.peer.ip`, `net.peer.port`, `net.sock.peer.addr`, `net.sock.peer.port`, `http.client_ip`, `client.address`, `client.port`, `network.peer.address`, `network.peer.port`, `net.host.ip`, `net.sock.host.addr`, `network.local.address` |
+| The raw user-agent string | `http.user_agent`, `user_agent.original` |
+| The machine's id and addresses | `host.id`, `host.ip`, `host.mac` |
+| The command line and the user running it | `process.command_args`, `process.command`, `process.command_line`, `process.owner`, `process.executable.path` |
+
+The drop also applies when you turn off secret redaction (`redactAttributes: false` in Node, `redact=False` in Python). The ingester applies it on arrival, so data from plain OpenTelemetry SDKs and older Runtime SDKs is covered too. Spans stored before the upgrade keep these attributes until their retention period ends.
+
+These attributes are kept: `service.instance.id`, `host.name`, `process.pid`, `process.runtime.*`, `os.type`, `host.arch`, and the coarse browser, OS and device fields of request summaries. `host.name` is usually a container or pod name. On a laptop or a VM it is the machine's name, which can be a person's. Drop it with `dropAttributes`.
+
+| Setting | Node (`initAutterServer`, `registerAutter`) | Python (`init_tracing`) | Environment variable (SDKs and ingester) |
+| --- | --- | --- | --- |
+| Keep identifying attributes | `keepIdentifyingAttributes: true` or a list of keys | `keep_identifying_attributes=True` or a list | `AUTTER_KEEP_IDENTIFYING_ATTRIBUTES=true` or a comma-separated list |
+| Drop more keys | `dropAttributes: ["host.name"]` | `drop_attributes=["host.name"]` | `AUTTER_DROP_ATTRIBUTES=host.name` |
+| Hash the client IP | `hashClientIp: { salt }` or `true` | `hash_client_ip=True, client_ip_salt=...` | `AUTTER_HASH_CLIENT_IP=true` |
+| Salt for the client IP hash | `hashClientIp: { salt }` | `client_ip_salt=...` | `AUTTER_CLIENT_IP_SALT` |
+
+<Warning>
+The SDK and the ingester each drop what they were not told to keep. To store an identifying attribute, set the keep option in your SDK **and** `AUTTER_KEEP_IDENTIFYING_ATTRIBUTES` on a self-hosted ingester. If only one side keeps it, it is not stored.
+</Warning>
+
+### Hashed client IP
+
+To count distinct clients without storing their addresses, turn on client IP hashing with a secret salt. Hashing is off by default. When it is on, the raw address is still dropped, and one attribute, `client.address_hash`, carries an HMAC-SHA256 of the address under your salt (32 hex characters).
+
+- **Which address:** the first valid one of `client.address`, then `http.client_ip` (both come from `X-Forwarded-For` or `Forwarded` behind a proxy), then the socket peer on server spans. Behind a proxy that does not forward the client address, the socket peer is the proxy.
+- **Normalised first:** ports, brackets and zone ids are removed, IPv6 is lower-cased and compressed, and `::ffff:203.0.113.9` is read as `203.0.113.9`.
+- **Same hash everywhere:** the Node SDK, the Python adapter and the ingester produce the same hash from the same salt and address. Use one salt for every service of a project.
+- **No salt, no hash:** the salt must be at least 16 characters. Without one, nothing is hashed and a warning is printed. There is no unsalted fallback, because every IPv4 address can be hashed in minutes.
+- **Ingester:** a self-hosted ingester with `AUTTER_HASH_CLIENT_IP=true` and `AUTTER_CLIENT_IP_SALT` hashes spans and log records that arrive without a hash. A hash sent by an SDK is stored unchanged. The ingester uses one salt for every project it serves, so prefer hashing in each project's SDK with its own salt.
+
+Generate a salt and keep it with your other secrets:
+
+```bash
+openssl rand -hex 32
+```
+
+<Warning>
+A hashed IP address is still pseudonymous personal data under some readings of privacy law, such as the GDPR. Anyone who holds the salt can check whether a known address produced a hash. Treat the salt as a secret, and rotate it to unlink old hashes.
+</Warning>
+
 ## Ingester configuration (self-hosted)
 
 Operation logging requires an ingester release containing `/v1/logs` and
@@ -56,6 +109,10 @@ No new ingest credential is required: use the existing repository server key.
 | `AUTTER_INGEST_KEYS` | yes, unless using `AUTTER_KEY_VALIDATOR_URL` | JSON array mapping ingest keys to `{orgId, repositoryId}`. See format below. |
 | `AUTTER_KEY_VALIDATOR_URL` | alternative to `AUTTER_INGEST_KEYS` | URL of your own key-validation service, for dynamic key management instead of a static env-var list. |
 | `AUTTER_SINK_URL` | no | Optional webhook. Each ingest batch is POSTed here as normalized occurrences — see [Architecture](/runtime/architecture#sink-webhook-v1). Delivery is best-effort, fire-and-forget. |
+| `AUTTER_KEEP_IDENTIFYING_ATTRIBUTES` | no | Keep identifying attributes the ingester drops by default: `true`, or a comma-separated list of keys. See [Identifying attributes and client IPs](#identifying-attributes-and-client-ips). |
+| `AUTTER_DROP_ATTRIBUTES` | no | Comma-separated attribute keys to drop on arrival as well, such as `host.name`. |
+| `AUTTER_HASH_CLIENT_IP` | no | `true` adds `client.address_hash` to spans and log records that arrive without one. Needs `AUTTER_CLIENT_IP_SALT`. |
+| `AUTTER_CLIENT_IP_SALT` | with `AUTTER_HASH_CLIENT_IP` | Secret salt for the client IP hash, at least 16 characters. Never logged. |
 
 ### `AUTTER_INGEST_KEYS`
 

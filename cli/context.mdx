@@ -37,6 +37,14 @@ When a line looks surprising, use the surrounding authorship data first:
 
 This gives you the intent behind the code, not just the final diff.
 
+## Get context for a task
+
+Before you or a coding agent start a change, run `autter context "<task>"`. It returns the repository memory facts, wiki pages and code structure that matter for the task, ranked and cut to a token budget, with the `rmf_…` fact IDs to cite. It needs connected mode and `autter login`, and gives the same answer as the `get_context` MCP tool. See [`autter context`](/cli/more-commands#autter-context).
+
+```bash
+autter context "add rate limiting to the checkout endpoint"
+```
+
 ## Keep context available to your team
 
 Connected mode can make prompt and attribution data available to the Autter platform for shared analytics and audit history.

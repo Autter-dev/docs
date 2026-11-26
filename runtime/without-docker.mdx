@@ -1,0 +1,104 @@
+---
+title: "Run Runtime without Docker"
+description: "Use the hosted ingester, run the ingester from source against your own ClickHouse, or capture in-process in tests. No Docker needed."
+---
+
+The local quickstart uses Docker Compose because the ingester stores everything in ClickHouse, and Compose starts both. You can skip Docker in three ways. Pick the first that fits.
+
+| Route | You run | Needs ClickHouse | Good for |
+| --- | --- | --- | --- |
+| [Hosted ingester](#hosted-ingester) | Nothing | No | Trying Runtime, and production |
+| [Ingester from source](#ingester-from-source-with-your-own-clickhouse) | The ingester (Node.js) | Yes: a native binary or ClickHouse Cloud | Self-hosting or developing the ingester without containers |
+| [In-process capture](#in-process-capture-for-tests) | Nothing | No | Unit and integration tests |
+
+<Note>
+  ClickHouse is required for any ingester you run. Without `CLICKHOUSE_URL`, the ingester starts but refuses every ingest request with `503 storage not configured`. There is no lightweight mode without ClickHouse.
+</Note>
+
+## Hosted ingester
+
+Autter hosts the ingester at `otlp.autter.dev`. Nothing runs on your machine.
+
+1. In the Autter platform, open **Settings → Access Tokens → Runtime ingest keys → Create key** and choose the repository. Copy the server key (`autter_rt_…`).
+2. Point your app and the checks at the hosted ingester:
+
+   ```bash
+   export AUTTER_ENDPOINT=https://otlp.autter.dev
+   export AUTTER_RUNTIME_KEY=autter_rt_…
+   npx @autter/runtime-node doctor    # versions, storage and the key; sends nothing
+   npx @autter/runtime-node verify    # sends a test event and reads it back
+   ```
+
+`verify` exits 0 when the test event was stored. The [Quickstart](/runtime/quickstart#five-steps-by-hand) shows the full output.
+
+## Ingester from source with your own ClickHouse
+
+You need Node.js 20 or later and a ClickHouse server you can reach over HTTP.
+
+<Steps>
+  <Step title="Start ClickHouse">
+    Use ClickHouse Cloud, or install the native binary with ClickHouse's own instructions ([ClickHouse quick start](https://clickhouse.com/docs/getting-started/quick-start)) and run `clickhouse server`. It listens for HTTP on port `8123`. The local Compose setup uses ClickHouse 24.8.
+
+    The ingester creates its database (`autter_runtime` by default) and runs its migrations by itself at start-up. There is no separate migration step.
+  </Step>
+  <Step title="Build the ingester">
+    ```bash
+    git clone https://github.com/Autter-dev/autter-runtime
+    cd autter-runtime
+    npm ci
+    npm run build
+    ```
+  </Step>
+  <Step title="Start it">
+    For a machine of your own, the built-in local key is the shortest route:
+
+    ```bash
+    export CLICKHOUSE_URL=http://localhost:8123
+    export CLICKHOUSE_PASSWORD=          # empty for a fresh native install's default user
+    export AUTTER_LOCAL_DEV=1            # accept autter_rt_local_dev_only from this machine
+    npm run start -w @autter/otlp-ingester
+    ```
+
+    It prints `autter otlp-ingester <version> listening on :4318 (clickhouse: configured; …)`. Set `PORT` to use another port, and `CLICKHOUSE_USER` and `CLICKHOUSE_DATABASE` if you do not use the defaults (`default` and `autter_runtime`).
+
+    For anything other machines can reach, leave `AUTTER_LOCAL_DEV` unset and give the ingester real keys instead:
+
+    ```bash
+    export AUTTER_INGEST_KEYS='[{"key":"autter_rt_…","orgId":"o","repositoryId":"r"}]'
+    ```
+
+    See [Environment variables](/runtime/environment-variables#autter_ingest_keys).
+  </Step>
+  <Step title="Check it">
+    ```bash
+    export AUTTER_ENDPOINT=http://localhost:4318
+    export AUTTER_RUNTIME_KEY=autter_rt_local_dev_only
+    npx @autter/runtime-node verify
+    ```
+
+    The `storage` line says whether the ingester can write to ClickHouse. If it says the tables are missing, read the ingester's start-up log for the migration error and restart it.
+  </Step>
+</Steps>
+
+The built-in key `autter_rt_local_dev_only` works only with `AUTTER_LOCAL_DEV=1` and only from your own machine or private network. A deployed ingester never accepts it.
+
+## In-process capture for tests
+
+`@autter/runtime-node/testing` keeps every record in memory, with no ingester and no network:
+
+```js
+const { captureRuntime, expectOperation } = require("@autter/runtime-node/testing");
+
+const runtime = captureRuntime();
+await request(app).post("/checkout").expect(402);
+expectOperation(runtime, "POST /checkout").toHaveOutcome("degraded");
+runtime.stop();
+```
+
+Use it to assert what your code reports. It does not check delivery; run `verify` against a real ingester for that.
+
+## Related
+
+- [Quickstart](/runtime/quickstart)
+- [Self-hosting](/runtime/self-hosting) for production deployments
+- [Is my data arriving?](/runtime/delivery)

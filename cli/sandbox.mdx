@@ -1,0 +1,68 @@
+---
+title: "Check a branch in the sandbox"
+description: "Build, test and rule-check a pushed branch in Autter's sandbox without opening a pull request."
+---
+
+`autter sandbox run` checks a branch that you have pushed, without opening a pull request. Autter builds and tests the branch in its sandbox. Then it runs the same 18 rule-based checks as [`autter review`](/cli/review) over the branch's diff against the default branch.
+
+- It makes **no AI calls**.
+- It posts **nothing to GitHub**. The result is printed in your terminal and shown in the dashboard.
+
+Use it to find out whether a branch builds, passes its tests and passes the rule-based checks before you open a pull request. The full pull request review, with its AI checks, still runs on the pull request.
+
+This command needs CLI 3.16.0 or later, [connected mode](/cli/connect-platform) and `autter login`.
+
+## Run a branch
+
+```bash
+git push
+autter sandbox run
+```
+
+The command stops if your branch is ahead of its upstream. Autter does not upload anything from your machine. It checks out the commit that GitHub has, so uncommitted changes and commits you have not pushed are not part of the run.
+
+Each run does three checks:
+
+| Check | What it does |
+| --- | --- |
+| `build` | Runs the repository's own build commands. |
+| `test` | Runs the repository's own test commands. |
+| `rules` | Runs the rule-based checks over the diff against the default branch. |
+
+By default `autter sandbox run` waits for the result and prints it. It exits `1` when a check fails or cannot run, so you can use it in a script.
+
+### Options
+
+| Option | Purpose |
+| --- | --- |
+| `--branch <name>` | Check another pushed branch than the one you have checked out. |
+| `--checks build,test,rules` | Pick which checks to run. The default is all three. |
+| `--no-wait` | Start the run and return right away. Check on it with `autter sandbox status`. |
+| `--repo <remote\|owner/repo>` | The repository, when the remote does not identify it. |
+| `--org <slug>` | Use another organization you belong to. |
+| `--json` | Print the run as JSON. |
+
+## See a run
+
+```bash
+autter sandbox status <id>
+autter sandbox list
+```
+
+`autter sandbox status <id>` shows one run. It exits `1` when a check failed or could not run.
+
+`autter sandbox list` shows this repository's runs, newest first. Use `--all` for every run, and `--limit <n>` to set how many it shows. The default is 20.
+
+Results also appear in the dashboard, under the repository's **Sandbox runs**.
+
+## Limits
+
+- Each organization gets 10 sandbox runs a day.
+- Each repository runs one at a time.
+- Sandbox runs do not count toward your plan's pull request review allowance.
+- You need a connected GitHub account with write access to the repository.
+
+## Related
+
+- [`autter review`](/cli/review) runs the rule-based checks on your local changes, including ones you have not committed.
+- [Command reference](/cli/command-reference)

@@ -1,0 +1,29 @@
+---
+title: "Coverage gaps"
+description: "Find the routes, jobs and services that send no telemetry, with a prompt to fix each."
+---
+
+Every codebase scan can report where a repository's telemetry is missing or non-standard. The results show on the repository's Runtime overview, in a **Coverage gaps** card. Each row has a copy-prompt button. The prompt is ready to paste into a coding agent.
+
+This check makes no model calls. Its findings are capped at low or medium severity. See [Codebase scans](/features/codebase-scans) to run a scan.
+
+## What it finds
+
+- Routes that have no request instrumentation.
+- Jobs and workers that have no operation tracing.
+- Services where trace propagation is missing.
+- Attributes that are not standard, such as the older `deployment.environment` instead of `deployment.environment.name`, or a missing `service.name` or `service.version`.
+
+A repository with no Runtime ingest key and no OpenTelemetry dependency gets one note that points at setup instead of a list.
+
+## Use it
+
+1. Run a codebase scan on the repository.
+2. Open the repository's Runtime overview and find the **Coverage gaps** card.
+3. Copy the prompt for a row and run it in your coding agent.
+
+To set up Runtime itself, see [Installation](/runtime/installation).
+
+## Turn it off
+
+Coverage gaps are on by default in codebase scans. To turn them off, set the experimental flag `scan:observability-coverage` to `false`. You can set it for the whole organization or for one repository.

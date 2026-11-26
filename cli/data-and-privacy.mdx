@@ -6,9 +6,12 @@ icon: "shield"
 
 You choose whether the Autter CLI stays local or connects to the Autter platform. You can change this choice at any time.
 
-<Frame caption="Replace this placeholder with approved data-flow artwork.">
-  <img src="/images/placeholders/data-flow.svg" alt="Placeholder diagram of Autter data moving from a developer machine to Git notes and an optional organization cloud" />
-</Frame>
+```mermaid
+flowchart LR
+    Dev["Your machine: coding agent + autter"] --> Notes["Git notes (refs/notes/ai): agent, model, line ranges"]
+    Dev --> Local["Local SQLite: prompt records"]
+    Dev -. "connected mode only" .-> Cloud["Autter platform (your organization)"]
+```
 
 ## Storage at a glance
 
@@ -21,7 +24,7 @@ You choose whether the Autter CLI stays local or connects to the Autter platform
 | Tool calls, MCP calls, skills, errors, interruptions, tokens | Not uploaded as cloud analytics | Uploaded for personal analytics | Uploaded for team analytics |
 | SCM profile and pull request metadata | Not uploaded by local-only CLI | SCM profile metadata | PR description, opener, reviewer, status, and related metadata |
 | Pull request diffs | Not uploaded by local-only CLI | Depends on connected product workflow | Processed to compute AI percentage; not stored |
-| Error and exception telemetry | Sent by default | Sent by default | Sent by default unless disabled or redirected |
+| Anonymous error and usage telemetry | Off until you opt in | Off until you opt in | Off until you opt in; can be redirected |
 
 <Note>
   Autter's public CLI privacy document does not state a universal cloud retention period. Check your agreement, deployment policy, or the [Autter Trust Center](https://trust.autter.dev) for current terms.
@@ -39,11 +42,15 @@ Local-only storage includes:
 
 Git notes are part of the repository's Git data. Anyone who receives the notes and has repository access can read their metadata.
 
-The open source CLI sends error and exception telemetry by default. Disable it with:
+Anonymous error and usage telemetry is off until you opt in, during `autter onboard` or with `autter telemetry on`. It never includes code or prompts. To check or change it:
 
 ```bash
-autter config set telemetry_oss off
+autter telemetry status   # on or off, and where events go
+autter telemetry log      # the local audit log of every event sent
+autter telemetry off      # stop sending
 ```
+
+See [`autter telemetry`](/cli/more-commands#autter-telemetry).
 
 ## Connected personal dashboards
 

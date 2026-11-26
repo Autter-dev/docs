@@ -76,7 +76,15 @@ autter bg restart
 autter bg tail -n 100
 ```
 
-Use `autter bg tail -f` to follow logs while reproducing the issue.
+Use `autter bg tail -f` to follow logs while reproducing the issue. See [Background service](/cli/background-service) for what the service listens to and the usual causes of each error.
+
+If the service still fails, write a support report and send the file with your request:
+
+```bash
+autter doctor --report autter-report.txt
+```
+
+The report contains no source code, file contents, or tokens.
 
 ## Onboarding does not connect
 
@@ -111,13 +119,14 @@ autter config prompt_storage
 autter whoami
 ```
 
-Return to local-only mode and disable open source error telemetry:
+Return to local-only mode:
 
 ```bash
 autter logout
 autter onboard --local --force
-autter config set telemetry_oss off
 ```
+
+Anonymous telemetry is separate from the mode and is off unless you opted in. Check it with `autter telemetry status`, and turn it off with `autter telemetry off`.
 
 ## Attribution is missing after a rename
 
