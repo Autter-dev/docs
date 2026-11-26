@@ -72,8 +72,8 @@ Use a token when your client does not support OAuth or you need a non-interactiv
   <Step title="Choose the MCP scopes">
     Pick the scopes the agent needs. `mcp:read` is selected by default:
 
-    - `mcp:read` for reviews, findings, learnings, and codebase intelligence
-    - `mcp:write` to let the agent reply to comments, resolve threads, re-run reviews, add learnings, and start scans
+    - `mcp:read` for reviews, findings, learnings, codebase intelligence, Runtime setup checks, and issue lineage
+    - `mcp:write` to let the agent reply to comments, resolve threads, re-run reviews, add learnings, start scans, and create Runtime keys and source map upload keys
     - `mcp:llm` for `query_codebase`
 
     The CLI refuses an MCP-only token. If you also want a token that works with `autter login`, choose **Run Autter in CI or a script** instead and use **Restrict scopes** to limit it.

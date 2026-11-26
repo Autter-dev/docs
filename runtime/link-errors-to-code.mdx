@@ -3,7 +3,7 @@ title: "Link errors to code"
 description: "Connect a Runtime error to the release, commit, pull request, owner and AI agent behind the failing line, and check that each link works."
 ---
 
-Set this up once and every Runtime error shows the release and commit it came from, the suspect commits and pull request, and who wrote the failing code: a person or an AI agent. You see it on the issue page, on the incident page, and with `autter lineage`.
+Set this up once and every Runtime error shows the release and commit it came from, and the suspect commits and pull request. With the optional AI authorship step, it also shows who wrote the failing code: a person or an AI agent. You see it on the issue page, on the incident page, and with `autter lineage`.
 
 <Note>
 This is unrelated to `autter telemetry`, the Autter CLI's anonymous usage telemetry. This page is about the errors your own services send to Runtime.
@@ -17,8 +17,22 @@ This is unrelated to `autter telemetry`, the Autter CLI's anonymous usage teleme
 | Error to release and commit | The SDK sends `service.version` (the release) and `deployment.commit` (the running commit). Autter maps each release to a commit. | [Step 3](#set-it-up) |
 | Minified frame to source line | Source maps, matched by debug id. | [Step 4](#set-it-up) |
 | Commit to suspect commits, pull request and owner | Autter reads blame and compare data through the GitHub App. | [Step 1](#set-it-up) |
-| Failing line to AI agent or person | Autter CLI authorship notes, uploaded in connected mode. File history comes from GitHub through the App. | [Step 5](#set-it-up) |
+| Failing line to AI agent or person (optional) | Autter CLI authorship notes, uploaded in connected mode. File history comes from GitHub through the App. | [Step 5](#set-it-up) |
 | Deploy markers (optional) | GitHub, Vercel and Cloudflare deployments and the commits they shipped. | [Step 6](#set-it-up) |
+
+## Let your agent set it up
+
+A coding agent can do most of this page for you: it creates and stores the Runtime key, makes each service report its commit and release, wires source maps, and checks the result after you deploy. Install the Autter skills in your project:
+
+```bash
+npx @autter/skills
+```
+
+Then tell your agent:
+
+> Use the Autter skills to set up Runtime for this project.
+
+You still connect the repository, approve the Autter sign-in and the key, and deploy. See [AI agent skills](/runtime/skills) for what the agent does and what stays with you. The rest of this page is the manual path.
 
 ## Before you begin
 
@@ -33,7 +47,7 @@ This is unrelated to `autter telemetry`, the Autter CLI's anonymous usage teleme
 | `@autter/runtime-browser` | 1.6.0 | Debug ids for source maps |
 | `@autter/runtime-cli` | 1.4.0 | Source map uploads |
 | Ingester | 1.20.0 | Accepts the `commit` field and `vcs.ref.head.revision` |
-| Autter CLI | 3.10.0 | `autter lineage` |
+| Autter CLI (optional) | 3.10.0 | AI authorship and `autter lineage` |
 
 ## Set it up
 
@@ -48,6 +62,8 @@ This is unrelated to `autter telemetry`, the Autter CLI's anonymous usage teleme
     Open **Settings → Keys and tokens** and click **Set up a key**. Choose **Send errors from my backend service**, then follow the prompts: enter a **Name**, choose the **Repository**, and click **Create key**. Copy the key when "Your key is ready" appears. You cannot see it again.
 
     Store it as `AUTTER_RUNTIME_KEY`. Services in different repositories need different keys.
+
+    A coding agent connected to Autter over MCP can create and store this key for you after you approve it once. See [AI agent skills](/runtime/skills).
 
     The same screen has two other intents: **Catch errors in my frontend** gives an `autter_rtc_` key, and **Upload source maps from my build** gives an `autter_rtu_` key.
   </Step>
@@ -99,7 +115,9 @@ This is unrelated to `autter telemetry`, the Autter CLI's anonymous usage teleme
     Without maps, Autter skips the frame: `Skipped <path>: it is a minified bundle, so its line is not a source line (upload source maps).` See [Source maps](/runtime/source-maps).
   </Step>
 
-  <Step title="Turn on AI authorship for every developer who commits">
+  <Step title="Turn on AI authorship (optional)">
+    Everything else on this page works without this step. It needs the Autter CLI, a separate product from Runtime, on the machine of every developer who commits.
+
     Each developer runs these on their machine.
 
     1. Install the Autter CLI.
@@ -126,9 +144,9 @@ This is unrelated to `autter telemetry`, the Autter CLI's anonymous usage teleme
    - `no release set: errors are not tied to a deploy, so "broke in release X" can't work` means the service reports no release.
    - `sent release X, stored [...]` means the ingester did not keep `service.version`. Check for a collector or proxy that rewrites resource attributes.
 2. Run `npx autter-runtime sourcemaps verify <dir>` on your build output.
-3. Run `autter sync status` on a developer's machine.
-4. Trigger a real error and open its issue page. The header shows `rel <release>` with a commit link. The page shows **Suspect commits** and "Who wrote the failing code".
-5. Run `autter lineage ri_…` with the issue id. It exits 0 even when one part cannot be read.
+3. If you set up AI authorship, run `autter sync status` on a developer's machine.
+4. Trigger a real error and open its issue page. The header shows `rel <release>` with a commit link. The page shows **Suspect commits**, and "Who wrote the failing code" if you set up AI authorship.
+5. If you set up AI authorship, run `autter lineage ri_…` with the issue id. It exits 0 even when one part cannot be read.
 
 ## Troubleshooting
 
