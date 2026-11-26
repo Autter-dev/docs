@@ -70,7 +70,7 @@ Use a personal access token only if the browser flow cannot complete.
     Go to [app.autter.dev](https://app.autter.dev) and sign in.
   </Step>
   <Step title="Create a personal access token">
-    Open the organization you want to connect. Go to **Org Settings → Access Tokens**, create a token, and copy it.
+    Open the organization you want to connect. Go to **Settings → Keys and tokens** and click **Set up a key**. Choose **Run Autter in CI or a script**, create the token, and copy it.
   </Step>
   <Step title="Complete CLI sign-in">
     Pass the token to the CLI:
@@ -105,14 +105,14 @@ Usage metrics route to the organization database associated with the signed iden
 
 ## Manage access
 
-Open **Org Settings → Access Tokens** in the dashboard to:
+Open **Settings → Keys and tokens** in the dashboard to:
 
-- Review active tokens
+- See your keys and tokens
 - Revoke a token
-- Review sign-in and data-push activity
+- Review the **Activity** section for key and token creation and revocation, CLI sign-ins, and data pushed to the cloud with a token
 
 <Tip>
-  The same Access Tokens screen creates tokens for the [MCP server](/features/mcp), so a coding agent can act on Autter data directly. Restrict a token to MCP scopes if you do not want it usable for CLI login. See [Connect an agent over MCP](/guides/mcp-setup).
+  The same page creates tokens for the [MCP server](/features/mcp), so a coding agent can act on Autter data directly. Use **Restrict scopes** to limit a token to MCP scopes if you do not want it usable for CLI login. See [Connect an agent over MCP](/guides/mcp-setup).
 </Tip>
 
 To remove credentials from the current machine:

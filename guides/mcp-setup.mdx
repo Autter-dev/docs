@@ -45,7 +45,7 @@ Most MCP clients (Cursor, Grok, Claude Code) support **Authenticate** — no man
 </Steps>
 
 <Note>
-  OAuth access tokens are scoped personal access tokens stored in Autter. Revoke them anytime under **Org Settings → Access Tokens** (they appear as `MCP — &lt;client name&gt;`).
+  OAuth access tokens are scoped personal access tokens stored in Autter. Revoke them anytime under **Settings → Keys and tokens** (they appear as `MCP — &lt;client name&gt;`).
 </Note>
 
 ### OAuth endpoints (for client implementers)
@@ -63,20 +63,20 @@ Most MCP clients (Cursor, Grok, Claude Code) support **Authenticate** — no man
 Use a token when your client does not support OAuth or you need a non-interactive credential.
 
 <Steps>
-  <Step title="Open Access Tokens">
-    Sign in to the [Autter platform](https://app.autter.dev), open the organization you want to connect, and go to **Org Settings → Access Tokens**.
+  <Step title="Open Keys and tokens">
+    Sign in to the [Autter platform](https://app.autter.dev), open the organization you want to connect, go to **Settings → Keys and tokens**, and click **Set up a key**.
   </Step>
-  <Step title="Start a new token">
-    Select the option to create a token and give it a descriptive name, for example `ci-mcp`.
+  <Step title="Choose the MCP-only token path">
+    Choose **Connect Cursor, Claude Code or another AI tool**, then click **My client can't open a browser (CI, headless)**. Give the token a descriptive name, for example `ci-mcp`.
   </Step>
-  <Step title="Restrict it to MCP scopes">
-    Enable the MCP scope restriction and choose the scopes the agent needs:
+  <Step title="Choose the MCP scopes">
+    Pick the scopes the agent needs. `mcp:read` is selected by default:
 
     - `mcp:read` for reviews, findings, learnings, and codebase intelligence
     - `mcp:write` to let the agent reply to comments, resolve threads, re-run reviews, add learnings, and start scans
     - `mcp:llm` for `query_codebase`
 
-    A restricted token only works with MCP. Leave the restriction off if you also want this token to work with `autter login`.
+    The CLI refuses an MCP-only token. If you also want a token that works with `autter login`, choose **Run Autter in CI or a script** instead and use **Restrict scopes** to limit it.
   </Step>
   <Step title="Copy the token">
     Copy the token now. Autter shows the raw value only once.
@@ -148,7 +148,7 @@ Or, before adding a dependency:
 
 ## Manage and revoke access
 
-Open **Org Settings → Access Tokens** to review token activity (including OAuth-created `MCP — …` tokens), or revoke access. Revoking a token stops it immediately.
+Open the **Activity** section of **Settings → Keys and tokens** to review token activity, and use the token list there to revoke access (including OAuth-created `MCP — …` tokens). Revoking a token stops it immediately.
 
 <Card title="MCP server overview" icon="plug" href="/features/mcp">
   Read the full tool catalog, scope model, and usage limits.
