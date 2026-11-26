@@ -21,6 +21,7 @@ A coding agent that can reach Autter over MCP can:
 - ask a natural-language question about the codebase
 - start or check a codebase security scan
 - read and add team conventions ("learnings") so future code passes review the first time
+- set up Autter Runtime for a repository and trace a Runtime issue to its release, commit and pull request ([AI agent skills](/runtime/skills))
 
 This closes the loop between "Autter found a problem" and "the agent fixed it," instead of a person copying findings between the pull request and the agent.
 
@@ -81,6 +82,14 @@ Every tool call is authenticated by the token, scoped to one organization, and l
     | `get_learnings` | Read team conventions Autter has learned for a repository or the organization |
     | `add_learning` | Add a convention so future reviews apply it |
   </Tab>
+  <Tab title="Runtime setup">
+    | Tool | What it does |
+    | --- | --- |
+    | `get_runtime_setup` | Check a repository's Runtime readiness: the ingester, which keys exist (never their values), the SDKs that report, and setup checks with what to fix |
+    | `create_runtime_key` | Create a Runtime server or client key for a repository. The key is returned once, to be stored in a secret store |
+    | `create_sourcemap_upload_key` | Create an upload-only key for source maps. The key is returned once, to be stored as a CI secret |
+    | `get_issue_lineage` | Read a Runtime issue's release, that release's commit, suspect commits and the suspect pull request |
+  </Tab>
 </Tabs>
 
 <Note>
@@ -93,8 +102,8 @@ A token used with MCP can be unrestricted, meaning it works for both CLI login a
 
 | Scope | Grants |
 | --- | --- |
-| `mcp:read` | Every read-only tool: reviews, findings, learnings, codebase intelligence, scan status |
-| `mcp:write` | `reply_to_review_comment`, `resolve_review_thread`, `trigger_review`, `add_learning`, `trigger_scan` |
+| `mcp:read` | Every read-only tool: reviews, findings, learnings, codebase intelligence, scan status, Runtime setup checks (`get_runtime_setup`), issue lineage (`get_issue_lineage`) |
+| `mcp:write` | `reply_to_review_comment`, `resolve_review_thread`, `trigger_review`, `add_learning`, `trigger_scan`, `create_runtime_key`, `create_sourcemap_upload_key` |
 | `mcp:llm` | `query_codebase` |
 
 A token restricted to MCP scopes cannot sign in to the Autter CLI. Create an unrestricted token if you need CLI login and MCP access on the same token.

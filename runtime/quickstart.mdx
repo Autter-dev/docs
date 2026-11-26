@@ -73,7 +73,7 @@ This path uses Autter's hosted ingester, so you need no Docker and no database. 
 </Steps>
 
 <Info>
-  Prefer to have a coding agent do this? See [AI agent skills](/runtime/skills): `npx skills add Autter-dev/autter-skills --all`, then tell your agent *"install Autter Runtime in this project."* The agent follows the same steps.
+  Prefer to have a coding agent do this? Run `npx @autter/skills` in your project, then tell your agent: *"Use the Autter skills to set up Runtime for this project."* The agent creates and stores the key after you approve it once, instruments each service, and verifies delivery. See [AI agent skills](/runtime/skills).
 </Info>
 
 The rest of this page covers the full setup: concepts, a local ingester, frontend capture, diagnostics and how to check stored data. Follow [Operation logging](/runtime/operation-logging) for the logging APIs and required deployments.

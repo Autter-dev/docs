@@ -156,7 +156,7 @@ The full schema is `browserPayloadSchema` in [`packages/otlp-ingester/src/normal
 The agent skills are not npm-specific — `npx` is only the *installer* for the skill files (any machine with Node can run it once; the target codebase doesn't need Node at all). The skills include Python, Go, Rust, and a generic any-OTel-language guide:
 
 ```bash
-npx skills add Autter-dev/autter-skills --all
+npx @autter/skills
 ```
 
-Then tell your coding agent: *"install Autter Runtime in this project"* — it inventories the services, picks the right per-language approach from above, and wires it up. See [AI agent skills](/runtime/skills) for the full setup walkthrough.
+Then tell your coding agent: *"Use the Autter skills to set up Runtime for this project."* It inventories the services, picks the right per-language approach from above, and wires it up. See [AI agent skills](/runtime/skills) for the full setup walkthrough.
