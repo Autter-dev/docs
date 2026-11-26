@@ -28,28 +28,50 @@ For an AWS/ECS deployment runbook and scripts, see [`deploy/aws`](https://github
 
 ## Local development
 
+No Docker? Use the hosted ingester or run the ingester from source against your own ClickHouse: see [Run Runtime without Docker](/runtime/without-docker).
+
 For local development with a bundled ClickHouse:
 
 ```bash
 git clone https://github.com/Autter-dev/autter-runtime
 cd autter-runtime
-docker compose up   # local ClickHouse + ingester on :4318, key "dev-key"
+docker compose up   # local ClickHouse + ingester on http://localhost:4318
 ```
 
-Point your OpenTelemetry exporter at it:
+There's no key step. The local Compose setup accepts the built-in key `autter_rt_local_dev_only`, but only from your own machine or private network. A deployed ingester never accepts it, so use a real key from Autter, or set `AUTTER_INGEST_KEYS`, for anything you deploy.
+
+Point your app at it and check the connection:
+
+```bash
+export AUTTER_ENDPOINT=http://localhost:4318
+export AUTTER_RUNTIME_KEY=autter_rt_local_dev_only
+npx @autter/runtime-node doctor    # versions, storage and the key; sends nothing
+npx @autter/runtime-node verify    # sends a test event and reads it back
+```
+
+`verify` stops at the first step that fails (key, network, ingester, storage,
+auth, ingest, stored, trace, release, logs) and says what to do. Its test
+event never opens an issue. See [Is my data arriving?](/runtime/delivery).
+
+Or point any OpenTelemetry exporter at it:
 
 ```ts
 new OTLPTraceExporter({
   url: "http://localhost:4318/v1/traces",
-  headers: { authorization: "Bearer dev-key" },
+  headers: { authorization: `Bearer ${process.env.AUTTER_RUNTIME_KEY}` },
 });
 ```
 
-Query ClickHouse directly with `docker compose exec clickhouse clickhouse-client --password dev`.
+Then trigger an error in your app and check that it was stored:
+
+```bash
+docker compose exec clickhouse clickhouse-client --password dev --query \
+  "SELECT service, error_type, message FROM autter_runtime.runtime_error_occurrences ORDER BY occurred_at DESC LIMIT 5"
+```
 
 ## Upgrade for operation logs
 
-Use ingester **1.4.0 or later**, which contains `/v1/logs` and migration
+Use ingester **1.4.0+** ([compatibility table](/runtime/compatibility)), which contains `/v1/logs` and migration
 `0011-runtime-logs`. A `latest` image tag alone does not establish that the
 feature is available. The ingester applies the additive migration at startup;
 confirm it completed and the `runtime_logs` table exists before enabling SDK

@@ -116,6 +116,10 @@ In **Settings** → **Notifications**, an owner or admin turns the Slack column 
 | Member removed | Off |
 | Secret or credential detected | On |
 | Weekly digest | On |
+| Task created from a finding | On |
+| Task closed | On |
+
+The two task events post the severity, title, location, and **Open task** and **View finding** links, plus the close reason. They never include finding text or code. See [Track findings as tasks](/features/track-findings-as-tasks).
 
 Incident alerts can include **Acknowledge**, **Investigate**, **Create fix**, and **Mute**. A pull request alert can include **Run review**.
 

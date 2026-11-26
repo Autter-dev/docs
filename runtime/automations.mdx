@@ -1,0 +1,69 @@
+---
+title: "Automations"
+description: "Run a sandbox agent on a schedule, a webhook, a pull request, a Runtime issue or a Slack mention, and open draft pull requests."
+---
+
+An automation is a sandbox agent that runs when something happens. You write instructions, pick the repositories it can use, and add triggers. When a trigger fires, Autter queues a run, checks out the repositories, runs the agent with your instructions and the trigger event, and records the result on a run page.
+
+Automations are on by default. Owners and admins can turn them off under **Settings → Fix automation → Automations**.
+
+<Note>
+  Automation runs make AI model calls.
+</Note>
+
+## Set one up
+
+An owner or admin saves a sandbox agent with:
+
+- 1 to 10 repositories. The first one is the working directory.
+- Up to 10 triggers.
+- Optionally, a Slack channel for notifications.
+
+You can start a run by hand with **Run now**, or try the agent with a pasted event using **Test**.
+
+### Triggers
+
+| Trigger | Starts a run when |
+| --- | --- |
+| Schedule | Every hour, day, weekday or week, at a time you pick (UTC). |
+| Webhook | Another system sends a POST request to a URL Autter gives you. The request body becomes the run's event. |
+| GitHub pull request | A pull request is opened or merged in one of the automation's repositories. |
+| Runtime issue | Runtime records a new issue, or an issue regresses, in one of the automation's repositories. You can set a minimum event or user count. That option is API only for now. |
+| Slack mention | Someone mentions Autter in one of the Slack channels you list. The run replies in that thread. |
+
+## What a run does
+
+A run can:
+
+- Post the agent's final message to the Slack thread that started it, or to the notification channel.
+- Open a draft pull request, if files changed.
+- Record everything on a run page: the trigger event, the summary, pull requests, and the reason when a run was skipped.
+
+A run the agent judges not worth reporting posts nothing and shows the reason on the run page. A failed run is always reported.
+
+### Draft pull requests
+
+Automations open draft pull requests only, on branches that start with `autter/automation-`. To open one, the repository needs **can open PR** and fix automation turned on.
+
+## Follow-ups
+
+A follow-up continues a run with its earlier context. Start one by:
+
+- replying on the run page,
+- replying in the run's Slack thread, or
+- leaving a review on the draft pull request.
+
+The run continues from the tip of the pull request branch and answers in the same place.
+
+- A run can have up to 20 follow-ups.
+- One follow-up waits at a time.
+- A follow-up counts toward your daily run cap.
+
+## Limits
+
+| Plan | Runs per rolling 24 hours | At once (queued or running) |
+| --- | --- | --- |
+| Free | 5 | 1 |
+| Paid | 50 | 3 |
+
+Follow-ups count as runs. A run that the cap stops shows as **skipped** on the runs page, with the reason.

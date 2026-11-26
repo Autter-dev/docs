@@ -1,0 +1,73 @@
+---
+title: "Version compatibility"
+description: "The minimum SDK and ingester release for every Runtime feature, in one table."
+---
+
+This is the only list of minimum versions. Other pages link here instead of
+stating their own. It is generated from the compatibility manifest in the
+[autter-runtime repository](https://github.com/Autter-dev/autter-runtime/blob/main/packages/otlp-ingester/src/compat-manifest.json),
+which the SDKs bundle and the ingester serves at `GET /v1/compat`.
+
+## What "compatible release" means
+
+A feature works when **both** sides are at least the version in its row:
+
+- the SDK that sends it. `1.4.0+` means 1.4.0 or any later 1.x release, the
+  same as the npm range `^1.4.0`;
+- the ingester that stores it, with its ClickHouse migrations applied.
+
+On Autter cloud (`otlp.autter.dev`) the ingester is always current, so only
+the SDK column matters. Self-hosted, upgrade the ingester first: its
+migrations run at startup. "–" means that package does not send the feature.
+Features with no SDK version are things the ingester does with whatever it
+receives (any OTLP sender, `@autter/runtime-cli`, or the dashboard).
+
+Don't read the table by hand for a real setup. `doctor` lists which of these
+are active for the SDKs installed in your project and the ingester you point
+it at, and flags version skew either way:
+
+```bash
+npx @autter/runtime-node doctor
+```
+
+## Table
+
+| Feature | Ingester | runtime-node | runtime-next | runtime-browser | runtime-edge | Route | ClickHouse migrations |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LLM call tracking (`llm_calls`) | 1.1.0+ | 1.1.0+ | 1.1.0+ | – | – |  | `0004-llm-calls` |
+| Endpoint latency regression detection (`endpoint_latency`) | 1.3.1+ | 1.3.0+ | 1.3.0+ | – | – |  | `0005-latency-histograms` |
+| Browser network, timing and outcome capture (`browser_network_events`) | 1.3.2+ | – | 1.3.2+ | 1.3.2+ | – |  |  |
+| Profile ingestion (`profiles`) | 1.3.2+ | – | – | – | – | `/v1/profiles` | `0006-profile-samples` |
+| Source map upload (`source_maps`) | 1.3.2+ | – | – | – | – | `/v1/sourcemaps` | `0007-source-maps` |
+| Memory pressure detection (`memory_metrics`) | 1.3.3+ | 1.3.3+ | 1.3.3+ | – | – |  | `0008-memory-signals`, `0010-memory-temporality` |
+| Platform OOM/restart events (`platform_events`) | 1.3.3+ | – | – | – | – | `/v1/platform-events` | `0008-memory-signals` |
+| Browser CSP violation capture (`csp_violations`) | 1.3.4+ | – | 1.3.4+ | 1.3.3+ | – |  |  |
+| Operation logging (`operation_logging`) | 1.4.0+ | 1.4.0+ | 1.4.0+ | – | – | `/v1/logs` | `0011-runtime-logs` |
+| Request summaries and the per-route request rollup (`request_summaries`) | 1.5.0+ | 1.5.0+ | 1.5.0+ | – | 1.0.0+ | `/v1/logs` | `0012-runtime-logs-requests`, `0014-runtime-request-1m` |
+| Coded errors and code-based grouping (`coded_errors`) | 1.5.0+ | 1.5.0+ | 1.5.0+ | 1.4.0+ | 1.0.0+ |  | `0013-occurrence-codes` |
+| Breadcrumbs: the steps before an error (`breadcrumbs`) | 1.6.0+ | 1.6.0+ | 1.6.0+ | 1.6.0+ | – |  |  |
+| Source map debug ids (`source_map_debug_ids`) | 1.6.0+ | – | 1.6.0+ | 1.6.0+ | – | `/v1/sourcemaps/check` | `0017-source-maps-debug-id` |
+| Fingerprint override (`fingerprint_override`) | 1.6.0+ | 1.6.0+ | 1.6.0+ | 1.6.0+ | 1.1.0+ |  |  |
+| Browser trace propagation (browser errors linked to server traces) (`browser_trace_propagation`) | 1.6.0+ | 1.6.0+ | 1.6.0+ | 1.6.0+ | – |  |  |
+| Upload-only keys for source maps (autter_rtu_) (`sourcemap_upload_keys`) | 1.7.0+ | – | – | – | – | `/v1/sourcemaps` |  |
+| Source map check by debug id (autter-runtime sourcemaps verify) (`source_map_verify`) | 1.7.0+ | – | – | – | – | `/v1/sourcemaps/check` | `0017-source-maps-debug-id` |
+| Rejected and dropped records per repository (`ingest_drop_counts`) | 1.8.0+ | – | – | – | – |  | `0018-runtime-ingest-drops` |
+| How each service's telemetry arrives (SDK, OpenTelemetry Collector or browser relay) (`telemetry_sender_via`) | 1.8.0+ | – | – | – | – |  | `0019-sdk-versions-via` |
+| Resolved and unresolved browser frames per occurrence (`frame_resolution_counts`) | 1.8.0+ | – | – | – | – |  | `0020-occurrence-frame-resolution` |
+| Suppression rules: drop or sample matching errors at ingest (`ingest_suppression`) | 1.9.0+ | – | – | – | – |  |  |
+| Loop collapse: a looping error stored as one sample a minute with an exact count (`loop_collapse`) | 1.9.0+ | – | – | – | – |  | `0021-occurrence-collapsed-count` |
+| Edge requests counted from their request summaries (`edge_request_counts`) | 1.10.0+ | – | – | – | 1.3.0+ | `/v1/logs` |  |
+| Caught errors and deliberate fallbacks recorded as handled occurrences (`caught_errors`) | 1.11.0+ | 1.9.0+ | 1.9.0+ | 1.8.0+ | 1.4.0+ |  |  |
+| Per-route p95 and p99 latency in the 1-minute rollups (`route_percentiles`) | 1.11.0+ | – | – | – | – |  | `0022-route-latency-1m` |
+| Server bundles symbolicated, with source context lines (`server_source_maps`) | 1.11.0+ | 1.9.0+ | 1.9.0+ | – | 1.4.0+ | `/v1/sourcemaps` |  |
+| Wrapped errors grouped with their root cause (cause-v1) (`cause_fingerprint`) | 1.11.0+ | 1.9.0+ | 1.9.0+ | – | 1.4.0+ |  |  |
+
+## Notes
+
+- Ingester 1.3.0 created the latency table but rejected numeric delta
+  temporality, so endpoint latency needs ingester 1.3.1.
+- Ingesters older than 1.8.0 reject a whole browser batch with a 400 when it
+  contains an event type they don't know, errors included. Upgrade the
+  ingester before the browser SDK.
+- The SDKs warn once at runtime when a feature you use needs a newer
+  ingester, naming both versions and the fix.

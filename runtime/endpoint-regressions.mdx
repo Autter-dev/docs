@@ -11,7 +11,7 @@ Use endpoint regression detection to find HTTP routes that become slower. Autter
 
 ## Prepare your service
 
-Use `@autter/runtime-node` or `@autter/runtime-next` version 1.3.0 or later. Prefer patch 1.3.1. Self-hosted installations require ingester 1.3.1 or later. Ingester 1.3.0 does not correctly accept numeric delta histograms.
+Needs `@autter/runtime-node` or `@autter/runtime-next` 1.3.0+ and, self-hosted, ingester 1.3.1+ (`endpoint_latency` in the [compatibility table](/runtime/compatibility)). `npx @autter/runtime-node doctor` shows whether it is active for your setup.
 
 Update your existing SDK initialization. Do not start a second SDK or register duplicate providers.
 
@@ -27,7 +27,7 @@ initAutterServer({
 
 For Next.js, pass the same options to `registerAutter` in your existing server instrumentation file. See [Installation](/runtime/installation).
 
-- Set `release` to the commit SHA that is actually deployed. Configure your build to provide `GIT_SHA`.
+- Set `release` to the commit SHA that is actually deployed. Configure your build to provide `GIT_SHA`. From `@autter/runtime-node` 1.16.0 you can leave `release` out: the SDK reports the running commit from your hosting environment ([Releases, commits and test runs](/runtime/releases-and-environments)).
 - Use the actual environment name. Keep service and environment names stable between releases.
 - Retain normal sampled traces as well as slow traces. The comparison needs both.
 - Add database or dependency instrumentation through the existing `instrumentations` option where needed. HTTP instrumentation alone does not measure all database calls or connection waits.

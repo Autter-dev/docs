@@ -1,13 +1,82 @@
 ---
 title: "Quickstart"
-description: "Set up Runtime capture, check operation-logging support, and verify stored application evidence."
+description: "Send your first event to Autter Runtime by hand in five steps, then add the frontend, diagnostics and a local ingester."
 ---
 
-Autter Runtime captures errors and usage from your frontend and backend. Compatible server releases also capture structured logs and operation outcomes. This guide sets up capture and checks stored data; follow [Operation logging](/runtime/operation-logging) for the new logging APIs and required deployments.
+Autter Runtime captures errors and usage from your frontend and backend. Compatible server releases also capture structured logs and operation outcomes.
+
+## Five steps by hand
+
+This path uses Autter's hosted ingester, so you need no Docker and no database. It takes a Node.js backend; for other languages, see [Stack integrations](/runtime/integrations).
+
+<Steps>
+  <Step title="Create a server key">
+    In the Autter platform, open **Settings → Access Tokens → Runtime ingest keys → Create key** and choose the repository. Copy the server key (`autter_rt_…`). You see it once. See [Keys and command-line tools](/runtime/introduction#keys-and-command-line-tools) if you are not sure which key you have.
+  </Step>
+  <Step title="Install the SDK">
+    ```bash
+    npm install @autter/runtime-node
+    ```
+  </Step>
+  <Step title="Initialize it before your app">
+    Create `instrument.cjs`:
+
+    ```js
+    const { initAutterServer } = require("@autter/runtime-node");
+
+    initAutterServer({
+      apiKey: process.env.AUTTER_RUNTIME_KEY,
+      endpoint: "https://otlp.autter.dev",
+      service: "payments-api",
+    });
+    ```
+
+    Start your app with it: `node --require ./instrument.cjs server.js`. Keep the key in an environment variable, never in source.
+  </Step>
+  <Step title="Check delivery">
+    ```bash
+    export AUTTER_ENDPOINT=https://otlp.autter.dev
+    export AUTTER_RUNTIME_KEY=autter_rt_…   # the key from step 1
+    npx @autter/runtime-node verify
+    ```
+
+    `verify` sends one tagged test event and reads it back. When everything works, it prints one line per check and exits 0:
+
+    ```text
+    Autter Runtime verify
+      endpoint   https://otlp.autter.dev
+      service    payments-api (environment verify, no release)
+      test id    4bf92f3577b34da6a3ce929d0e0e4736
+
+      ok   key       autter_rt_… (41 characters)
+      ok   network   DNS, TCP, TLS, HTTP ok (otlp.autter.dev:443, 212 ms)
+      ok   ingester  @autter/otlp-ingester@1.18.1, schema ready
+      ok   storage   ready: ClickHouse accepts writes
+      ok   auth      key accepted
+      ok   ingest    /v1/traces 200
+      ok   stored    1 span and 1 error stored after 1.4 s
+      ok   trace     the error is linked to its span by trace id 4bf92f3577b34da6a3ce929d0e0e4736
+      warn release   no release set: errors are not tied to a deploy, so "broke in release X" can't work
+                     -> The SDK reports AUTTER_RELEASE, else the commit in a commit variable (GIT_SHA, …)
+      ok   logs      1 log record stored after 0.8 s
+
+    Delivered: a test event from "payments-api" was accepted and stored. Check the warnings: release. It is stored under environment "verify" and never opens an issue.
+    ```
+
+    {/* TODO: replace with output pasted from a real run against otlp.autter.dev. This example follows the format in packages/runtime-node/src/verify.ts; timings, IDs and the ingester version will differ. */}
+
+    The `release` warning goes away when you set `GIT_SHA` (or `AUTTER_RELEASE`) where the app runs. A `FAIL` line names the first step that failed and what to do; exit code 2 means the ingester could not be reached. See [Is my data arriving?](/runtime/delivery).
+  </Step>
+  <Step title="Look in the app">
+    Trigger an error in your app. Server errors arrive within about 2 seconds and request counts within 60 seconds ([arrival times](/runtime/delivery#when-it-arrives)). Open the repository in the Autter platform and choose **Runtime**. The `verify` test event never opens an issue, so look for your own error.
+  </Step>
+</Steps>
 
 <Info>
-  Prefer to have an AI coding agent set this up for you? See [AI agent skills](/runtime/skills) — `npx skills add Autter-dev/autter-skills --all`, then tell your agent *"install Autter Runtime in this project."*
+  Prefer to have a coding agent do this? See [AI agent skills](/runtime/skills): `npx skills add Autter-dev/autter-skills --all`, then tell your agent *"install Autter Runtime in this project."* The agent follows the same steps.
 </Info>
+
+The rest of this page covers the full setup: concepts, a local ingester, frontend capture, diagnostics and how to check stored data. Follow [Operation logging](/runtime/operation-logging) for the logging APIs and required deployments.
 
 ## Concepts
 
@@ -27,66 +96,168 @@ Autter Runtime captures errors and usage from your frontend and backend. Compati
 
 **What is never sent:** cookies, DOM content, form values, request/response bodies, headers, emails, full URLs with query strings.
 
-Use a Runtime ingest key, not an Autter CLI/PAT or MCP token. Keep the key value
+Use a Runtime ingest key, not an Autter CLI/PAT or MCP token ([which key is which](/runtime/introduction#keys-and-command-line-tools)). Keep the key value
 in your environment; your coding agent only needs its variable name. Custom
 log context is application-authored: do not include sensitive data, even though
 the SDK and ingester redact it.
 
 <Steps>
-  <Step title="Run the ingester">
-    For a local try-out, clone the repo and start ClickHouse plus the ingester with Docker Compose:
+  <Step title="Choose an ingester">
+    **Hosted:** set `AUTTER_ENDPOINT=https://otlp.autter.dev` and your repository's server key, as in [Five steps by hand](#five-steps-by-hand).
+
+    **Local, with Docker:** clone the repo and start ClickHouse plus the ingester with Docker Compose:
 
     ```bash
     git clone https://github.com/Autter-dev/autter-runtime
     cd autter-runtime
-    docker compose up   # ClickHouse + ingester on :4318, key "dev-key"
+    docker compose up   # ClickHouse + ingester on http://localhost:4318
     ```
 
-    For real deployments, see [Self-hosting](/runtime/self-hosting) or use Autter's hosted ingester at `otlp.autter.dev`.
+    There's no key step. The local Compose setup accepts the built-in key `autter_rt_local_dev_only`, but only from your own machine. A deployed ingester never accepts it. Point your app at it and check the connection:
+
+    ```bash
+    export AUTTER_ENDPOINT=http://localhost:4318
+    export AUTTER_RUNTIME_KEY=autter_rt_local_dev_only
+    npx @autter/runtime-node doctor    # versions, storage and the key; sends nothing
+    npx @autter/runtime-node verify    # sends a test event and reads it back
+    ```
+
+    `verify` goes through key, network, ingester, storage, auth, ingest, stored, trace, release and logs, and stops at the first step that fails with what to do. Its test event never opens an issue. Run it first whenever events don't show up. See [Is my data arriving?](/runtime/delivery).
+
+    **No Docker?** Use the hosted ingester, or run the ingester from source against your own ClickHouse: see [Run Runtime without Docker](/runtime/without-docker). For production, see [Self-hosting](/runtime/self-hosting).
   </Step>
   <Step title="Instrument your backend">
-    ```bash
-    npm install @autter/runtime-node@^1.4.0
-    ```
+    <Tabs>
+      <Tab title="Node.js">
+      ```bash
+      npm install @autter/runtime-node
+      ```
 
-    Create `instrument.cjs` — it must load **before** your app:
+      Create `instrument.cjs` — it must load **before** your app:
 
-    ```js
-    const { initAutterServer } = require("@autter/runtime-node");
+      ```js
+      const { initAutterServer } = require("@autter/runtime-node");
 
-    initAutterServer({
-      apiKey: process.env.AUTTER_RUNTIME_KEY,   // server key
-      endpoint: process.env.AUTTER_ENDPOINT,     // your ingester URL
-      service: "payments-api",
-      environment: process.env.NODE_ENV,
-      release: process.env.GIT_SHA,              // enables "broke in release X"
-      retainTracesAboveMs: 2000,
-    });
-    ```
+      initAutterServer({
+        apiKey: process.env.AUTTER_RUNTIME_KEY,   // server key
+        endpoint: process.env.AUTTER_ENDPOINT,     // your ingester URL
+        service: "payments-api",
+        environment: process.env.NODE_ENV,
+        release: process.env.GIT_SHA,              // enables "broke in release X"
+        retainTracesAboveMs: 2000,
+      });
+      ```
 
-    ```bash
-    node --require ./instrument.cjs server.js
-    ```
+      ```bash
+      node --require ./instrument.cjs server.js
+      ```
 
-    Reuse your existing SDK initialization if you already have one. The example opts into bounded, local slow-request trace retention. Set `GIT_SHA` to the deployed commit SHA. See [Endpoint regressions](/runtime/endpoint-regressions) for metric requirements and retention limits.
+      Reuse your existing SDK initialization if you already have one. The example opts into bounded, local slow-request trace retention. Set `GIT_SHA` to the deployed commit SHA. From `@autter/runtime-node` 1.16.0 you can leave `release` out: the SDK reports the running commit from your hosting environment ([Releases, commits and test runs](/runtime/releases-and-environments)). See [Endpoint regressions](/runtime/endpoint-regressions) for metric requirements and retention limits.
 
-    This records HTTP request metrics and captures crashes. For handled errors:
+      This records HTTP request metrics and captures crashes and unhandled
+      promise rejections. A rejection from a promise started during a request
+      keeps that request's route and request id.
 
-    ```js
-    const { captureException } = require("@autter/runtime-node");
+      On Express, add request ids and the error hook to your app:
 
-    try {
-      await chargeCard(order);
-    } catch (err) {
-      captureException(err, { "order.id": order.id });
-      throw err;
-    }
-    ```
+      ```js
+      const { autterRequests, autterErrorHandler } = require("@autter/runtime-node");
+
+      app.use(autterRequests());       // first: request ids and one summary per request
+      // ... your routes and routers ...
+      app.use(autterErrorHandler());   // after your routes, before your own error handlers
+      ```
+
+      With `@autter/runtime-node` 1.10.0 or later, the error behind every
+      Express 5xx is recorded with its type, message, stack, route and request
+      id even without `autterErrorHandler()`. That holds in every router,
+      including routers with their own error handler. The handler adds coded
+      errors that end in a 4xx, and it never reports an error twice, so one
+      `app.use(autterErrorHandler())` at app level is enough. On older versions
+      it is required: without it a thrown error shows up only as
+      `GET /route returned 500`, with no stack. Fastify and Koa need their
+      hooks (`autterFastifyErrors`, `autterKoa`); see
+      [Integrations](/runtime/integrations#nodejs-express-fastify-koa-nestjs).
+
+      For handled errors:
+
+      ```js
+      const { captureException } = require("@autter/runtime-node");
+
+      try {
+        await chargeCard(order);
+      } catch (err) {
+        captureException(err, { "order.id": order.id });
+        throw err;
+      }
+      ```
+
+      A run that returns normally but did not do its job (a declined payment) is not an exception. Declare it so it becomes an issue:
+
+      ```js
+      const { reportOutcome } = require("@autter/runtime-node");
+
+      if (!payment.confirmed) reportOutcome("checkout", "payment was not confirmed");
+      ```
+
+      Test it without an ingester: `@autter/runtime-node/testing` keeps every record in memory.
+
+      ```js
+      const { captureRuntime, expectOperation } = require("@autter/runtime-node/testing");
+
+      const runtime = captureRuntime();
+      await request(app).post("/checkout").expect(402);
+      expectOperation(runtime, "POST /checkout").toHaveOutcome("degraded");
+      runtime.stop();
+      ```
+
+      Then check the real path: `npx @autter/runtime-node verify --service payments-api`. If your app has no key, or the ingester refuses it, the SDK prints one line saying so at startup or on the first refusal.
+      </Tab>
+      <Tab title="Python">
+        For Django, FastAPI, Flask and Celery. There is no Autter package for Python: install OpenTelemetry and copy two files from the Autter Runtime repository next to your code.
+
+        ```bash
+        pip install opentelemetry-sdk opentelemetry-exporter-otlp-proto-http \
+          opentelemetry-instrumentation-django   # or -fastapi, -flask, -celery
+        curl -fsSO https://raw.githubusercontent.com/Autter-dev/autter-runtime/main/adapters/python/autter_tracing.py
+        curl -fsSO https://raw.githubusercontent.com/Autter-dev/autter-runtime/main/adapters/python/redact.py
+        ```
+
+        Configure it with environment variables:
+
+        ```bash
+        OTEL_EXPORTER_OTLP_ENDPOINT=$AUTTER_ENDPOINT                    # your ingester URL
+        OTEL_EXPORTER_OTLP_HEADERS=x-autter-key=${AUTTER_RUNTIME_KEY}   # server key
+        OTEL_SERVICE_NAME=payments-api
+        OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.environment.name=production
+        OTEL_TRACES_SAMPLER=parentbased_traceidratio
+        OTEL_TRACES_SAMPLER_ARG=0.01
+        AUTTER_COUNT_REQUESTS=true
+        ```
+
+        Call `init_tracing()` once per process, at startup, before your framework's instrumentation. For Flask:
+
+        ```python
+        from autter_tracing import init_tracing
+        from flask import Flask
+        from opentelemetry.instrumentation.flask import FlaskInstrumentor
+
+        init_tracing()
+        app = Flask(__name__)
+        FlaskInstrumentor().instrument_app(app)
+        ```
+
+        `init_tracing()` sends every error at 1% sampling and counts every request, so error rates are right. Configuring the OpenTelemetry SDK yourself with the same sampler does neither: an error on a trace the sampler drops is never sent. Where to call it for Django, FastAPI and Celery, prefork servers and handled exceptions: [Python integration](/runtime/integrations#python-django-fastapi-flask-celery).
+
+        Check the path with [`compat.py`](https://github.com/Autter-dev/autter-runtime/blob/main/adapters/python/compat.py) (stdlib only, copy it next to your app): `python3 compat.py verify --service payments-api`.
+      </Tab>
+    </Tabs>
   </Step>
   <Step title="Add server operation diagnostics">
-    First [check installed SDK exports and ingestion support](/runtime/operation-logging#check-your-installation).
-    Node/Next.js SDK and ingester **1.4.0+** are required; installing a
-    package does not establish that the hosted ingester or platform is ready.
+    Node/Next.js SDK and ingester **1.4.0+** are required ([compatibility table](/runtime/compatibility)).
+    `npx @autter/runtime-node doctor` shows whether operation logging is active
+    for your installed SDK and ingester, and `verify` checks that a log record
+    is stored.
 
     Once supported, add `logging` options to the existing initialization and
     wrap meaningful checkout/job boundaries with `withRuntimeOperation`.
@@ -132,8 +303,8 @@ the SDK and ingester redact it.
 
     No backend? See the direct setup and full walkthrough in [Installation](/runtime/installation).
   </Step>
-  <Step title="Verify data is flowing">
-    In a local test environment, trigger a test error, then query ClickHouse. In production, inspect existing traffic instead; do not generate artificial errors or requests:
+  <Step title="See your own events">
+    `verify` proves the path; it is safe in production because its test event never opens an issue or counts as a request. To see your app's own events locally, trigger an error, wait a few seconds (server errors arrive within 2 s, request counts within 60 s; see [arrival times](/runtime/delivery#when-it-arrives)), then query ClickHouse. In production, inspect existing traffic instead:
 
     ```sql
     SELECT service, error_type, message, route, occurred_at
@@ -170,7 +341,8 @@ the SDK and ingester redact it.
 - Server keys only in backend env vars; client keys only where a relay is genuinely impossible.
 - Client keys have `allowedOrigins` set to your exact app origins.
 - `release` is wired to your git SHA in **both** frontend and backend — it powers regression detection ("broke in release X").
-- Keep trace sampling at ~1% (`traceSampleRate`) — errors are always captured regardless.
+- Keep trace sampling at ~1% (`traceSampleRate`). The `@autter/*` SDKs and Python's `init_tracing()` capture every error regardless. With a plain OpenTelemetry SDK, an error on a trace the sampler drops is not sent ([what is sampled](/runtime/delivery#what-is-sampled)).
+- `npx @autter/runtime-node verify` passes from where the app runs (CI or the deployed host), with the production endpoint and key.
 - Confirm the logging SDK release and ingester/platform deployment separately; redeploy the application after upgrading.
 - Declare business outcomes, preserve existing loggers, and check buffered/dropped records and flush failures. Logs are best-effort diagnostics.
 - Check export volume after enabling `retainTracesAboveMs`. The platform rollout does not enable this option in existing applications.

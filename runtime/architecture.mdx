@@ -27,7 +27,7 @@ flowchart TD
 The `/v1/logs` path requires the operation-logging deployment. See
 [capability checks](/runtime/operation-logging#check-your-installation).
 
-The ingester is **stateless**: auth key → `{orgId, repositoryId}` resolution, normalization, fingerprinting, ClickHouse writes, optional forward. Anything stateful (issue lifecycle, incidents, correlation, symbolication) belongs to the consumer of the sink webhook (Autter cloud, or your own backend).
+The ingester is **stateless**: auth key → `{orgId, repositoryId}` resolution, normalization, symbolication of minified and bundled JavaScript frames through uploaded [source maps](/runtime/source-maps), fingerprinting, ClickHouse writes, optional forward. Frames are resolved before fingerprinting, so an issue survives new builds. Anything stateful (issue lifecycle, incidents, correlation) belongs to the consumer of the sink webhook (Autter cloud, or your own backend).
 
 ## External provider sources
 

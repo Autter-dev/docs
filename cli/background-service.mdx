@@ -1,0 +1,73 @@
+---
+title: "Background service"
+description: "What the Autter background service does, what it listens to, and how to check and restart it."
+icon: "server"
+---
+
+Autter runs one small background process per user, called the background service. You manage it with `autter bg`. This page explains what it does, what it listens to, and how to inspect it when something is wrong.
+
+The service does not start until you agree to it during `autter onboard`, or run `autter install --system`.
+
+## What it does
+
+- **Writes authorship notes.** When you commit, Git reports the command to the service. The service matches it with the checkpoints your agents sent and writes the commit's authorship note to `refs/notes/ai`. It does the same bookkeeping for rebase, cherry-pick, merge, stash, and reset, so attribution follows the code.
+- **Receives checkpoints.** Agent hooks call `autter checkpoint`, which hands the edit to the service and returns as soon as the service confirms it has it, in about a millisecond. If the service does not confirm within 200 ms, the hook tries once more, then prints `Checkpoint may not have been recorded` and still exits `0` so the agent carries on.
+- **Uploads, in connected mode only.** On a machine connected to the Autter platform, the service uploads queued authorship and usage data. In local-only mode it uploads nothing.
+- **Checks for updates.** Release builds check for a newer version about once an hour and install it in the background. It does not do this in CI, when `AUTTER_RELEASE_TAG` pins a release, or when updates are turned off with `AUTTER_DISABLE_AUTO_UPDATES=1` or `autter config set disable_auto_updates true`.
+
+The service does not open a network port. It does not read files outside the repositories you commit in and the agent transcripts named in checkpoints.
+
+## What it listens to
+
+The service listens on two local endpoints that only your user account can open:
+
+- **A trace socket.** Git writes one event per Git command to it. The `trace2.eventTarget` setting in your global Git config points at it. Check it with `git config --global --get-regexp '^trace2\.'`.
+- **A control socket.** The `autter` command uses it to send checkpoints and ask for status.
+
+On macOS, Linux, and WSL these are Unix sockets in a per-user folder under the system temp directory (`autter-d-<id>/`). On Windows they are named pipes (`\\.\pipe\autter-<id>-trace2` and `\\.\pipe\autter-<id>-control`).
+
+## Check and restart it
+
+```bash
+autter bg status     # is it running, which version, queue and upload health
+autter bg restart    # start it, or stop and start it if it is running
+autter bg shutdown   # stop it
+autter bg tail -f    # follow its log
+```
+
+`autter bg start` starts the service if it is not running. Its log files are in `~/.autter/internal/daemon/logs/`, one per run.
+
+## When something is wrong
+
+Start with `autter doctor`. It checks that the service is running, that a Git command reaches it through the trace socket, and that a checkpoint makes the round trip. It prints a `fix:` line for each failure.
+
+| What you see | Usual cause | What to do |
+| --- | --- | --- |
+| Commits get no authorship note | Git is not reporting to the service: the global `trace2` settings are missing or point at an old socket | `autter install --system`, then `autter doctor` |
+| `failed to connect to autter background service` | The service is not running | `autter bg restart`, then `autter doctor` |
+| "Access is denied" or "lock held" | The service was started as root or Administrator, so your own account cannot reach it | From the elevated terminal, run `autter bg shutdown`. Then run `autter bg restart` from a normal terminal |
+| The service and the CLI report different versions | An upgrade replaced the binary while the old service was still running | `autter bg restart` |
+| `autter doctor` times out on a slow machine | Time limits are too short for this machine | `AUTTER_DOCTOR_TIMEOUT_SCALE=5 autter doctor` |
+
+## Send a report to support
+
+If it still fails, write a support report and send the file with your request:
+
+```bash
+autter doctor --report autter-report.txt
+```
+
+The report holds doctor's results, the service's start timings and lock-file state, the end of its log, and your Git and OS versions. It contains no source code, file contents, or tokens.
+
+## Remove it
+
+To stop the service and remove it along with the rest of Autter's setup, run `autter uninstall`. Use `autter uninstall --dry-run` first to list what it removes.
+
+<CardGroup cols={2}>
+  <Card title="CLI troubleshooting" icon="wrench" href="/cli/troubleshooting">
+    Diagnose missing attribution, login failures, and unexpected uploads.
+  </Card>
+  <Card title="How Autter works" icon="gears" href="/cli/how-autter-works">
+    See how checkpoints, Git notes, and the background service fit together.
+  </Card>
+</CardGroup>

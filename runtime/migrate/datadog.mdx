@@ -1,0 +1,421 @@
+---
+title: "Move from Datadog"
+description: "Send the same telemetry to Autter Runtime and Datadog, compare the two, then switch alerting over."
+---
+
+This guide is for teams on Datadog who want Autter Runtime's error issues, root-cause analysis and draft fix pull requests, without a gap in alerting. You keep Datadog running while Autter receives the same telemetry. You compare the two, then switch over.
+
+Autter Runtime is built around issues. Errors are grouped into issues, and alert rules fire on issue events such as new, regressed and spiking. Runtime has no metric or log-count threshold alerts. If most of your Datadog monitors are metric, host or log-count monitors, read the [monitor table](#datadog-monitors-and-their-autter-equivalents) first. Many have no Autter equivalent.
+
+The send-to-both step needs services that emit OpenTelemetry (OTLP). A service instrumented only with Datadog's own libraries keeps sending to Datadog as before. Bring its errors into Autter with the [Datadog connector](#2-bring-errors-and-history-across-with-the-datadog-connector).
+
+## 1. Send to both
+
+Run one OpenTelemetry Collector that exports to Autter and to Datadog. The config is the [Autter collector config](/runtime/otel-collector), plus these parts:
+
+| Added | What it does |
+| --- | --- |
+| `otlp_http/datadog` on `traces/autter` and `logs/autter` | Datadog's OTLP intake receives the same traces and logs as Autter. |
+| `metrics/datadog` pipeline, with `cumulative_to_delta/datadog` | The apps' own metrics, unfiltered, go to Datadog as delta. The intake accepts delta only. Autter's `metrics/autter` drops the apps' HTTP duration histograms so Autter does not count requests twice. Datadog still needs them. |
+| `span_metrics/datadog` with `traces/datadog-span-metrics` and `metrics/datadog-span-metrics` | APM trace metrics (requests, errors, duration) for Datadog, computed from every span before sampling. |
+
+This follows Datadog's recommended collector setup ([Send data to Datadog with the Collector](https://docs.datadoghq.com/opentelemetry/setup/collector_exporter/)):
+
+- The `otlp_http` exporter sends to `https://otlp.<DD_SITE>` with the `dd-api-key` and `dd-otel-metric-config` headers, zstd compression and batching by bytes.
+- The `span_metrics` connector uses Datadog's settings and dimensions, taken from Datadog's [pinned example config](https://github.com/DataDog/opentelemetry-examples/blob/be842bc1447337c32f2d6265612232932a6cdbfd/configurations/opentelemetry-collector/agent-container.yaml).
+- Cumulative-to-delta conversion on metrics follows the [OTLP metrics intake](https://docs.datadoghq.com/opentelemetry/setup/otlp_ingest/metrics/) page.
+
+Datadog's setup needs collector-contrib 0.154.0 or later. It was tested with 0.161.0, the version the Autter config pins. At that version the components are named `otlp_http`, `span_metrics` and `cumulative_to_delta`.
+
+The config leaves out parts of Datadog's example that are not about moving telemetry: the `host_metrics` receiver and `resource_detection` processor (host metrics for the Infrastructure List), the `datadog` extension (Fleet Automation) and the collector's own telemetry. Add them from Datadog's page if you use them. If you already run the Datadog Exporter and Connector, Datadog says they [remain supported](https://docs.datadoghq.com/opentelemetry/setup/collector_exporter/datadog_exporter/). This guide follows Datadog's recommendation for new configurations.
+
+Set these variables:
+
+| Variable | Value |
+| --- | --- |
+| `DD_API_KEY` | A Datadog API key. It is sent as the `dd-api-key` header. |
+| `DD_SITE` | Your [Datadog site](https://docs.datadoghq.com/getting_started/site/) parameter: `datadoghq.com` (US1), `us3.datadoghq.com`, `us5.datadoghq.com`, `datadoghq.eu` (EU1), `ap1.datadoghq.com`, `ap2.datadoghq.com`, `uk1.datadoghq.com`, `ddog-gov.com` (US1-FED) or `us2.ddog-gov.com`. |
+| `AUTTER_RUNTIME_KEY` | A server ingest key of one Autter repository. See [OpenTelemetry Collector](/runtime/otel-collector). |
+
+Save this as `otel-collector.yaml`:
+
+```yaml
+# Dual send: Autter and Datadog.
+# The Autter collector config, plus Datadog's
+# recommended Collector setup: its OTLP intake on the traces and logs
+# pipelines, a Datadog metrics pipeline (delta only), and APM trace metrics
+# from span_metrics over every span before sampling.
+# https://docs.datadoghq.com/opentelemetry/setup/collector_exporter/
+#
+# DD_API_KEY: a Datadog API key. DD_SITE: your Datadog site parameter
+# (datadoghq.com, us3.datadoghq.com, us5.datadoghq.com, datadoghq.eu,
+# ap1.datadoghq.com, ap2.datadoghq.com, uk1.datadoghq.com, ddog-gov.com,
+# us2.ddog-gov.com): https://docs.datadoghq.com/getting_started/site/
+#
+# Autter Runtime: OpenTelemetry Collector (contrib) config.
+# Keeps every error and LLM call, samples the rest, counts every request,
+# drops request headers and query strings, and sends OTLP/HTTP to Autter.
+#
+# AUTTER_RUNTIME_KEY: a server ingest key (autter_rt_...) of ONE repository.
+# Self-hosted ingester? Replace https://otlp.autter.dev with its URL.
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+connectors:
+  # Every server span, before sampling, becomes a delta http.server.duration
+  # histogram: the ingester's request counts and error rates stay exact.
+  span_metrics/autter:
+    namespace: http.server
+    histogram:
+      unit: ms
+      explicit:
+        buckets: [5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2500ms, 5s, 10s]
+    dimensions:
+      - name: http.route
+      - name: http.request.method
+      - name: http.response.status_code
+      - name: http.status_code
+    aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
+    metrics_flush_interval: 60s
+
+  # Datadog APM trace metrics (RED), from every span before sampling. The
+  # settings and dimensions are Datadog's recommended ones.
+  span_metrics/datadog:
+    aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
+    add_resource_attributes: true
+    histogram:
+      exponential: {}
+      unit: s
+    dimensions:
+      - name: deployment.environment.name
+      - name: service.version
+      - name: http.response.status_code
+      - name: container.id
+      - name: aws.ecs.launchtype
+      - name: aws.ecs.task.arn
+      - name: cloud.provider
+      - name: cloud.account.id
+      - name: host.id
+      - name: host.name
+      - name: k8s.node.name
+      - name: k8s.cluster.name
+      - name: azure.resourcegroup.name
+      - name: aws.s3.bucket
+      - name: db.namespace
+      - name: messaging.destination.name
+      - name: messaging.system
+      - name: server.address
+      - name: operation.name
+      - name: http.request.method
+      - name: http.method
+      - name: db.system
+      - name: messaging.operation
+      - name: rpc.system
+      - name: rpc.service
+      - name: faas.invoked_provider
+      - name: faas.invoked_name
+      - name: faas.trigger
+      - name: graphql.operation.type
+      - name: network.protocol.name
+      - name: resource.name
+      - name: http.route
+      - name: messaging.destination
+      - name: rpc.method
+      - name: graphql.operation.name
+      - name: db.statement
+      - name: db.query.text
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 20
+
+  # Fills in only what a sender left out: insert never overwrites.
+  resource/autter:
+    attributes:
+      # Legacy key on purpose: deployment.environment.name, when a sender
+      # sets it, still wins.
+      - key: deployment.environment
+        value: production
+        action: insert
+      # Shows these services as "via OTel Collector" in Autter. An Autter
+      # SDK keeps its own name.
+      - key: telemetry.distro.name
+        value: otelcol-contrib
+        action: insert
+      - key: telemetry.distro.version
+        value: "0.161.0"
+        action: insert
+
+  # Request and response headers (cookies, auth) and query strings never
+  # leave this collector.
+  transform/autter-redact:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - 'delete_matching_keys(attributes, "^http[.](request|response)[.]header[.]")'
+          - 'delete_key(attributes, "url.query")'
+          - 'replace_pattern(attributes["url.full"], "[?#].*", "") where attributes["url.full"] != nil'
+          - 'replace_pattern(attributes["http.url"], "[?#].*", "") where attributes["http.url"] != nil'
+          - 'replace_pattern(attributes["http.target"], "[?#].*", "") where attributes["http.target"] != nil'
+      - context: spanevent
+        statements:
+          - 'delete_matching_keys(attributes, "^http[.](request|response)[.]header[.]")'
+          - 'delete_key(attributes, "url.query")'
+    log_statements:
+      - context: log
+        statements:
+          - 'delete_matching_keys(attributes, "^http[.](request|response)[.]header[.]")'
+          - 'delete_key(attributes, "url.query")'
+          - 'replace_pattern(attributes["url.full"], "[?#].*", "") where attributes["url.full"] != nil'
+
+  # Only server spans feed the request counts. Autter SDKs count their own.
+  filter/autter-server-spans:
+    error_mode: ignore
+    trace_conditions:
+      - 'span.kind != SPAN_KIND_SERVER'
+      - 'IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+
+  # The counts come from span_metrics/autter; a sender's own delta HTTP
+  # duration histograms would count every request twice.
+  filter/autter-http-duration:
+    error_mode: ignore
+    metric_conditions:
+      - '(metric.name == "http.server.request.duration" or metric.name == "http.server.duration") and not IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+
+  tail_sampling/autter:
+    decision_wait: 10s
+    num_traces: 100000
+    expected_new_traces_per_sec: 100
+    policies:
+      # Errors are never sampled away (the Autter SDKs' always-on errors).
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: exceptions
+        type: ottl_condition
+        ottl_condition:
+          error_mode: ignore
+          spanevent:
+            - 'name == "exception"'
+      # LLM calls are costed per call: keep all of them.
+      - name: llm-calls
+        type: ottl_condition
+        ottl_condition:
+          error_mode: ignore
+          span:
+            - 'attributes["gen_ai.system"] != nil'
+            - 'attributes["gen_ai.operation.name"] != nil'
+      # Autter SDKs already sample and tail-retain: pass them through.
+      - name: autter-sdks
+        type: ottl_condition
+        ottl_condition:
+          error_mode: ignore
+          span:
+            - 'IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+      - name: slow
+        type: latency
+        latency:
+          threshold_ms: 2000
+      - name: baseline
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+
+  # Kept server spans are not counted again: span_metrics/autter counted them.
+  transform/autter-tail-retained:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - 'set(attributes["autter.tail_retained"], true) where kind == SPAN_KIND_SERVER and not IsMatch(resource.attributes["telemetry.distro.name"], "^@autter/")'
+
+  # Datadog's metrics intake accepts delta temporality only.
+  cumulative_to_delta/datadog: {}
+
+  # The ingester takes at most 1 MiB per request and 300 requests a minute
+  # per key. Spans past 5000 and log records past 2000 in one request come
+  # back as rejected in partial_success, which the exporter logs.
+  batch/autter:
+    send_batch_size: 256
+    send_batch_max_size: 512
+    timeout: 5s
+
+exporters:
+  otlp_http/autter:
+    endpoint: https://otlp.autter.dev
+    headers:
+      authorization: "Bearer ${env:AUTTER_RUNTIME_KEY}"
+    compression: gzip
+    retry_on_failure:
+      enabled: true
+    sending_queue:
+      enabled: true
+      queue_size: 1000
+
+  otlp_http/datadog:
+    endpoint: https://otlp.${env:DD_SITE}
+    headers:
+      dd-api-key: ${env:DD_API_KEY}
+      # Resource attributes and scope metadata as metric tags.
+      dd-otel-metric-config: '{"resource_attributes_as_tags": true, "instrumentation_scope_metadata_as_tags": true}'
+    compression: zstd
+    compression_params:
+      level: 3
+    sending_queue:
+      batch:
+        sizer: bytes
+        min_size: 2097152
+        max_size: 4194304
+
+service:
+  extensions: [health_check]
+  pipelines:
+    # Unsampled, only to count requests.
+    traces/autter-requests:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, filter/autter-server-spans]
+      exporters: [span_metrics/autter]
+    metrics/autter-requests:
+      receivers: [span_metrics/autter]
+      processors: [memory_limiter, batch/autter]
+      exporters: [otlp_http/autter]
+    traces/autter:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, transform/autter-redact, tail_sampling/autter, transform/autter-tail-retained, batch/autter]
+      exporters: [otlp_http/autter, otlp_http/datadog]
+    metrics/autter:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, filter/autter-http-duration, batch/autter]
+      exporters: [otlp_http/autter]
+    logs/autter:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, transform/autter-redact, batch/autter]
+      exporters: [otlp_http/autter, otlp_http/datadog]
+    # Every span, unsampled, only for Datadog's trace metrics.
+    traces/datadog-span-metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter]
+      exporters: [span_metrics/datadog]
+    metrics/datadog-span-metrics:
+      receivers: [span_metrics/datadog]
+      processors: [memory_limiter]
+      exporters: [otlp_http/datadog]
+    # The apps' own metrics, unfiltered, as delta.
+    metrics/datadog:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/autter, cumulative_to_delta/datadog, batch/autter]
+      exporters: [otlp_http/datadog]
+```
+
+Run it, passing the Datadog variables too:
+
+```bash
+docker run -d --name otel-collector -p 4317:4317 -p 4318:4318 \
+  -e AUTTER_RUNTIME_KEY -e DD_API_KEY -e DD_SITE \
+  -v "$PWD/otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro" \
+  otel/opentelemetry-collector-contrib:0.161.0
+```
+
+Check the file before you deploy it:
+
+```bash
+docker run --rm -v "$PWD/otel-collector.yaml:/cfg.yaml:ro" \
+  otel/opentelemetry-collector-contrib:0.161.0 validate --config=/cfg.yaml
+```
+
+Then point each service at the collector with the environment variables on the [OpenTelemetry Collector](/runtime/otel-collector#point-your-services-at-the-collector) page. This is what changes for Datadog:
+
+- **Traces are sampled.** Apps send everything (`parentbased_always_on`). The collector keeps every trace with an error, an exception, an LLM call or a span over 2 seconds, and 10% of the rest. Datadog gets that sample. Its trace metrics still count every span, because `span_metrics/datadog` sees spans before sampling. Datadog describes the pattern: trace metrics are computed from all traces, not only the sampled ones.
+- **Request and response headers and query strings are removed** from spans, span events and logs before either destination sees them.
+- **Resource attributes the collector inserts** reach Datadog too: `deployment.environment: production` when a service sets no environment, the collector's `telemetry.distro.*`, and `autter.tail_retained` on kept server spans.
+- **Batch sizes.** The exporter batches 2 to 4 MiB per request for Datadog, as Datadog's example does. Datadog's OTLP intake answers `413` for a request over its limit (metrics 512 KiB compressed, logs 5.1 MiB uncompressed, traces 15 MiB uncompressed). See [OTLP intake limits](https://docs.datadoghq.com/opentelemetry/setup/otlp_ingest/). If the exporter logs 413s, lower `sending_queue.batch.max_size`.
+- **One Autter repository per key.** To split one collector across repositories, give each repository its own `otlp_http` exporter and key, as described on the collector page.
+
+<Warning>
+  This config has not been run against a collector or a Datadog account for this guide. Run the `validate` command before you deploy it. Then check that APM service pages in Datadog keep their request and error counts.
+</Warning>
+
+An Autter SDK has no documented way to send to a second exporter, so the collector is the supported way to send to both.
+
+## 2. Bring errors and history across with the Datadog connector
+
+The Datadog connector reads errors out of Datadog into Autter. Use it for history, and for services that only Datadog's own libraries instrument. See [External log sources](/runtime/external-sources).
+
+1. Open **Repository → Settings → Runtime → Data sources** and connect Datadog. Enter the regional API URL, an API key and an application key. The application key needs `logs_read_data`. Add `apm_read` for APM error spans and `rum_apps_read` for RUM errors.
+2. Turn on APM and RUM for the connection if you want those sources. Logs are on by default.
+3. Select **Test access**, then save.
+
+What arrives: warning and error logs, APM error spans (only indexed, retained spans are searchable) and RUM errors. A bug reported by both the connector and an Autter SDK or the collector lands on one issue that lists both sources.
+
+What does not arrive: metrics, dashboards, monitors, and anything older than the initial backfill of 24 hours. Records from the backfill are visible, but they do not start automatic investigation or fixes. Autter cannot import a longer Datadog history today.
+
+### Monitor alerts
+
+The connector also accepts a custom monitor webhook in the shape of the [generic webhook record](/runtime/external-sources#generic-webhook-record): `eventId`, `title`, `occurredAt`, `kind: "alert"` and `action` set to `"fired"` or `"resolved"`. Two things stop a Datadog webhook from filling that shape today:
+
+- Datadog's webhook variables give the event time only as epoch milliseconds or seconds (`$DATE`, `$DATE_POSIX`). There is no ISO 8601 variable ([Webhooks integration](https://docs.datadoghq.com/integrations/webhooks/)). The connector requires `occurredAt` to be an ISO timestamp, so it answers "An event has an invalid timestamp".
+- `$ALERT_TRANSITION` is `Triggered`, `Recovered` and the like. The connector resolves an alert only on `action: "resolved"`.
+
+Until the connector accepts those, forward monitor alerts only after you check a test delivery. Or keep paging from Datadog for them during the overlap.
+
+## Datadog monitors and their Autter equivalents
+
+An Autter [alert rule](/runtime/alert-rules) fires on issue events: `new`, `regressed`, `spiking`, `assigned` and `resolved`. It can filter by environment, service, level, priority (`p0` to `p3`), error type and message (equals, contains, starts with, regex), and assignee. It can require a minimum number of events or users in a window of up to 7 days. It posts to Slack, adds a line to the daily email summary, notifies in-app, and pages on-call for critical issues.
+
+A [synthetic check](/runtime/synthetic-checks) is an HTTP GET or HEAD request to a public URL, with an expected status, optional body text and an optional latency threshold. It runs from one region. A [journey check](/runtime/synthetic-checks#journey-checks) replays a saved journey in a browser instead. A [dashboard](/runtime/dashboards) has line, bar, stat and table widgets over logs, spans, errors, metrics and LLM calls. A dashboard widget shows data. It does not alert.
+
+Monitor types are Datadog's list in [Monitor types](https://docs.datadoghq.com/monitors/types/).
+
+| Datadog monitor | Autter | Notes |
+| --- | --- | --- |
+| Error Tracking | Alert rule | `new`, `regressed` and `spiking` triggers. Use minimum events or users for volume. |
+| APM | Partly: alert rule | Error spans become issues, through the collector or the connector's APM source. Latency and throughput thresholds: no equivalent. |
+| Real User Monitoring | Partly: alert rule | RUM errors through the connector become issues. Performance thresholds: no equivalent. |
+| Logs | Partly: alert rule | Error logs become issues, and a rule fires per issue. Log count thresholds: no equivalent. |
+| Synthetic Monitoring | Synthetic check | A check is one HTTP request from one region. Other synthetic test types: no equivalent. |
+| Network (TCP and HTTP endpoints) | Synthetic check (HTTP) | TCP checks: no equivalent. |
+| Metric | No equivalent | A dashboard widget can show the metric. |
+| Anomaly | No equivalent | |
+| Forecast | No equivalent | |
+| Outlier | No equivalent | |
+| Change Alert | No equivalent | |
+| Composite | No equivalent | |
+| SLO Alerts | No equivalent | |
+| Watchdog | No equivalent | |
+| Host | No equivalent | |
+| Live Process, Process Check | No equivalent | |
+| Service Check, Integration | No equivalent | |
+| Database Monitoring | No equivalent | |
+| Network Path, Cloud Network Monitoring, NetFlow | No equivalent | |
+| CI | No equivalent | |
+| Cloud Cost, Data Observability, Audit Trail, Event, Analysis | No equivalent | |
+
+## Cutover checklist
+
+1. List your Datadog monitors and sort them with the table above: recreate as an alert rule or synthetic check, or keep in Datadog.
+2. Deploy the dual-send collector, run `validate`, and move services onto it one at a time. In Autter, **Repository → Settings → Runtime → Source coverage** shows each service as "via OTel Collector". In Datadog, check that the same services still report traces, trace metrics, logs and metrics.
+3. Connect the Datadog connector for history and for services that are not on OpenTelemetry.
+4. Recreate the issue-based monitors as [alert rules](/runtime/alert-rules) under **Repository → Settings → Runtime → Alert rules**. Send them to the Slack channels and on-call your Datadog monitors use. Recreate URL monitors as [synthetic checks](/runtime/synthetic-checks).
+5. Run both for long enough to see your usual traffic and a few real errors. Compare Autter's issues with Datadog Error Tracking and APM errors for the same services and time range.
+6. Move paging. Turn on the on-call action in the Autter rules, then mute the Datadog monitors they replace. Mute them. Do not delete them until the rollback window ends.
+7. When Datadog is no longer needed for these services, switch the collector to the Autter-only config on the [collector page](/runtime/otel-collector) and disconnect the Datadog connector.
+
+## Roll back
+
+- **Before step 7:** unmute the Datadog monitors and turn off the Autter rules' on-call action. Datadog has received everything all along.
+- **After step 7:** put the dual-send config back, with the same file and variables. Services keep pointing at the collector, so nothing changes in them. Datadog has a gap for the time the config was removed.
+- **Leaving Autter entirely:** remove `otlp_http/autter` and the Autter-only pipelines from the collector, or point services back at their previous Datadog setup. Apps were set to `parentbased_always_on` for the collector. Restore their previous sampler if they no longer go through it. Pause or disconnect the Datadog connector in repository settings.

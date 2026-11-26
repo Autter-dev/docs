@@ -23,6 +23,8 @@ Autter does not guess whether code came from AI. Supported coding agents create 
   </Card>
 </Columns>
 
+The Autter CLI (`autter`) is separate from the Runtime command (`autter-runtime`) that ships with the Runtime npm packages. See [Keys and command-line tools](/runtime/introduction#keys-and-command-line-tools).
+
 ## What the CLI adds
 
 - **Line-level attribution** connects committed code to the agent session that created it.
@@ -49,6 +51,18 @@ Autter does not guess whether code came from AI. Supported coding agents create 
 <Note>
   Connecting is optional. The open source CLI remains useful in local-only mode.
 </Note>
+
+## Without a coding agent
+
+The CLI installs and runs whether or not you use a coding agent. Attribution needs an agent to record its edits, so without one:
+
+- `autter blame`, `autter stats` and `autter log` still work and show 0% AI. Lines in a commit Autter recorded show as **untracked** (no agent or editor extension recorded them). Lines in a commit with no Autter record show as **unknown**. See [Untracked and unknown lines](/cli/commit-stats#untracked-and-unknown-lines).
+- Commands that read the Autter platform rather than your agents work once you sign in with `autter login`: `autter ask`, `autter logs`, `autter threads`, `autter lineage`, `autter dash`, `autter context` and `autter memory`. See [More CLI commands](/cli/more-commands).
+- `autter verify`, `autter badge`, `autter wrapped` and `autter telemetry` need no agent either.
+
+{/* TODO: confirm the untracked wording with `autter status` and `autter stats` on a fresh install with no agent hooks. */}
+
+When you add an agent later, run `autter install-hooks`. Attribution starts with that agent's next edit; earlier commits are not rewritten.
 
 ## Start here
 

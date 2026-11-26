@@ -1,9 +1,9 @@
 ---
 title: "Stack integrations"
-description: "Per-stack setup snippets for Autter Runtime — React, Node, Next.js, Go, Rust, and any OpenTelemetry SDK."
+description: "Per-stack setup snippets for Autter Runtime — React, Node, Next.js, Python, Go, Rust, and any OpenTelemetry SDK."
 ---
 
-For existing Sentry, PostHog, Grafana/Loki, Datadog, Vercel, Cloudflare Workers or webhook logs, use [external log sources](/runtime/external-sources). Provider connections require no application SDK or Runtime ingest key.
+For errors and logs you already send to Sentry, PostHog, Datadog, AWS, Google Cloud, Grafana/Loki, Vercel, Cloudflare Workers, Bugsnag, Rollbar, New Relic or a generic webhook, use [external log sources](/runtime/external-sources). Provider connections require no application SDK or Runtime ingest key.
 
 The application instrumentation path below uses Runtime credentials and OTLP/browser endpoints.
 
@@ -71,6 +71,8 @@ initAutterBrowser({
   Direct ingest is cross-origin. Ad-blockers silently drop these requests, so expect partial data. Use the same-origin relay above whenever you can deploy a Worker or edge route.
 </Warning>
 
+To link browser errors to the server error behind them, turn on [trace propagation](#link-browser-errors-to-the-server-error-behind-them).
+
 React render errors: wrap with `<AutterErrorBoundary>` (from `@autter/runtime-next/client`, works in any React app). Vue/Svelte/Angular: call `captureException(err)` from the framework's error hook (`app.config.errorHandler`, `handleError`, `ErrorHandler`).
 
 ## Node.js (Express, Fastify, Koa, NestJS)
@@ -85,9 +87,32 @@ const { initAutterServer } = require("@autter/runtime-node");
 initAutterServer({
   apiKey: process.env.AUTTER_RUNTIME_KEY,
   service: "payments-api",
-  release: process.env.GIT_SHA,
 });
 ```
+
+From `@autter/runtime-node` 1.16.0 you don't need to pass `release`. With no `release`, the SDK reports `AUTTER_RELEASE`, else the running commit from your hosting environment (`GITHUB_SHA`, `VERCEL_GIT_COMMIT_SHA`, `GIT_SHA`, `RENDER_GIT_COMMIT` and others), as the release and as `deployment.commit`. `release: false` or `AUTTER_DETECT_RELEASE=false` reports no release. With no `environment` and no `NODE_ENV`, it reports `test` under Jest, Vitest or `node --test`, else `production`. See [Releases, commits and test runs](/runtime/releases-and-environments).
+
+Request ids and error hooks:
+
+```js
+// Express: request ids first, the error hook after your routes
+app.use(autterRequests());
+app.use(autterErrorHandler());
+// Fastify
+app.register(autterFastifyErrors);
+// Koa: first
+app.use(autterKoa());
+```
+
+Each hook records a thrown error, with its stack, on the request span and
+leaves the response to the framework. Without one, a thrown error reaches
+Autter only as the 500 it caused (`GET /route returned 500`, no stack).
+Express is the exception from `@autter/runtime-node` 1.10.0: the SDK records
+the error behind every 5xx itself, in every router, including routers with
+their own error handler. `autterErrorHandler()` then only adds coded errors
+that end in a 4xx, and an error is never reported twice. Set
+`captureExpressErrors: false` in `initAutterServer` to turn the automatic
+capture off.
 
 Relay for your frontend:
 
@@ -115,6 +140,252 @@ Server initialization, relay and operation logging use
 `@autter/runtime-next/client`. Logging operations require Node, not edge.
 See the [Next.js logging example](/runtime/operation-logging#nextjs).
 
+From `@autter/runtime-next` 1.11.0, the client tracker sends a `traceparent` on same-origin requests by default, so browser errors link to the server request behind them. See [Link browser errors to the server error behind them](#link-browser-errors-to-the-server-error-behind-them).
+
+## Link browser errors to the server error behind them
+
+When the browser tracker adds a W3C `traceparent` header to your app's requests, your server continues that trace. A browser error then links to the server trace, and the server error, of the same request. In the dashboard, the browser issue shows **Root cause (same request)** and the server issue shows **Seen by users as**. See [Investigate an issue](/runtime/investigate-issues#browser-and-server-errors-of-the-same-request).
+
+`@autter/runtime-node`, `@autter/runtime-next` and OpenTelemetry's HTTP instrumentation continue the trace with no setup.
+
+### Next.js: on by default
+
+From `@autter/runtime-next` 1.11.0, `initAutterBrowser` from `@autter/runtime-next/client` adds a `traceparent` to same-origin `fetch` and XHR requests, such as your route handlers and server actions. This is a behaviour change: earlier versions sent the header only after you called `enableTracePropagation()`.
+
+```tsx
+"use client";
+import { initAutterBrowser } from "@autter/runtime-next/client";
+
+initAutterBrowser({
+  endpoint: "/api/autter-runtime",
+  service: "web-app",
+  // Optional: a cross-origin API you control. It must allow the header in CORS.
+  tracePropagationTargets: ["https://api.example.com/"],
+});
+```
+
+- Turn it off with `tracePropagation: false`.
+- `tracePropagationTargets` adds cross-origin APIs you control. They must allow the header in CORS: `Access-Control-Allow-Headers: traceparent`. See [below](#apis-on-another-origin-cors).
+- A third-party origin never gets the header and sees no new CORS preflight. The tracker's own endpoint never gets one either.
+- `fetch` is traced through the tracker's network observer, so `captureNetworkFailures: false` turns it off for `fetch`. XHR keeps it.
+- The client bundle grows by about 0.6 KB brotlied. Nothing changes during server rendering.
+
+<Warning>
+If your Next.js app imports `enableTracePropagation` from `@autter/runtime-browser/tracing` and calls it before `initAutterBrowser`, its targets are now replaced by the default (same-origin only). Import it from `@autter/runtime-next/client` instead, or pass `tracePropagationTargets` to `initAutterBrowser`.
+</Warning>
+
+### `@autter/runtime-browser`: one call
+
+Plain `@autter/runtime-browser` stays opt-in, because tracing does not fit the main tracker's size budget. Call `enableTracePropagation()` after `initAutterBrowser`:
+
+```ts
+import { initAutterBrowser } from "@autter/runtime-browser";
+import { enableTracePropagation } from "@autter/runtime-browser/tracing";
+
+initAutterBrowser({ endpoint: "/api/autter-runtime", service: "web-app" });
+enableTracePropagation();
+```
+
+Same-origin requests then carry a `traceparent`. To add an API on another origin that you control:
+
+```ts
+enableTracePropagation({ tracePropagationTargets: ["https://api.example.com/"] });
+```
+
+Browser trace propagation needs `@autter/runtime-browser` 1.6.0 or later ([compatibility table](/runtime/compatibility)).
+
+### APIs on another origin (CORS)
+
+`traceparent` is not a CORS-safelisted header. For an API on another origin, the browser sends a preflight and blocks the request unless the API allows the header. Allow your frontend's exact origins and the header.
+
+FastAPI:
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://app.example.com"],
+    allow_methods=["*"],
+    allow_headers=["traceparent", "content-type"],
+    expose_headers=["x-request-id"],
+)
+```
+
+Django, with `pip install django-cors-headers`, in `settings.py`:
+
+```python
+from corsheaders.defaults import default_headers
+
+INSTALLED_APPS = [
+    # ...your apps...
+    "corsheaders",
+]
+MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # before CommonMiddleware
+    # ...your middleware...
+]
+CORS_ALLOWED_ORIGINS = ["https://app.example.com"]
+CORS_ALLOW_HEADERS = (*default_headers, "traceparent")
+CORS_EXPOSE_HEADERS = ["x-request-id"]
+```
+
+OpenTelemetry's FastAPI and Django instrumentation continue the browser's trace with no other setup. The header is unsampled, so the parent-based sampler does not head-sample those requests. `init_tracing()` still exports the whole trace of any request that fails. Same-origin requests need none of this.
+
+## Python (Django, FastAPI, Flask, Celery)
+
+There is no Autter package for Python. You use OpenTelemetry's SDK, its OTLP/HTTP exporter and the instrumentation for your framework, plus two files from [`adapters/python`](https://github.com/Autter-dev/autter-runtime/tree/main/adapters/python) that you copy into your project:
+
+- `autter_tracing.py`: `init_tracing()`, which builds the tracer provider from the standard `OTEL_*` variables, keeps every error at any sampling rate and counts every request.
+- `redact.py`: the secret and PII scrubbing `@autter/runtime-node` does (stdlib only).
+
+<Warning>
+  Plain OpenTelemetry with a ratio sampler drops the errors of the traces it drops: at `OTEL_TRACES_SAMPLER_ARG=0.01`, about 99 errors in 100 never leave the process. Call `init_tracing()` instead of configuring the SDK yourself.
+</Warning>
+
+```bash
+pip install opentelemetry-sdk opentelemetry-exporter-otlp-proto-http \
+  opentelemetry-instrumentation-django   # or -fastapi, -flask, -celery
+curl -fsSO https://raw.githubusercontent.com/Autter-dev/autter-runtime/main/adapters/python/autter_tracing.py
+curl -fsSO https://raw.githubusercontent.com/Autter-dev/autter-runtime/main/adapters/python/redact.py
+```
+
+Configure it with environment variables only:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp.autter.dev            # the exporter adds /v1/traces
+OTEL_EXPORTER_OTLP_HEADERS=x-autter-key=${AUTTER_RUNTIME_KEY}   # the server key
+OTEL_SERVICE_NAME=shop
+OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.environment.name=production
+OTEL_TRACES_SAMPLER=parentbased_traceidratio
+OTEL_TRACES_SAMPLER_ARG=0.01   # 1% of healthy traces; init_tracing() still sends every error
+AUTTER_COUNT_REQUESTS=true     # count every request, so error rates are right at 1%
+```
+
+`authorization=Bearer%20${AUTTER_RUNTIME_KEY}` works as well: header values in `OTEL_EXPORTER_OTLP_HEADERS` are URL-encoded, and `x-autter-key` needs no space. `service.version` is the release.
+
+Copies of `autter_tracing.py` from Autter Runtime 1.20.0 fill in what the resource leaves out. A value you set always wins:
+
+- **Commit and release.** `deployment.commit` is the running commit from your hosting environment (`AUTTER_COMMIT`, `GITHUB_SHA`, `GIT_SHA`, `RENDER_GIT_COMMIT` and others, read from environment variables only). With no `service.version`, the release is `AUTTER_RELEASE`, else that commit, so on those platforms you can leave `service.version` out. `AUTTER_DETECT_RELEASE=false` or `init_tracing(detect_release=False)` turns the release default off. The commit is still sent.
+- **Test runs.** Under pytest or `manage.py test`, the adapter reports `deployment.environment=test` unless you set an environment yourself. Turn this off with `AUTTER_DETECT_TEST_ENV=false` or `init_tracing(detect_test_env=False)`. An environment in `OTEL_RESOURCE_ATTRIBUTES` counts as set, so keep `deployment.environment.name=production` (or the older `deployment.environment=production`) out of the environment your tests run in.
+
+See [Releases, commits and test runs](/runtime/releases-and-environments) for the full list of variables and what Autter does with the `test` environment. Request counts carry the same environment, commit and release as the spans.
+
+Call `init_tracing()` once in each process that serves requests or runs tasks, at startup, before the framework instrumentation:
+
+| Framework | Where | What |
+| --- | --- | --- |
+| Django | `wsgi.py` / `asgi.py`, before `get_wsgi_application()` | `init_tracing()`, `DjangoInstrumentor().instrument()` |
+| FastAPI | the module that creates the app | `init_tracing()` first, then `FastAPIInstrumentor.instrument_app(app)` |
+| Flask | the app module | `init_tracing()`, `app = Flask(__name__)`, `FlaskInstrumentor().instrument_app(app)` |
+| Celery | the worker's `worker_process_init` signal | `init_tracing()`, `CeleryInstrumentor().instrument()` |
+
+Django, in full:
+
+```python
+# shop/wsgi.py: runserver and gunicorn import it in the process that serves requests
+import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "shop.settings")
+
+from autter_tracing import init_tracing
+from opentelemetry.instrumentation.django import DjangoInstrumentor
+
+init_tracing()
+DjangoInstrumentor().instrument()
+
+from django.core.wsgi import get_wsgi_application
+
+application = get_wsgi_application()
+```
+
+Django's instrumentation also records `Http404`, `PermissionDenied`, `BadRequest` and `SuspiciousOperation` as errors. To keep 404s out of your issues, add the `ClientErrorResponses` middleware from the [Django recipe](https://github.com/Autter-dev/autter-runtime/tree/main/examples/python/django) to `MIDDLEWARE`.
+
+Prefork servers: gunicorn imports the WSGI module in each worker. With `--preload` it imports it once before forking, and the exporter thread and the error buffer restart in each worker. A Celery worker sets up tracing in each pool child, as OpenTelemetry's Celery instrumentation requires. The solo pool sends `worker_process_init` once; the threads, gevent and eventlet pools do not, so use `worker_init` with them:
+
+```python
+from celery.signals import worker_process_init
+from opentelemetry.instrumentation.celery import CeleryInstrumentor
+
+from autter_tracing import init_tracing
+
+
+@worker_process_init.connect(weak=False)
+def init_worker_tracing(**kwargs):
+    init_tracing()
+    CeleryInstrumentor().instrument()
+```
+
+Check the path from where the app runs. Copy [`compat.py`](https://github.com/Autter-dev/autter-runtime/blob/main/adapters/python/compat.py) next to your app (stdlib only) and run `python3 compat.py verify --service shop` with the same variables. See [Is my data arriving?](/runtime/delivery).
+
+[`examples/python`](https://github.com/Autter-dev/autter-runtime/tree/main/examples/python) has tested recipes for Django (runserver), FastAPI (uvicorn), Flask (gunicorn) and a Celery prefork worker, each with pinned requirements.
+
+### Always-on errors
+
+Head sampling decides at a trace's first span, before anything has failed, and the Python SDK exports sampled spans only. `init_tracing()` keeps the errors anyway:
+
+- Spans of traces the sampler drops are still recorded, but not exported, and downstream services still see "not sampled".
+- When one of those spans ends with an `exception` event or `ERROR` status, the whole local trace is exported: the spans that already ended (the failing call, the queries before it) and those that end later (the request span). A trace that ends without an error is dropped. Memory is bounded (256 spans per trace, 5,000 buffered spans and traces, 30 s per trace).
+- Spans exported this way carry `autter.tail_retained = true`. Head-sampled traces export unchanged.
+- Span names, attributes, status messages, exception messages and tracebacks are scrubbed with `redact.py` before export. The ingester scrubs again.
+
+### Request counts
+
+`init_tracing()` counts every HTTP request once, sampled or not, in a delta `http.server.duration` histogram sent to `/v1/metrics`. That is the older OpenTelemetry name, in milliseconds; the adapter uses it on purpose and the ingester accepts it, so you need not change anything. It marks the request spans it counted so the ingester does not count them again. Without these counts, the ingester counts only the requests head sampling kept while every error arrives, so at 1% sampling a 2% error rate reads as about 200%.
+
+Copies of `autter_tracing.py` from Autter Runtime 1.18.0 or earlier count only with `AUTTER_COUNT_REQUESTS=true` or `init_tracing(count_requests=True)`; later copies count by default. Set the variable, as in the block above, and either copy counts.
+
+Turn counting off with `AUTTER_COUNT_REQUESTS=false` or `init_tracing(count_requests=False)` when:
+
+- **Your self-hosted ingester is older than 1.8.0.** It ignores the marks and counts each sampled request twice. Upgrade it, or turn counting off until you do.
+- **Your app registers its own meter provider after `init_tracing()`.** OpenTelemetry keeps the first one registered, so your app's meter provider is ignored and its metrics go nowhere. Register yours before `init_tracing()` (counting then stays off by itself, with a warning), add your instruments to the one `init_tracing()` registers, or turn counting off.
+
+Counting also stays off, with a warning, when `opentelemetry-exporter-otlp-proto-http` is not installed.
+
+### Zero-code (`opentelemetry-instrument`)
+
+The `opentelemetry-distro` wrapper takes its sampler from `OTEL_TRACES_SAMPLER`, and no standard sampler keeps the errors of unsampled traces. Do one of these:
+
+- Start the app without the wrapper and call `init_tracing()`.
+- Run the wrapper at full sampling: `OTEL_TRACES_SAMPLER=parentbased_always_on`, plus `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`, since the distro defaults to gRPC.
+- Sample in an OpenTelemetry Collector with the `tail_sampling` processor.
+
+Under the wrapper, `init_tracing()` leaves the wrapper's provider in place and logs a warning when its sampler drops errors.
+
+### Unhandled and handled exceptions
+
+| Framework | Unhandled exceptions | Not recorded |
+| --- | --- | --- |
+| Django | Recorded on the request span, with `ERROR` status and the 500 | 404s and other client errors once you add `ClientErrorResponses`; exceptions another middleware answers |
+| FastAPI | What escapes the app (Starlette's 500), on the request span | `HTTPException`, exceptions an `@app.exception_handler` answers |
+| Flask | Recorded on the request span when the request is torn down (Flask's 500) | `abort()` / `HTTPException`, exceptions an `@app.errorhandler` answers |
+| Celery | Recorded on the task's `run/<task name>` span, `ERROR` status | Nothing: every exception that fails a task is recorded |
+
+Record handled exceptions, and the ones your own error handlers answer, on the current span:
+
+```python
+from opentelemetry import trace
+
+try:
+    refund_card(order_id)
+except RefundPending as exc:
+    trace.get_current_span().record_exception(exc, attributes={"autter.handled": True})
+    return JsonResponse({"status": "pending"}, status=202)
+```
+
+Add `"autter.severity": "warning"` to the attributes for one that should not count as an error.
+
+### Troubleshooting
+
+- **Nothing arrives.** The exporter logs failed exports: a 401 is a missing or wrong key, a connection error the endpoint or egress. `OTEL_EXPORTER_OTLP_ENDPOINT` is the base URL; `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` takes the full `…/v1/traces` URL.
+- **Errors arrive, healthy requests rarely.** That is the sampler at work.
+- **No errors either.** `init_tracing()` did not run in the process that serves the requests: a module only a parent process imports, or a Celery pool child without the `worker_process_init` hook.
+- **`init_tracing(): an OpenTelemetry TracerProvider is already registered`.** The app runs under `opentelemetry-instrument`. See [Zero-code](#zero-code-opentelemetry-instrument).
+- **Error rates look far too high.** Request counting is off: set `AUTTER_COUNT_REQUESTS=true`, and check the startup log for a warning that says why it stayed off.
+- **macOS development only.** `gunicorn --preload` workers die with `objc[…]: … fork() was called`: set `OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`. Celery's prefork pool needs `FORKED_BY_MULTIPROCESSING=1`.
+
 ## OTLP logs in other backends
 
 Python, Go, Rust, Java, .NET and other backends can use their installed
@@ -137,7 +408,8 @@ exp, _ := otlptracehttp.New(ctx,
         "authorization": "Bearer " + os.Getenv("AUTTER_RUNTIME_KEY"),
     }),
 )
-// resource: service.name, service.version (release), deployment.environment
+// resource: service.name, service.version (release), deployment.environment.name,
+//           service.instance.id (unique per process)
 // errors: span.RecordError(err); span.SetStatus(codes.Error, err.Error())
 ```
 
@@ -155,19 +427,25 @@ let exporter = opentelemetry_otlp::SpanExporter::builder()
     .build()?;
 ```
 
-## Python, Java, .NET, or anything else
+## Java, .NET, or anything else
 
-Standard OpenTelemetry environment variables work with every SDK:
+Standard OpenTelemetry environment variables work with every SDK. For Python, use [`init_tracing()`](#python-django-fastapi-flask-celery) instead.
 
 ```bash
 OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp.autter.dev
 OTEL_EXPORTER_OTLP_HEADERS="authorization=Bearer ${AUTTER_RUNTIME_KEY}"
 OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
 OTEL_SERVICE_NAME=payments-api
-OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.environment=production
+OTEL_RESOURCE_ATTRIBUTES=service.version=${GIT_SHA},deployment.commit=${GIT_SHA},deployment.environment.name=production,service.instance.id=${HOSTNAME}
 OTEL_TRACES_SAMPLER=parentbased_traceidratio
 OTEL_TRACES_SAMPLER_ARG=0.01
 ```
+
+`service.instance.id` must be unique per process (a host or pod name works for one process per host); Autter uses it to tell processes apart and needs it for memory and GC metrics. `@autter/runtime-node` sets it for you. `deployment.commit` (a 7 to 40 character hexadecimal SHA) lets Autter map each release to the commit it runs. In the job that runs your tests, set `deployment.environment.name=test` instead of `production`. See [Releases, commits and test runs](/runtime/releases-and-environments).
+
+<Warning>
+  With a plain OpenTelemetry SDK, an error on a trace the sampler drops is not sent. At `0.01`, about 99 errors in 100 are lost. Sample at 100% (`OTEL_TRACES_SAMPLER=parentbased_always_on`), or sample in an OpenTelemetry Collector with the `tail_sampling` processor and an error policy. The `@autter/*` SDKs and Python's `init_tracing()` send every error at any rate.
+</Warning>
 
 Errors surface as issues when spans carry `exception` events (every SDK's `record_exception` / `RecordError` does this) or `ERROR` status. The ingester parses each language's native stack format (Go, Rust, Java, .NET, Python, JavaScript), so errors group by function and file, not by message alone — the same defect stays one issue and unrelated errors that share a message stay apart.
 
@@ -180,7 +458,13 @@ span.set_attribute("autter.severity", "warning")
 
 ## Sampling guidance (all stacks)
 
-Errors are always worth sending; keep successful-trace sampling at ~1% (`OTEL_TRACES_SAMPLER_ARG=0.01`). Request/usage metrics are derived server-side from spans and the `http.server.duration` histogram — no extra setup.
+Keep successful-trace sampling at ~1% (`traceSampleRate` in the `@autter/*` SDKs, `OTEL_TRACES_SAMPLER_ARG=0.01` elsewhere) only where errors bypass the sampler:
+
+- **`@autter/*` SDKs:** errors are always captured, and the full trace around an error is kept (`retainTracesOnError`, on by default).
+- **Python with `init_tracing()`:** errors are always sent, with the trace around them, and every request is counted ([Python](#python-django-fastapi-flask-celery)).
+- **A plain OpenTelemetry SDK:** a ratio sampler drops the errors of the traces it drops. Sample at 100%, or sample in an OpenTelemetry Collector with the `tail_sampling` processor (a `status_code = ERROR` policy plus a small `probabilistic` one) in front of the ingester.
+
+Request/usage metrics are derived server-side from spans and the `http.server.request.duration` histogram (seconds) — no extra setup. The older `http.server.duration` (milliseconds) is still accepted.
 
 <Card title="No @autter/* package for your language?" icon="terminal" href="/runtime/without-npm">
   Send telemetry with just an OpenTelemetry SDK, a Collector, or a hand-rolled HTTP request.

@@ -42,12 +42,24 @@ Before inviting the team:
 
 Install the Autter CLI on developer machines when the team wants explicit AI authorship in Git history.
 
-```bash
+<CodeGroup>
+```bash macOS, Linux, WSL
 curl -fsSL https://api.autter.dev/install.sh | bash
-autter status
 ```
 
-Node-centric teams can distribute the CLI through npm instead — `npm install -g @autter/cli` installs the same release binary and fits existing Node toolchains and setup scripts.
+```powershell Windows
+powershell -NoProfile -ExecutionPolicy Bypass -Command "iex (irm https://api.autter.dev/install.ps1)"
+```
+
+```bash npm
+npm install -g @autter/cli
+autter onboard
+```
+</CodeGroup>
+
+Use npm instead if you're on Windows and already have Node.js 18 or later, or if the installer keeps failing to download on your network. Then check the setup with `autter doctor`.
+
+npm installs the same release binary, so Node-centric teams can also distribute the CLI through existing Node toolchains and setup scripts. For CI machines, see [Install the CLI](/cli/install#ci).
 
 Local-only mode requires no account. Connected mode can contribute attribution and prompt history to organization dashboards.
 

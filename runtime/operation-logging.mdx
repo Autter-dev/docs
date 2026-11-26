@@ -9,7 +9,7 @@ finish its payment retries without confirming payment. Report that outcome so
 Runtime can distinguish a failed checkout from a normally returning function.
 
 <Note>
-  Operation logging requires Node/Next.js SDK and ingester **1.4.0 or later**,
+  Operation logging requires Node/Next.js SDK and ingester **1.4.0+** ([compatibility table](/runtime/compatibility)),
   plus a matching platform deployment. Do not assume your installed package or
   hosted deployment supports the feature. Use
   the capability checks below before adding imports. Basic error and usage
@@ -91,7 +91,7 @@ module.exports = runtime; // reuse this handle in your existing shutdown hook
 node --require ./instrument.cjs server.js
 ```
 
-Set `GIT_SHA` to the deployed commit SHA. Reuse existing providers; do not
+Set `GIT_SHA` to the deployed commit SHA. From `@autter/runtime-node` 1.16.0 you can leave `release` out: the SDK reports the running commit from your hosting environment ([Releases, commits and test runs](/runtime/releases-and-environments)). Reuse existing providers; do not
 register a second SDK. If another OTel SDK owns the process, resolve provider
 ownership before adding Runtime. For an ESM app, follow the loader setup in
 the [Node package guide](https://github.com/Autter-dev/autter-runtime/tree/main/packages/runtime-node).
@@ -217,10 +217,115 @@ be overwritten through user context. Structured trace attributes are encoded
 as JSON for OTel compatibility.
 
 Concurrent operations keep separate async context. It does not cross processes
-or queues. Pass an opaque workflow identifier in the job payload and set it as
-custom context in the consumer. That identifier alone does not create an
-automatic parent operation or an issue-evidence link. Runtime evidence links
-use captured trace/operation IDs, rather than similar timestamps.
+or queues by itself. To link a job to the operation that queued it, hand over
+the operation's carrier as shown in
+[Queues, workers and other processes](#queues-workers-and-other-processes).
+A workflow identifier you put in the payload yourself does not create a parent
+operation or an issue-evidence link. Runtime evidence links use captured
+trace and operation IDs, rather than similar timestamps.
+
+## Queues, workers and other processes
+
+Available from `@autter/runtime-node` 1.16.0.
+
+The producer adds the current operation's carrier to what it hands over with
+`runtimeContext.inject(target, format?)`. The consumer passes what it received
+as `withRuntimeOperation(name, fn, {}, { from })`. The consumer's summary then
+carries the producer's operation id (`autter.operation.parent_id`), the
+producer's request id (`autter.request.id`) and `autter.parent_trace_id`.
+
+<Note>
+The consumer's trace is linked to the producer's (an OpenTelemetry span link),
+not continued. It gets its own trace id, and the request id is what joins the
+two.
+</Note>
+
+The carrier is `{ v: 1, op, req?, traceparent? }` under the key `autter`: ids
+only, never operation attributes, user context or baggage.
+
+- `inject` returns a copy and never changes `target`. Outside an operation, or
+  when `target` is not a plain object or `Headers`, it returns `target`
+  unchanged. It never throws.
+- `from` ignores anything missing or malformed, and a carrier string over 1,024
+  characters. The operation then starts unlinked.
+
+| `format` | Where the carrier goes | Consumer passes as `from` |
+| --- | --- | --- |
+| `"payload"` (default) | `{ ...data, autter: carrier }` | The payload |
+| `"headers"` | Header `autter: <carrier JSON>`. A `Headers` instance is always treated as headers. | The headers, in any case |
+| `"sqs"` | `{ autter: { DataType: "String", StringValue: <carrier JSON> } }` | `MessageAttributes`, or the whole message |
+
+### BullMQ
+
+The carrier travels in the job payload. `resize` stands for your own job code:
+
+```ts
+import { Queue, Worker } from "bullmq";
+import { runtimeContext, withRuntimeOperation } from "@autter/runtime-node";
+import { resize } from "./images.js";
+
+const connection = { host: "localhost", port: 6379 };
+const queue = new Queue("images", { connection });
+
+// Producer, inside a request or operation
+export async function queueResize(imageId: string) {
+  await queue.add("resize", runtimeContext.inject({ imageId }));
+}
+
+// Worker
+new Worker(
+  "images",
+  (job) => withRuntimeOperation(job.name, () => resize(job.data.imageId), {}, { from: job.data }),
+  { connection },
+);
+```
+
+### SQS
+
+The carrier travels in a message attribute, so the body stays yours. `fulfil`
+stands for your own handler:
+
+```ts
+import { ReceiveMessageCommand, SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
+import { runtimeContext, withRuntimeOperation } from "@autter/runtime-node";
+import { fulfil } from "./orders.js";
+
+const sqs = new SQSClient({});
+const QueueUrl = process.env.ORDERS_QUEUE_URL;
+
+// Producer, inside a request or operation
+export async function queueOrder(order: { id: string }) {
+  await sqs.send(new SendMessageCommand({
+    QueueUrl,
+    MessageBody: JSON.stringify(order),
+    MessageAttributes: runtimeContext.inject({}, "sqs"),
+  }));
+}
+
+// Consumer: ReceiveMessage needs MessageAttributeNames: ["autter"] (or ["All"]).
+export async function receiveOrders() {
+  const { Messages } = await sqs.send(new ReceiveMessageCommand({
+    QueueUrl,
+    MessageAttributeNames: ["autter"],
+  }));
+  for (const message of Messages ?? []) {
+    await withRuntimeOperation("fulfil-order", () => fulfil(JSON.parse(message.Body!)), {}, {
+      from: message,
+    });
+  }
+}
+```
+
+A Lambda SQS record works as is: its `messageAttributes` are read too.
+
+### Celery
+
+Celery (Python) needs no Autter helper. OpenTelemetry's Celery instrumentation
+already continues the trace from the code that sends the task to the worker
+that runs it. Call `CeleryInstrumentor().instrument()` in both processes, after
+`init_tracing()`, as in
+[`examples/python/celery`](https://github.com/Autter-dev/autter-runtime/tree/main/examples/python/celery).
+See [Python](/runtime/integrations#python-django-fastapi-flask-celery).
 
 ## Flush before short-lived work ends
 
@@ -337,6 +442,11 @@ Do not send request bodies, payment details, secrets, prompts or personal data.
 The SDK redacts before stdout/export; ingestion scrubs again and bounds nested
 context. Pattern-based redaction cannot identify every secret. Telemetry text
 is untrusted evidence, never instructions for an agent to follow.
+
+Client IP addresses, raw user-agent strings, machine ids and command lines
+that OpenTelemetry adds to spans are dropped by default. See
+[Identifying attributes and client IPs](/runtime/environment-variables#identifying-attributes-and-client-ips)
+to keep them, drop more, or count clients with a hashed IP.
 
 See [Architecture and data model](/runtime/architecture) for storage and
 [AI agent skills](/runtime/skills) for automated setup.
