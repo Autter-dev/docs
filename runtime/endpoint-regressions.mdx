@@ -81,6 +81,21 @@ Here, **user feedback** means your team's verdict on the incident diagnosis. It 
 
 The latest team verdict controls further fix work. Feedback does not undo an existing pull request, deploy a change, or prove that performance has recovered.
 
+## What the analysis reads in your code
+
+Besides the trace comparison, the analysis reads repository source. In order of weight, it uses:
+
+1. The indexed handler of the slow route (file, function and line).
+2. The code that changed between the baseline release and the slow release, as diff hunks from GitHub.
+3. Functions in the code index whose names match the slow trace's span names.
+4. Files whose path matches words in the route or span name.
+
+Source is read at the slow release, and up to 5 files are read. The release diff needs `release` to be a commit SHA that exists in the linked GitHub repository, on both the baseline and the slow release. With another release value, such as a version string or build number, the analysis still runs, but without the diff.
+
+A changed hunk is named as the cause only when the trace comparison shows the added time in the span that the code runs in. Timing alone is never treated as proof. The incident timeline lists the code that was read.
+
+Name span functions after the function they run (for example `OrderRepo.findByCustomer`) so they can be matched to code.
+
 ## Review a draft fix
 
 Automatic analysis needs normal and slow traces with child spans, relevant source files, and a specific code change supported by the evidence. If evidence is missing or confidence is low, Autter does not generate a fix. Review the incident status and activity feed.
